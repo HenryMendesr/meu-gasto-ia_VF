@@ -44,12 +44,27 @@ def read_expenses() -> list[dict]:
     return expenses
 
 
+def read_incomes() -> tuple[dict[str, float], dict[str, float]]:
+    with ZipFile(XLSM) as workbook:
+        sheet = ET.fromstring(workbook.read("xl/worksheets/sheet1.xml"))
+
+    def value(row: int, column: str) -> str | None:
+        cell = sheet.find(f'.//{{{NS}}}c[@r="{column}{row}"]')
+        return cell.findtext(f"{{{NS}}}v") if cell is not None else None
+
+    cash, voucher = {}, {}
+    for row in range(2, 101):
+        month = value(row, "X")
+        if month:
+            cash[month] = round(float(value(row, "Y") or 0), 2)
+            voucher[month] = round(float(value(row, "Z") or 0), 2)
+    return cash, voucher
+
+
 expenses = read_expenses()
 months = sorted({item["date"][:7] for item in expenses}, reverse=True)
 
-# Salários identificados no extrato. O usuário pode editar estes valores no painel;
-# as alterações ficam salvas apenas no navegador.
-initial_income = {"2026-08": 3469.09, "2026-09": 3586.42, "2026-10": 0}
+initial_income, initial_voucher = read_incomes()
 
 template = r'''<!doctype html>
 <html lang="pt-BR">
@@ -98,14 +113,13 @@ template = r'''<!doctype html>
 </main><script>
 const DATA=__DATA__;
 const DEFAULT_INCOME=__INCOME__;
+const DEFAULT_VOUCHER=__VOUCHER__;
 const COLORS=['#a61f24','#dc555a','#e98972','#f0ad72','#d5a021','#6e9f76','#4f839d','#796a9d','#8a7474','#687281'];
 const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const date=v=>new Date(v+'T12:00:00').toLocaleDateString('pt-BR');
 const monthLabel=v=>{const [y,m]=v.split('-');return new Date(+y,+m-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).replace(/^./,x=>x.toUpperCase())};
-const saved=JSON.parse(localStorage.getItem('meuGastoIncome')||'{}');
-const incomeByMonth={...DEFAULT_INCOME,...saved};
-const savedVoucher=JSON.parse(localStorage.getItem('meuGastoVoucherIncome')||'{}');
-const voucherByMonth={...savedVoucher};
+const incomeByMonth={...DEFAULT_INCOME};
+const voucherByMonth={...DEFAULT_VOUCHER};
 const month=document.querySelector('#month'),category=document.querySelector('#category'),search=document.querySelector('#search'),incomeInput=document.querySelector('#incomeInput'),voucherInput=document.querySelector('#voucherInput');
 const months=[...new Set(DATA.map(x=>x.date.slice(0,7)))].sort().reverse();months.forEach(m=>month.add(new Option(monthLabel(m),m)));
 const categories=[...new Set(DATA.map(x=>x.category))].sort();categories.forEach(c=>category.add(new Option(c,c)));
@@ -117,15 +131,15 @@ function render(){const all=DATA.filter(x=>x.date.startsWith(month.value));const
  const voucherSums={};voucher.forEach(x=>voucherSums[x.category]=(voucherSums[x.category]||0)+x.amount);const voucherList=Object.entries(voucherSums).sort((a,b)=>b[1]-a[1]),voucherMax=voucherList[0]?.[1]||1;document.querySelector('#voucherBars').innerHTML=voucherList.length?voucherList.map(([c,v])=>`<div><div class="bar-head"><span>${c}</span><strong>${brl(v)}</strong></div><div class="track"><div class="fill" style="width:${v/voucherMax*100}%;background:#6f5aa8"></div></div></div>`).join(''):'<div class="empty">Nenhum gasto com voucher neste mês.</div>';
  document.querySelector('#rows').innerHTML=view.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${date(x.date)}</td><td><strong>${x.where}</strong></td><td><span class="pill">${x.category}</span></td><td>${x.payment}</td><td>${x.description}</td><td class="money">${brl(x.amount)}</td></tr>`).join('');document.querySelector('#empty').hidden=!!view.length;
 }
-[month,category].forEach(el=>el.addEventListener('change',render));search.addEventListener('input',render);incomeInput.addEventListener('change',()=>{incomeByMonth[month.value]=Math.max(0,+incomeInput.value||0);localStorage.setItem('meuGastoIncome',JSON.stringify(incomeByMonth));render()});voucherInput.addEventListener('change',()=>{voucherByMonth[month.value]=Math.max(0,+voucherInput.value||0);localStorage.setItem('meuGastoVoucherIncome',JSON.stringify(voucherByMonth));render()});render();
+[month,category].forEach(el=>el.addEventListener('change',render));search.addEventListener('input',render);async function persistIncome(){if(location.protocol==='file:'){alert('Abra o painel pelo servidor local para salvar a renda no Excel.');render();return}const payload={month:month.value,cash:Math.max(0,+incomeInput.value||0),voucher:Math.max(0,+voucherInput.value||0)};const response=await fetch('/api/incomes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();if(!response.ok){alert(result.error||'Não foi possível salvar os valores');render();return}incomeByMonth[month.value]=payload.cash;voucherByMonth[month.value]=payload.voucher;render()}incomeInput.addEventListener('change',persistIncome);voucherInput.addEventListener('change',persistIncome);render();
 document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===tab));document.querySelectorAll('.panel').forEach(x=>x.hidden=x.id!==tab.dataset.panel);document.querySelector('#filters').style.visibility=tab.dataset.panel==='dashboardPanel'?'visible':'hidden'}));
-const form=document.querySelector('#expenseForm'),message=document.querySelector('#formMessage');form.date.value=new Date().toISOString().slice(0,10);form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;message.hidden=true;try{const payload=Object.fromEntries(new FormData(form));payload.amount=Number(payload.amount);const response=await fetch('/api/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível salvar');message.textContent='Gasto salvo no Excel. Atualizando o painel...';message.className='message ok';message.hidden=false;setTimeout(()=>location.reload(),700)}catch(error){message.textContent=location.protocol==='file:'?'Abra o painel pelo servidor local para salvar no Excel.':error.message;message.className='message error';message.hidden=false;button.disabled=false}});
+const form=document.querySelector('#expenseForm'),message=document.querySelector('#formMessage');form.date.value=new Date().toISOString().slice(0,10);async function sendExpense(payload){return fetch('/api/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})}form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;message.hidden=true;try{const payload=Object.fromEntries(new FormData(form));payload.amount=Number(payload.amount);let response=await sendExpense(payload),result=await response.json();if(response.status===409&&result.code==='duplicate'){if(!confirm(`${result.error}. Deseja lançar mesmo assim?`)){button.disabled=false;return}payload.allow_duplicate=true;response=await sendExpense(payload);result=await response.json()}if(!response.ok)throw new Error(result.error||'Não foi possível salvar');message.textContent='Gasto salvo no Excel e backup criado. Atualizando o painel...';message.className='message ok';message.hidden=false;setTimeout(()=>location.reload(),700)}catch(error){message.textContent=location.protocol==='file:'?'Abra o painel pelo servidor local para salvar no Excel.':error.message;message.className='message error';message.hidden=false;button.disabled=false}});
 </script></body></html>'''
 
 safe_data = json.dumps(expenses, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 html = template.replace("__DATA__", safe_data).replace(
     "__INCOME__", json.dumps(initial_income, separators=(",", ":"))
-)
+).replace("__VOUCHER__", json.dumps(initial_voucher, separators=(",", ":")))
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 OUTPUT.write_text(html, encoding="utf-8")
 print(f"{OUTPUT} — {len(expenses)} lançamentos — {len(months)} meses")

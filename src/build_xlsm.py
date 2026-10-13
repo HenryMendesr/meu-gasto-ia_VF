@@ -146,7 +146,7 @@ parts['xl/workbook.xml'] = ET.tostring(workbook_xml, encoding='utf-8', xml_decla
 
 sheet1_xml = ET.fromstring(parts['xl/worksheets/sheet1.xml'])
 for col in sheet1_xml.findall(f'.//{{{main_ns}}}col'):
-    if int(col.attrib.get('min', '0')) <= 22 and int(col.attrib.get('max', '0')) >= 18:
+    if int(col.attrib.get('min', '0')) <= 26 and int(col.attrib.get('max', '0')) >= 18:
         col.set('hidden', '1')
 parts['xl/worksheets/sheet1.xml'] = ET.tostring(sheet1_xml, encoding='utf-8', xml_declaration=True)
 

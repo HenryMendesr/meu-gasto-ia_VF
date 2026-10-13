@@ -69,5 +69,15 @@ No Windows, basta dar dois cliques em `INICIAR_PAINEL.bat`. O servidor e o ender
 
 O dashboard controla separadamente a renda em dinheiro e o crédito do voucher. Selecione `Voucher` como forma de pagamento para que o gasto apareça no saldo e no gráfico exclusivos do benefício.
 
+Antes de cada alteração, o servidor cria automaticamente uma cópia da planilha em `backups/` e mantém as 20 mais recentes. Lançamentos idênticos exigem confirmação para evitar duplicidade.
+
+Execute os testes do armazenamento com:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+O contrato preparado para a futura integração está documentado em [`docs/INTEGRACAO_WHATSAPP.md`](docs/INTEGRACAO_WHATSAPP.md).
+
 > A planilha pronta não precisa de Node.js nem Python. Basta utilizar o Excel para computador.
 
