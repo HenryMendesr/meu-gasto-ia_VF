@@ -57,5 +57,13 @@ python3 src/build_dashboard.py
 
 O valor da renda de cada mês pode ser ajustado no próprio painel e fica salvo no navegador utilizado.
 
+Para usar também a aba **Lançar gasto** e gravar diretamente no Excel, execute:
+
+```bash
+python3 src/dashboard_server.py
+```
+
+Depois abra `http://127.0.0.1:8765`. Cada novo gasto é salvo na planilha, validado e exibido no dashboard automaticamente. O Excel não precisa ficar aberto.
+
 > A planilha pronta não precisa de Node.js nem Python. Basta utilizar o Excel para computador.
 
