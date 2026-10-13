@@ -79,5 +79,11 @@ python3 -m unittest discover -s tests -v
 
 O contrato preparado para a futura integração está documentado em [`docs/INTEGRACAO_WHATSAPP.md`](docs/INTEGRACAO_WHATSAPP.md).
 
+## Serviço do WhatsApp
+
+A primeira versão do serviço oficial, sem IA, está em [`whatsapp-worker/`](whatsapp-worker/README.md). Ela aceita mensagens no formato `71 gasolina crédito`, mantém contas privadas por telefone e limita o administrador a bloquear ou apagar perfis e históricos.
+
+O serviço utiliza a API oficial da Meta e Cloudflare Workers com banco D1. A implantação exige uma conta Cloudflare, um aplicativo Meta e um número dedicado; nenhum segredo deve ser salvo no repositório.
+
 > A planilha pronta não precisa de Node.js nem Python. Basta utilizar o Excel para computador.
 

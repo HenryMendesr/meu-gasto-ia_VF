@@ -1,5 +1,6 @@
 build/
 node_modules/
+whatsapp-worker/.wrangler/
 __pycache__/
 *.pyc
 *.log
