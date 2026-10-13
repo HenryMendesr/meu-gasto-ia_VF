@@ -26,7 +26,7 @@ CATEGORIES = {
     "Educação", "Lazer", "Compras", "Assinaturas", "Contas",
     "Viagem", "Presentes", "Outros",
 }
-PAYMENTS = {"Pix", "Crédito", "Débito", "Dinheiro", "Transferência", "Não informado"}
+PAYMENTS = {"Pix", "Crédito", "Débito", "Dinheiro", "Transferência", "Voucher", "Não informado"}
 
 
 def set_value(sheet: ET.Element, row: int, column: str, value: str, kind: str) -> None:

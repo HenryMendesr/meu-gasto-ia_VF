@@ -65,5 +65,7 @@ python3 src/dashboard_server.py
 
 Depois abra `http://127.0.0.1:8765`. Cada novo gasto é salvo na planilha, validado e exibido no dashboard automaticamente. O Excel não precisa ficar aberto.
 
+O dashboard controla separadamente a renda em dinheiro e o crédito do voucher. Selecione `Voucher` como forma de pagamento para que o gasto apareça no saldo e no gráfico exclusivos do benefício.
+
 > A planilha pronta não precisa de Node.js nem Python. Basta utilizar o Excel para computador.
 

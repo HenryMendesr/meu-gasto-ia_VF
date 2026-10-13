@@ -19,7 +19,7 @@ const black="#111318", graphite="#242830", red="#C62828", redDark="#8F1D1D", whi
 const money='R$ #,##0.00;[Red](R$ #,##0.00);-';
 const pct='0.0%;[Red](0.0%);-';
 const categories=["Alimentação","Mercado","Transporte","Moradia","Saúde","Educação","Lazer","Compras","Assinaturas","Contas","Viagem","Presentes","Outros"];
-const payments=["Pix","Crédito","Débito","Dinheiro","Transferência","Não informado"];
+const payments=["Pix","Crédito","Débito","Dinheiro","Transferência","Voucher","Não informado"];
 const setup=(s)=>{s.showGridLines=false;s.getRange("A1:Z1000").format.font={name:"Arial",size:10,color:black};};
 const title=(s,range,text)=>{s.getRange(range).merge();s.getRange(range.split(":")[0]).values=[[text]];s.getRange(range).format={fill:black,font:{color:white,bold:true,size:16},verticalAlignment:"center"};};
 const note=(s,range,text)=>{s.getRange(range).merge();s.getRange(range.split(":")[0]).values=[[text]];s.getRange(range).format={fill:"#FDECEC",font:{color:redDark,italic:true},verticalAlignment:"center"};};
