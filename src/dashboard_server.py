@@ -159,6 +159,58 @@ def set_income(payload: dict) -> dict:
     return {"month": month, "cash": cash, "voucher": voucher, "backup": backup.name}
 
 
+def read_budgets() -> dict[str, dict[str, float]]:
+    with ZipFile(XLSM) as source:
+        sheet = ET.fromstring(source.read("xl/worksheets/sheet1.xml"))
+    result: dict[str, dict[str, float]] = {}
+    for row in range(102, 551):
+        month = cell_value(sheet, row, "X")
+        category = cell_value(sheet, row, "Y")
+        limit = cell_value(sheet, row, "Z")
+        if month and category and limit is not None:
+            result.setdefault(month, {})[category] = round(float(limit), 2)
+    return result
+
+
+def set_budget(payload: dict) -> dict:
+    month = str(payload.get("month", ""))
+    category = str(payload.get("category", "")).strip()
+    try:
+        date.fromisoformat(f"{month}-01")
+        limit = round(float(payload.get("limit", 0)), 2)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Mês ou limite inválido") from exc
+    if category not in CATEGORIES:
+        raise ValueError("Categoria inválida")
+    if limit < 0 or limit > 10_000_000:
+        raise ValueError("O limite precisa ser positivo")
+
+    with WRITE_LOCK:
+        with ZipFile(XLSM) as source:
+            parts = {name: source.read(name) for name in source.namelist()}
+        sheet = ET.fromstring(parts["xl/worksheets/sheet1.xml"])
+        target_row = None
+        for row in range(102, 551):
+            saved_month = cell_value(sheet, row, "X")
+            saved_category = cell_value(sheet, row, "Y")
+            if (saved_month == month and saved_category == category) or (
+                saved_month is None and target_row is None
+            ):
+                target_row = row
+                if saved_month == month and saved_category == category:
+                    break
+        if target_row is None:
+            raise ValueError("Não há espaço para cadastrar outro limite")
+        set_value(sheet, target_row, "X", month, "str")
+        set_value(sheet, target_row, "Y", category, "str")
+        set_value(sheet, target_row, "Z", f"{limit:.2f}", "n")
+        parts["xl/worksheets/sheet1.xml"] = ET.tostring(
+            sheet, encoding="utf-8", xml_declaration=True
+        )
+        backup = save_workbook(parts)
+    return {"month": month, "category": category, "limit": limit, "backup": backup.name}
+
+
 def add_expense(payload: dict) -> dict:
     try:
         expense_date = date.fromisoformat(str(payload["date"]))
@@ -242,11 +294,14 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/incomes":
             self.respond(200, {"ok": True, "incomes": read_incomes()})
             return
+        if path == "/api/budgets":
+            self.respond(200, {"ok": True, "budgets": read_budgets()})
+            return
         super().do_GET()
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
-        if path not in {"/api/expenses", "/api/incomes"}:
+        if path not in {"/api/expenses", "/api/incomes", "/api/budgets"}:
             self.send_error(404)
             return
         try:
@@ -256,6 +311,10 @@ class Handler(SimpleHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length))
             if path == "/api/incomes":
                 result = set_income(payload)
+                self.respond(200, {"ok": True, **result})
+                return
+            if path == "/api/budgets":
+                result = set_budget(payload)
                 self.respond(200, {"ok": True, **result})
                 return
             result = add_expense(payload)

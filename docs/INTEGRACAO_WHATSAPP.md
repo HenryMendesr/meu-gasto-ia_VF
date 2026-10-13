@@ -20,6 +20,8 @@ Com `python3 src/dashboard_server.py` em execução:
 - `POST /api/expenses`: grava um gasto.
 - `GET /api/incomes`: consulta renda e voucher por mês.
 - `POST /api/incomes`: atualiza renda e voucher do mês.
+- `GET /api/budgets`: consulta limites mensais por categoria.
+- `POST /api/budgets`: atualiza o limite de uma categoria no mês.
 
 Exemplo de lançamento:
 

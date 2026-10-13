@@ -83,6 +83,20 @@ class DashboardStorageTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             server.set_income({"month": "2026-11", "cash": -1, "voucher": 0})
 
+    def test_persists_monthly_category_budget(self):
+        result = server.set_budget({"month": "2026-10", "category": "Alimentação", "limit": 700})
+        budgets = server.read_budgets()
+
+        self.assertEqual(700.0, budgets["2026-10"]["Alimentação"])
+        self.assertEqual("Alimentação", result["category"])
+        self.assertTrue((server.BACKUPS / result["backup"]).is_file())
+
+    def test_rejects_invalid_budget(self):
+        with self.assertRaises(ValueError):
+            server.set_budget({"month": "2026-10", "category": "Inventada", "limit": 100})
+        with self.assertRaises(ValueError):
+            server.set_budget({"month": "2026-10", "category": "Lazer", "limit": -1})
+
 
 if __name__ == "__main__":
     unittest.main()

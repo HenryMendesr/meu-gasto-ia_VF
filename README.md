@@ -69,6 +69,8 @@ No Windows, basta dar dois cliques em `INICIAR_PAINEL.bat`. O servidor e o ender
 
 O dashboard controla separadamente a renda em dinheiro e o crédito do voucher. Selecione `Voucher` como forma de pagamento para que o gasto apareça no saldo e no gráfico exclusivos do benefício.
 
+Também é possível definir um limite mensal para cada categoria. O painel mostra o valor utilizado, quanto ainda pode ser gasto e alertas quando restarem 20%, 10% ou 5% do limite. Os limites ficam armazenados no próprio Excel e variam por mês.
+
 Antes de cada alteração, o servidor cria automaticamente uma cópia da planilha em `backups/` e mantém as 20 mais recentes. Lançamentos idênticos exigem confirmação para evitar duplicidade.
 
 Execute os testes do armazenamento com:
