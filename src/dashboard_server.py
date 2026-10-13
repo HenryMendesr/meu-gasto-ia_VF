@@ -8,7 +8,9 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+from threading import Timer
 from urllib.parse import urlparse
+import webbrowser
 from zipfile import ZIP_DEFLATED, ZipFile
 import xml.etree.ElementTree as ET
 
@@ -137,11 +139,15 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Abre o painel local do Meu Gasto IA")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--no-browser", action="store_true")
     options = parser.parse_args()
     subprocess.run(["python3", str(BUILD_DASHBOARD)], cwd=ROOT, check=True)
     server = ThreadingHTTPServer((options.host, options.port), Handler)
     print(f"Meu Gasto IA disponível em http://{options.host}:{options.port}")
     print("Pressione Ctrl+C para encerrar.")
+    if not options.no_browser:
+        browser_host = "127.0.0.1" if options.host == "0.0.0.0" else options.host
+        Timer(0.8, webbrowser.open, args=(f"http://{browser_host}:{options.port}",)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
