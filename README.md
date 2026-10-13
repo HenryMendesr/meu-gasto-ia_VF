@@ -55,7 +55,7 @@ Depois de atualizar a planilha, gere novamente o painel com:
 python3 src/build_dashboard.py
 ```
 
-O valor da renda de cada mês pode ser ajustado no próprio painel e fica salvo no navegador utilizado.
+O valor do salário e do voucher de cada mês pode ser ajustado no próprio painel. Use o botão **Salvar salário e voucher no Excel** para gravar os dois valores na planilha.
 
 Para usar também a aba **Lançar gasto** e gravar diretamente no Excel, execute:
 
@@ -66,6 +66,8 @@ python3 src/dashboard_server.py
 Depois abra `http://127.0.0.1:8765`. Cada novo gasto é salvo na planilha, validado e exibido no dashboard automaticamente. O Excel não precisa ficar aberto.
 
 No Windows, basta dar dois cliques em `INICIAR_PAINEL.bat`. O servidor e o endereço correto serão abertos automaticamente. Não abra `web/index.html` diretamente para lançar gastos, pois páginas abertas como arquivo não têm permissão para alterar a planilha.
+
+O painel mostra **Conectado ao Excel** quando o salvamento está disponível. A versão aberta pelo GitHub Pages serve somente para consulta, pois um site estático não consegue modificar um arquivo no computador ou no repositório.
 
 O dashboard controla separadamente a renda em dinheiro e o crédito do voucher. Selecione `Voucher` como forma de pagamento para que o gasto apareça no saldo e no gráfico exclusivos do benefício.
 

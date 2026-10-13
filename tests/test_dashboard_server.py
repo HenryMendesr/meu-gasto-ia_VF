@@ -77,6 +77,19 @@ class DashboardStorageTests(unittest.TestCase):
         self.assertEqual({"cash": 4200.0, "voucher": 850.0}, incomes["2026-11"])
         self.assertTrue((server.BACKUPS / result["backup"]).is_file())
 
+    def test_income_and_voucher_expense_survive_sequential_saves(self):
+        server.set_income({"month": "2026-12", "cash": 5100, "voucher": 920})
+        server.add_expense(self.payload(date="2026-12-08", amount=32.40))
+
+        self.assertEqual(
+            {"cash": 5100.0, "voucher": 920.0},
+            server.read_incomes()["2026-12"],
+        )
+        saved = [item for item in server.read_expenses() if item["date"] == "2026-12-08"]
+        self.assertEqual(1, len(saved))
+        self.assertEqual("Voucher", saved[0]["payment"])
+        self.assertEqual(32.40, saved[0]["amount"])
+
     def test_rejects_invalid_income(self):
         with self.assertRaises(ValueError):
             server.set_income({"month": "novembro", "cash": 1000, "voucher": 0})
