@@ -45,5 +45,17 @@ O primeiro comando gera `build/Controle_Gastos_Automatico.xlsx`. Ele requer Node
 
 O caminho dos arquivos é calculado a partir da localização dos scripts, portanto os comandos funcionam mesmo quando o repositório estiver em outra pasta.
 
+## Painel web
+
+O painel em [`web/index.html`](web/index.html) funciona sem servidor e pode ser aberto diretamente no navegador. Ele mostra entradas, gastos, saldo, categorias e histórico com filtros.
+
+Depois de atualizar a planilha, gere novamente o painel com:
+
+```bash
+python3 src/build_dashboard.py
+```
+
+O valor da renda de cada mês pode ser ajustado no próprio painel e fica salvo no navegador utilizado.
+
 > A planilha pronta não precisa de Node.js nem Python. Basta utilizar o Excel para computador.
 
