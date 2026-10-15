@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 import re
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
-from src import auth, investments, runtime_storage as storage
+from src import auth, investments, runtime_storage as storage, statement_import
 
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
@@ -118,6 +118,33 @@ async def extract_image(request:Request):
     if isinstance(uid,JSONResponse):return uid
     try:return {'ok':True,**investments.extract_image(str((await request.json()).get('image','')))}
     except ValueError as exc:return json_error(400,str(exc))
+
+@fastapi_app.post('/api/statements/preview')
+async def preview_statement(request:Request,file:UploadFile=File(...)):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:
+        raw=await file.read(statement_import.MAX_FILE_SIZE+1)
+        items=statement_import.parse_statement(file.filename or '',raw)
+        return {'ok':True,'items':items,'count':len(items),'needs_review':sum(not item['category'] for item in items)}
+    except ValueError as exc:return json_error(400,str(exc))
+
+@fastapi_app.post('/api/statements/import')
+async def import_statement(request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:payload=await request.json();items=payload.get('items',[])
+    except (ValueError,TypeError):return json_error(400,'Dados do extrato inválidos')
+    if not isinstance(items,list) or not items or len(items)>statement_import.MAX_ITEMS:return json_error(400,'Selecione de 1 a 500 lançamentos')
+    imported=skipped=0;errors=[]
+    for position,item in enumerate(items,1):
+        if not isinstance(item,dict) or item.get('selected') is False:continue
+        if not str(item.get('category','')).strip():errors.append({'line':position,'error':'Escolha uma categoria'});continue
+        expense={'date':item.get('date'),'amount':item.get('amount'),'where':item.get('where'),'category':item.get('category'),'payment':item.get('payment','Crédito'),'description':item.get('description','')}
+        try:storage.add_expense(expense,uid);imported+=1
+        except storage.DuplicateExpenseError:skipped+=1
+        except ValueError as exc:errors.append({'line':position,'error':str(exc)})
+    return {'ok':not errors,'imported':imported,'skipped':skipped,'errors':errors}
 @fastapi_app.put('/api/investments/{item_id}')
 async def update_investment(item_id:str,request:Request):
     uid=protected(request)

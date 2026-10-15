@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src import auth, investments, storage
+from src import auth, investments, statement_import, storage
 
 
 class AppStorageTests(unittest.TestCase):
@@ -71,6 +71,21 @@ class AppStorageTests(unittest.TestCase):
         self.assertEqual(42, auth.session_user(second_user_token, now=1001))
         self.assertFalse(auth.verify_session(token + "x", now=1001))
         self.assertFalse(auth.verify_session(token, now=1000 + auth.SESSION_SECONDS + 1))
+
+    def test_statement_csv_suggests_categories_and_leaves_unknown_for_review(self):
+        raw = "data;descricao;valor\n13/10/2026;SUPERMERCADO CENTRAL;152,30\n14/10/2026;EMPRESA DESCONHECIDA;45,90\n".encode()
+        items = statement_import.parse_statement("fatura.csv", raw)
+        self.assertEqual(2, len(items))
+        self.assertEqual("Mercado", items[0]["category"])
+        self.assertEqual("", items[1]["category"])
+        self.assertEqual(45.90, items[1]["amount"])
+
+    def test_statement_ofx_marks_only_debits_by_default(self):
+        raw = b"<OFX><STMTTRN><DTPOSTED>20261013<TRNAMT>-25.50<NAME>UBER</STMTTRN><STMTTRN><DTPOSTED>20261014<TRNAMT>100.00<NAME>ESTORNO</STMTTRN></OFX>"
+        items = statement_import.parse_statement("conta.ofx", raw)
+        self.assertEqual("Transporte", items[0]["category"])
+        self.assertTrue(items[0]["selected"])
+        self.assertFalse(items[1]["selected"])
 
 
 if __name__ == "__main__": unittest.main()

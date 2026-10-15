@@ -146,17 +146,21 @@ html = html.replace("__BUDGETS__", json.dumps(initial_budgets, ensure_ascii=Fals
 investment_css = (ROOT / "src/investments_panel.css").read_text(encoding="utf-8")
 investment_panel = (ROOT / "src/investments_panel.html").read_text(encoding="utf-8")
 investment_js = (ROOT / "src/investments_panel.js").read_text(encoding="utf-8")
+statement_css = (ROOT / "src/statement_panel.css").read_text(encoding="utf-8")
+statement_panel = (ROOT / "src/statement_panel.html").read_text(encoding="utf-8")
+statement_js = (ROOT / "src/statement_panel.js").read_text(encoding="utf-8")
 pwa_js = (ROOT / "src/pwa.js").read_text(encoding="utf-8")
-html = html.replace("</style>", investment_css + "\n  </style>", 1)
+html = html.replace("</style>", investment_css + "\n" + statement_css + "\n  </style>", 1)
 html = html.replace(
     '<button class="tab" data-panel="entryPanel">Lançar gasto</button>',
     '<button class="tab" data-panel="entryPanel">Lançar gasto</button><button class="tab" data-panel="investmentsPanel">Investimentos</button>',
     1,
 )
 html = html.replace('  <div class="foot">', investment_panel + '\n  <div class="foot">', 1)
+html = html.replace('<div id="entryPanel" class="panel" hidden><section class="card entry">', '<div id="entryPanel" class="panel" hidden>' + statement_panel + '<section class="card entry">', 1)
 safe_investments = json.dumps(initial_investments, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 html = html.replace("let DATA=", f"const INVESTMENT_DATA={safe_investments};\nlet DATA=", 1)
-html = html.replace("</script>", investment_js + "\n" + pwa_js + "\n</script>", 1)
+html = html.replace("</script>", investment_js + "\n" + statement_js + "\n" + pwa_js + "\n</script>", 1)
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 OUTPUT.write_text(html, encoding="utf-8")
 print(f"{OUTPUT} — {len(expenses)} lançamentos — {len(months)} meses")

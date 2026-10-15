@@ -1,0 +1,16 @@
+<section class="card statement-upload">
+  <div class="statement-intro"><div class="statement-icon" aria-hidden="true">⇧</div><div><h2>Importar extrato</h2><div class="sub">Envie CSV, OFX ou PDF. Você revisa tudo antes de lançar.</div></div></div>
+  <form id="statementUploadForm" class="statement-upload-form">
+    <label class="statement-file"><span>Escolher extrato</span><input id="statementFile" name="file" type="file" accept=".csv,.ofx,.pdf,text/csv,application/pdf" required></label>
+    <button class="save" type="submit">Analisar extrato</button>
+  </form>
+  <div class="statement-tips"><span>✓ Categorias sugeridas</span><span>✓ Duplicados ignorados</span><span>✓ Confirmação antes de salvar</span></div>
+  <div id="statementUploadMessage" class="message" hidden></div>
+</section>
+<section id="statementReview" class="card statement-review" hidden>
+  <div class="statement-review-head"><div><h2>Revise os lançamentos</h2><div id="statementReviewSummary" class="sub"></div></div><button id="cancelStatement" class="secondary" type="button">Cancelar</button></div>
+  <div class="statement-review-note">Itens em amarelo precisam de uma categoria. Desmarque pagamentos, estornos ou linhas que não deseja importar.</div>
+  <div id="statementRows" class="statement-rows"></div>
+  <div class="statement-review-actions"><span id="statementSelectedTotal"></span><button id="importStatement" class="save" type="button">Importar selecionados</button></div>
+  <div id="statementImportMessage" class="message" hidden></div>
+</section>

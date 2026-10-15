@@ -45,6 +45,12 @@ A aba **Investimentos** aceita renda fixa, ações, fundos imobiliários, ETFs, 
 
 O preenchimento por imagem continua disponível na execução local quando o Tesseract está instalado. A Vercel não inclui o Tesseract; na versão hospedada, esses campos devem ser preenchidos manualmente até uma futura integração com OCR em nuvem.
 
+## Importação de extratos
+
+Na aba **Lançar gasto**, a área **Importar extrato** aceita arquivos CSV, OFX e PDF de até 6 MB e mostra no máximo 500 linhas por vez. O arquivo é processado apenas para gerar uma prévia e não é armazenado. Categorias conhecidas são sugeridas pelo estabelecimento; itens sem correspondência ficam destacados e exigem categoria manual. Comentários, seleção das linhas e categorias podem ser revisados antes da confirmação. Lançamentos duplicados são ignorados durante a importação.
+
+Como layouts de PDF variam entre bancos, CSV ou OFX oferecem resultados mais precisos. A prévia sempre deve ser conferida antes de salvar.
+
 ## Segurança
 
 - Banco Neon acessado somente pela API, usando `DATABASE_URL` secreta.
