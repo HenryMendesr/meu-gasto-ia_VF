@@ -15,6 +15,17 @@ app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
 MULTI_USER=bool(os.environ.get('DATABASE_URL'))
 
 
+@app.middleware('http')
+async def restore_vercel_route(request:Request,call_next):
+    """Restaura o caminho original enviado explicitamente pelo rewrite da Vercel."""
+    route=request.query_params.get('__route')
+    if route:
+        path='/' if route=='home' else f'/{route.lstrip("/")}'
+        request.scope['path']=path
+        request.scope['raw_path']=path.encode('utf-8')
+    return await call_next(request)
+
+
 def current_user_id(request:Request)->int|None:return auth.session_user(request.cookies.get(auth.COOKIE_NAME))
 def json_error(status:int,message:str)->JSONResponse:return JSONResponse({'ok':False,'error':message},status_code=status,headers={'Cache-Control':'no-store'})
 def protected(request:Request):

@@ -8,23 +8,23 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/api"
+      "destination": "/api?__route=home"
     },
     {
       "source": "/login",
-      "destination": "/api"
+      "destination": "/api?__route=login"
     },
     {
       "source": "/register",
-      "destination": "/api"
+      "destination": "/api?__route=register"
     },
     {
       "source": "/logout",
-      "destination": "/api"
+      "destination": "/api?__route=logout"
     },
     {
       "source": "/api/:path*",
-      "destination": "/api"
+      "destination": "/api?__route=api/:path*"
     }
   ],
   "headers": [
