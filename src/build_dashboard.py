@@ -13,7 +13,7 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "public/index.html"
+OUTPUT = ROOT / "templates/index.html"
 CATEGORIES = [
     "Alimentação", "Mercado", "Transporte", "Moradia", "Saúde", "Educação",
     "Lazer", "Compras", "Assinaturas", "Contas", "Viagem", "Presentes", "Outros",

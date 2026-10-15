@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from src import auth, investments, runtime_storage as storage
 
 ROOT=Path(__file__).resolve().parents[1]
-WEB=ROOT/'public'
+TEMPLATES=ROOT/'templates'
 MULTI_USER=bool(os.environ.get('DATABASE_URL'))
 
 
@@ -25,7 +25,7 @@ def protected(request:Request):
     return user_id if user_id is not None else json_error(401,'Faça login para continuar')
 
 def auth_html(*,register:bool=False,error:str='')->HTMLResponse:
-    template=(WEB/'auth.html').read_text(encoding='utf-8')
+    template=(TEMPLATES/'auth.html').read_text(encoding='utf-8')
     if register:
         fields=''.join([
             '<label>Nome<input name="name" maxlength="80" autocomplete="name" required autofocus></label>',
@@ -48,7 +48,7 @@ def set_session(response:RedirectResponse,user_id:int)->RedirectResponse:
     return response
 
 @fastapi_app.get('/')
-def home(request:Request):return FileResponse(WEB/'index.html',headers={'Cache-Control':'no-store'}) if current_user_id(request) else RedirectResponse('/login',303)
+def home(request:Request):return FileResponse(TEMPLATES/'index.html',headers={'Cache-Control':'no-store'}) if current_user_id(request) else RedirectResponse('/login',303)
 @fastapi_app.get('/login')
 def login_page(request:Request):return RedirectResponse('/',303) if current_user_id(request) else auth_html()
 @fastapi_app.post('/login')

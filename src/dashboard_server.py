@@ -21,6 +21,7 @@ except ImportError:  # execução direta: python src/dashboard_server.py
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "public"
+TEMPLATES = ROOT / "templates"
 BUILD_DASHBOARD = ROOT / "src/build_dashboard.py"
 read_expenses = storage.read_expenses
 read_incomes = storage.read_incomes
@@ -78,7 +79,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def auth_page(self, setup: bool, error: str = "") -> None:
-        template = (WEB / "auth.html").read_text(encoding="utf-8")
+        template = (TEMPLATES / "auth.html").read_text(encoding="utf-8")
         if setup:
             fields = '<label>Crie sua senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label><label>Confirme a senha<input name="confirmation" type="password" minlength="10" autocomplete="new-password" required></label>'
             values = {"__TITLE__": "Primeiro acesso", "__SUBTITLE__": "Proteja seus dados com uma senha", "__ACTION__": "/setup", "__FIELDS__": fields, "__BUTTON__": "Criar acesso", "__FOOTER__": ""}
@@ -127,6 +128,15 @@ class Handler(SimpleHTTPRequestHandler):
                 self.auth_page(False)
             return
         if not self.require_auth():
+            return
+        if path == "/":
+            body = (TEMPLATES / "index.html").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
             return
         if path == "/api/health":
             self.respond(200, {
