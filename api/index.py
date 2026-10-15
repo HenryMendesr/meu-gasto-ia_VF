@@ -3,6 +3,7 @@ from html import escape
 import os
 from pathlib import Path
 import re
+from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -11,19 +12,25 @@ from src import auth, investments, runtime_storage as storage
 
 ROOT=Path(__file__).resolve().parents[1]
 WEB=ROOT/'public'
-app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
 MULTI_USER=bool(os.environ.get('DATABASE_URL'))
 
 
-@app.middleware('http')
-async def restore_vercel_route(request:Request,call_next):
-    """Restaura o caminho original enviado explicitamente pelo rewrite da Vercel."""
-    route=request.query_params.get('__route')
-    if route:
-        path='/' if route=='home' else f'/{route.lstrip("/")}'
-        request.scope['path']=path
-        request.scope['raw_path']=path.encode('utf-8')
-    return await call_next(request)
+class RestoreVercelRoute:
+    """Restaura o caminho original antes de o roteador ASGI processar a requisição."""
+    def __init__(self,application):self.application=application
+
+    async def __call__(self,scope,receive,send):
+        if scope.get('type')=='http':
+            query=parse_qs(scope.get('query_string',b'').decode('utf-8'))
+            route=query.get('__route',[None])[0]
+            if route:
+                path='/' if route=='home' else f'/{route.lstrip("/")}'
+                scope={**scope,'path':path,'raw_path':path.encode('utf-8')}
+        await self.application(scope,receive,send)
+
+
+fastapi_app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
+app=RestoreVercelRoute(fastapi_app)
 
 
 def current_user_id(request:Request)->int|None:return auth.session_user(request.cookies.get(auth.COOKIE_NAME))
@@ -55,11 +62,11 @@ def set_session(response:RedirectResponse,user_id:int)->RedirectResponse:
     response.set_cookie(auth.COOKIE_NAME,auth.create_session(user_id),max_age=auth.SESSION_SECONDS,httponly=True,secure=True,samesite='strict',path='/')
     return response
 
-@app.get('/')
+@fastapi_app.get('/')
 def home(request:Request):return FileResponse(WEB/'index.html',headers={'Cache-Control':'no-store'}) if current_user_id(request) else RedirectResponse('/login',303)
-@app.get('/login')
+@fastapi_app.get('/login')
 def login_page(request:Request):return RedirectResponse('/',303) if current_user_id(request) else auth_html()
-@app.post('/login')
+@fastapi_app.post('/login')
 def login(password:str=Form(...),email:str=Form('')):
     if MULTI_USER:
         user=storage.authenticate_user(email,password)
@@ -67,32 +74,32 @@ def login(password:str=Form(...),email:str=Form('')):
         return set_session(RedirectResponse('/',303),user['id'])
     if not auth.verify_password(password):return auth_html(error='Senha incorreta')
     return set_session(RedirectResponse('/',303),1)
-@app.get('/register')
+@fastapi_app.get('/register')
 def register_page(request:Request):
     if not MULTI_USER:return RedirectResponse('/login',303)
     return RedirectResponse('/',303) if current_user_id(request) else auth_html(register=True)
-@app.post('/register')
+@fastapi_app.post('/register')
 def register(name:str=Form(...),email:str=Form(...),password:str=Form(...),invitation_code:str=Form(...)):
     if not MULTI_USER:return RedirectResponse('/login',303)
     try:user=storage.register_user(name,email,password,invitation_code)
     except ValueError as exc:return auth_html(register=True,error=str(exc))
     return set_session(RedirectResponse('/',303),user['id'])
-@app.post('/logout')
+@fastapi_app.post('/logout')
 def logout():
     response=RedirectResponse('/login',303);response.delete_cookie(auth.COOKIE_NAME,path='/');return response
 
-@app.get('/api/health')
+@fastapi_app.get('/api/health')
 def health(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
     return {'ok':True,'service':'meu-gasto-ia','database':True,'expenses':len(storage.read_expenses(uid)),'investments':len(investments.portfolio(uid)['investments'])}
-@app.get('/api/bootstrap')
+@fastapi_app.get('/api/bootstrap')
 def bootstrap(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
     user=storage.get_user(uid) if MULTI_USER else {'id':1,'name':'Você','email':''}
     return {'ok':True,'user':user,'expenses':storage.read_expenses(uid),'incomes':storage.read_incomes(uid),'budgets':storage.read_budgets(uid),'portfolio':investments.portfolio(uid)}
-@app.get('/api/{resource}')
+@fastapi_app.get('/api/{resource}')
 def read_resource(resource:str,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
@@ -101,7 +108,7 @@ def read_resource(resource:str,request:Request):
     if resource=='budgets':return {'ok':True,'budgets':storage.read_budgets(uid)}
     if resource=='investments':return {'ok':True,**investments.portfolio(uid)}
     return json_error(404,'Rota não encontrada')
-@app.post('/api/{resource}')
+@fastapi_app.post('/api/{resource}')
 async def create_resource(resource:str,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
@@ -114,19 +121,19 @@ async def create_resource(resource:str,request:Request):
         return json_error(404,'Rota não encontrada')
     except storage.DuplicateExpenseError as exc:return JSONResponse({'ok':False,'code':'duplicate','error':str(exc)},status_code=409)
     except (ValueError,KeyError) as exc:return json_error(400,str(exc).strip("'"))
-@app.post('/api/investments/refresh')
+@fastapi_app.post('/api/investments/refresh')
 def refresh(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
     try:return {'ok':True,**investments.refresh_investments(user_id=uid)}
     except ValueError as exc:return json_error(400,str(exc))
-@app.post('/api/investments/extract-image')
+@fastapi_app.post('/api/investments/extract-image')
 async def extract_image(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
     try:return {'ok':True,**investments.extract_image(str((await request.json()).get('image','')))}
     except ValueError as exc:return json_error(400,str(exc))
-@app.put('/api/investments/{item_id}')
+@fastapi_app.put('/api/investments/{item_id}')
 async def update_investment(item_id:str,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
@@ -134,7 +141,7 @@ async def update_investment(item_id:str,request:Request):
     try:return {'ok':True,'investment':investments.update_investment(item_id,await request.json(),uid)}
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
     except ValueError as exc:return json_error(400,str(exc))
-@app.delete('/api/investments/{item_id}')
+@fastapi_app.delete('/api/investments/{item_id}')
 def remove_investment(item_id:str,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
