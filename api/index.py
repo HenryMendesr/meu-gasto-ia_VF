@@ -35,16 +35,17 @@ def auth_html(*,register:bool=False,error:str='')->HTMLResponse:
         ])
         values={'__TITLE__':'Criar conta','__SUBTITLE__':'Seus dados serão privados e separados','__ACTION__':'/register','__FIELDS__':fields,'__BUTTON__':'Criar minha conta','__FOOTER__':'Já possui uma conta? <a href="/login">Entrar</a>'}
     else:
-        email='<label>E-mail<input name="email" type="email" maxlength="254" autocomplete="email" required autofocus></label>' if MULTI_USER else ''
-        fields=email+'<label>Senha<input name="password" type="password" autocomplete="current-password" required></label>'
+        email='<label>E-mail<input name="email" type="email" maxlength="254" autocomplete="username" required autofocus></label>' if MULTI_USER else ''
+        fields=email+'<label>Senha<input name="password" type="password" autocomplete="current-password" required></label><label class="remember-access"><input name="remember" type="checkbox" value="1"><span><strong>Manter conectado</strong><small>Salvar o acesso neste dispositivo por 30 dias</small></span></label>'
         footer='<a href="/register">Criar uma conta com convite</a>' if MULTI_USER else ''
         values={'__TITLE__':'Entrar','__SUBTITLE__':'Acesse seu controle financeiro','__ACTION__':'/login','__FIELDS__':fields,'__BUTTON__':'Entrar','__FOOTER__':footer}
     values['__ERROR__']=f'<div class="error">{escape(error)}</div>' if error else ''
     for key,value in values.items():template=template.replace(key,value)
     return HTMLResponse(template,headers={'Cache-Control':'no-store'})
 
-def set_session(response:RedirectResponse,user_id:int)->RedirectResponse:
-    response.set_cookie(auth.COOKIE_NAME,auth.create_session(user_id),max_age=auth.SESSION_SECONDS,httponly=True,secure=True,samesite='strict',path='/')
+def set_session(response:RedirectResponse,user_id:int,persistent:bool=True)->RedirectResponse:
+    cookie_options={'max_age':auth.SESSION_SECONDS} if persistent else {}
+    response.set_cookie(auth.COOKIE_NAME,auth.create_session(user_id),httponly=True,secure=True,samesite='strict',path='/',**cookie_options)
     return response
 
 @fastapi_app.get('/')
@@ -52,13 +53,13 @@ def home(request:Request):return FileResponse(TEMPLATES/'index.html',headers={'C
 @fastapi_app.get('/login')
 def login_page(request:Request):return RedirectResponse('/',303) if current_user_id(request) else auth_html()
 @fastapi_app.post('/login')
-def login(password:str=Form(...),email:str=Form('')):
+def login(password:str=Form(...),email:str=Form(''),remember:str=Form('')):
     if MULTI_USER:
         user=storage.authenticate_user(email,password)
         if not user:return auth_html(error='E-mail ou senha incorretos')
-        return set_session(RedirectResponse('/',303),user['id'])
+        return set_session(RedirectResponse('/',303),user['id'],persistent=remember=='1')
     if not auth.verify_password(password):return auth_html(error='Senha incorreta')
-    return set_session(RedirectResponse('/',303),1)
+    return set_session(RedirectResponse('/',303),1,persistent=remember=='1')
 @fastapi_app.get('/register')
 def register_page(request:Request):
     if not MULTI_USER:return RedirectResponse('/login',303)
