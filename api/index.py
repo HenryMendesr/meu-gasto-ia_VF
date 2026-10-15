@@ -34,7 +34,9 @@ async def reject_cross_site_writes(request:Request,call_next):
         origin=request.headers.get('origin')
         if origin:
             parsed=urlsplit(origin)
-            if parsed.scheme not in {'http','https'} or parsed.netloc.lower()!=request.url.netloc.lower():
+            public_hosts={request.headers.get('host','').lower()}
+            public_hosts.update(host.strip().lower() for host in request.headers.get('x-forwarded-host','').split(',') if host.strip())
+            if parsed.scheme not in {'http','https'} or parsed.netloc.lower() not in public_hosts:
                 return json_error(403,'Origem da requisição não permitida')
         content_length=request.headers.get('content-length')
         if content_length and content_length.isdigit() and int(content_length)>9_000_000:

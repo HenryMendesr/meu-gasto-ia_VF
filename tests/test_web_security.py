@@ -39,6 +39,22 @@ class WebSecurityTests(unittest.TestCase):
         self.assertIn("SameSite=strict", cookie)
         self.assertIn("Max-Age=2592000", cookie)
 
+    def test_vercel_public_host_is_accepted(self):
+        with patch("api.index.auth.verify_password", return_value=True), patch.dict(
+            "os.environ", {"SESSION_SECRET": "segredo-de-teste-com-mais-de-trinta-e-dois-caracteres"}
+        ):
+            response = self.client.post(
+                "/login",
+                data={"password": "senha-forte-de-teste"},
+                headers={
+                    "Host": "funcao-interna.vercel.app",
+                    "X-Forwarded-Host": "minha-carteira.example",
+                    "Origin": "https://minha-carteira.example",
+                },
+                follow_redirects=False,
+            )
+        self.assertEqual(303, response.status_code)
+
     def test_oversized_write_is_rejected_before_parsing(self):
         response = self.client.post(
             "/api/statements/preview",
