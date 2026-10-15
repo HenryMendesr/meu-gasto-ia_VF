@@ -50,6 +50,23 @@ class WebSecurityTests(unittest.TestCase):
                     "Host": "funcao-interna.vercel.app",
                     "X-Forwarded-Host": "minha-carteira.example",
                     "Origin": "https://minha-carteira.example",
+                    "Sec-Fetch-Site": "same-origin",
+                },
+                follow_redirects=False,
+            )
+        self.assertEqual(303, response.status_code)
+
+    def test_vercel_alias_mismatch_is_accepted_for_same_origin_browser_request(self):
+        with patch("api.index.auth.verify_password", return_value=True), patch.dict(
+            "os.environ", {"SESSION_SECRET": "segredo-de-teste-com-mais-de-trinta-e-dois-caracteres"}
+        ):
+            response = self.client.post(
+                "/login",
+                data={"password": "senha-forte-de-teste"},
+                headers={
+                    "Host": "funcao-interna.vercel.app",
+                    "Origin": "https://meu-gasto-ia-vf.vercel.app",
+                    "Sec-Fetch-Site": "same-origin",
                 },
                 follow_redirects=False,
             )

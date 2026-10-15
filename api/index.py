@@ -29,10 +29,13 @@ app=fastapi_app
 async def reject_cross_site_writes(request:Request,call_next):
     """Bloqueia CSRF sem expor um token ao JavaScript da aplicação."""
     if request.method not in {'GET','HEAD','OPTIONS'}:
-        if request.headers.get('sec-fetch-site','').lower()=='cross-site':
+        fetch_site=request.headers.get('sec-fetch-site','').lower()
+        if fetch_site=='cross-site':
             return json_error(403,'Origem da requisição não permitida')
         origin=request.headers.get('origin')
-        if origin:
+        # Navegadores modernos informam a relação real entre a página e a
+        # requisição. Na Vercel, Host/Origin podem apontar para aliases distintos.
+        if origin and not fetch_site:
             parsed=urlsplit(origin)
             public_hosts={request.headers.get('host','').lower()}
             public_hosts.update(host.strip().lower() for host in request.headers.get('x-forwarded-host','').split(',') if host.strip())
