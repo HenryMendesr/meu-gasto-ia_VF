@@ -3,6 +3,9 @@ from html import escape
 import os
 from pathlib import Path
 import re
+from threading import Lock
+import time
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -12,10 +15,31 @@ from src import auth, investments, runtime_storage as storage, statement_import
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
 MULTI_USER=bool(os.environ.get('DATABASE_URL'))
+_AUTH_ATTEMPTS:dict[str,list[float]]={}
+_AUTH_LOCK=Lock()
+_AUTH_WINDOW_SECONDS=15*60
+_AUTH_MAX_ATTEMPTS=8
 
 
 fastapi_app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
 app=fastapi_app
+
+
+@fastapi_app.middleware('http')
+async def reject_cross_site_writes(request:Request,call_next):
+    """Bloqueia CSRF sem expor um token ao JavaScript da aplicação."""
+    if request.method not in {'GET','HEAD','OPTIONS'}:
+        if request.headers.get('sec-fetch-site','').lower()=='cross-site':
+            return json_error(403,'Origem da requisição não permitida')
+        origin=request.headers.get('origin')
+        if origin:
+            parsed=urlsplit(origin)
+            if parsed.scheme not in {'http','https'} or parsed.netloc.lower()!=request.url.netloc.lower():
+                return json_error(403,'Origem da requisição não permitida')
+        content_length=request.headers.get('content-length')
+        if content_length and content_length.isdigit() and int(content_length)>9_000_000:
+            return json_error(413,'Arquivo ou requisição muito grande')
+    return await call_next(request)
 
 
 def current_user_id(request:Request)->int|None:return auth.session_user(request.cookies.get(auth.COOKIE_NAME))
@@ -23,6 +47,30 @@ def json_error(status:int,message:str)->JSONResponse:return JSONResponse({'ok':F
 def protected(request:Request):
     user_id=current_user_id(request)
     return user_id if user_id is not None else json_error(401,'Faça login para continuar')
+
+def auth_attempt_key(request:Request,identity:str)->str:
+    forwarded=request.headers.get('x-forwarded-for','').split(',')[0].strip()
+    address=forwarded or (request.client.host if request.client else 'unknown')
+    return f'{address}:{identity.strip().lower()[:254]}'
+
+def auth_is_limited(key:str)->bool:
+    cutoff=time.monotonic()-_AUTH_WINDOW_SECONDS
+    with _AUTH_LOCK:
+        recent=[stamp for stamp in _AUTH_ATTEMPTS.get(key,[]) if stamp>cutoff]
+        if recent:_AUTH_ATTEMPTS[key]=recent
+        else:_AUTH_ATTEMPTS.pop(key,None)
+        return len(recent)>=_AUTH_MAX_ATTEMPTS
+
+def auth_record_failure(key:str)->None:
+    with _AUTH_LOCK:
+        if len(_AUTH_ATTEMPTS)>5_000:
+            cutoff=time.monotonic()-_AUTH_WINDOW_SECONDS
+            stale=[item for item,attempts in _AUTH_ATTEMPTS.items() if not attempts or attempts[-1]<=cutoff]
+            for item in stale:_AUTH_ATTEMPTS.pop(item,None)
+        _AUTH_ATTEMPTS.setdefault(key,[]).append(time.monotonic())
+
+def auth_clear_failures(key:str)->None:
+    with _AUTH_LOCK:_AUTH_ATTEMPTS.pop(key,None)
 
 def auth_html(*,register:bool=False,error:str='')->HTMLResponse:
     template=(TEMPLATES/'auth.html').read_text(encoding='utf-8')
@@ -53,22 +101,29 @@ def home(request:Request):return FileResponse(TEMPLATES/'index.html',headers={'C
 @fastapi_app.get('/login')
 def login_page(request:Request):return RedirectResponse('/',303) if current_user_id(request) else auth_html()
 @fastapi_app.post('/login')
-def login(password:str=Form(...),email:str=Form(''),remember:str=Form('')):
+def login(request:Request,password:str=Form(...),email:str=Form(''),remember:str=Form('')):
+    key=auth_attempt_key(request,email or 'legacy')
+    if auth_is_limited(key):return auth_html(error='Muitas tentativas. Aguarde 15 minutos e tente novamente')
     if MULTI_USER:
         user=storage.authenticate_user(email,password)
-        if not user:return auth_html(error='E-mail ou senha incorretos')
+        if not user:auth_record_failure(key);return auth_html(error='E-mail ou senha incorretos')
+        auth_clear_failures(key)
         return set_session(RedirectResponse('/',303),user['id'],persistent=remember=='1')
-    if not auth.verify_password(password):return auth_html(error='Senha incorreta')
+    if not auth.verify_password(password):auth_record_failure(key);return auth_html(error='Senha incorreta')
+    auth_clear_failures(key)
     return set_session(RedirectResponse('/',303),1,persistent=remember=='1')
 @fastapi_app.get('/register')
 def register_page(request:Request):
     if not MULTI_USER:return RedirectResponse('/login',303)
     return RedirectResponse('/',303) if current_user_id(request) else auth_html(register=True)
 @fastapi_app.post('/register')
-def register(name:str=Form(...),email:str=Form(...),password:str=Form(...),invitation_code:str=Form(...)):
+def register(request:Request,name:str=Form(...),email:str=Form(...),password:str=Form(...),invitation_code:str=Form(...)):
     if not MULTI_USER:return RedirectResponse('/login',303)
+    key=auth_attempt_key(request,'register')
+    if auth_is_limited(key):return auth_html(register=True,error='Muitas tentativas. Aguarde 15 minutos e tente novamente')
     try:user=storage.register_user(name,email,password,invitation_code)
-    except ValueError as exc:return auth_html(register=True,error=str(exc))
+    except ValueError as exc:auth_record_failure(key);return auth_html(register=True,error=str(exc))
+    auth_clear_failures(key)
     return set_session(RedirectResponse('/',303),user['id'])
 @fastapi_app.post('/logout')
 def logout():
@@ -78,7 +133,7 @@ def logout():
 def health(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    return {'ok':True,'service':'meu-gasto-ia','database':True,'expenses':len(storage.read_expenses(uid)),'investments':len(investments.portfolio(uid)['investments'])}
+    return {'ok':True,'service':'minha-carteira','database':True,'expenses':len(storage.read_expenses(uid)),'investments':len(investments.portfolio(uid)['investments'])}
 @fastapi_app.get('/api/bootstrap')
 def bootstrap(request:Request):
     uid=protected(request)

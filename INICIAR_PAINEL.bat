@@ -1,6 +1,6 @@
 @echo off
 cd /d "%~dp0"
-title Meu Gasto IA
+title Minha Carteira
 python src\dashboard_server.py
 if errorlevel 1 (
   echo.

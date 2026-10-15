@@ -93,8 +93,11 @@ def authenticate_user(email:str,password:str)->dict|None:
     if len(password)>200:return None
     with connect() as db,db.cursor() as c:
         c.execute('SELECT id,name,email,password_salt,password_hash FROM users WHERE lower(email)=lower(%s)',(email.strip(),));user=c.fetchone()
-    if not user:return None
     import base64
+    if not user:
+        # Mantém custo semelhante para e-mails existentes e inexistentes.
+        _password_digest(password,b'\0'*16)
+        return None
     salt=base64.urlsafe_b64decode(user['password_salt']+'='*(-len(user['password_salt'])%4))
     if not hmac.compare_digest(_password_digest(password,salt),user['password_hash']):return None
     return {'id':user['id'],'name':user['name'],'email':user['email']}

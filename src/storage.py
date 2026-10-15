@@ -1,4 +1,4 @@
-"""Banco de dados local e backups do Meu Gasto IA."""
+"""Banco de dados local e backups do Minha Carteira."""
 
 from __future__ import annotations
 

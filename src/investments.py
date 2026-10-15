@@ -124,7 +124,7 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
 
 
 def fetch_json(url: str, timeout: int = 8) -> dict | list:
-    request = Request(url, headers={"User-Agent": "Meu-Gasto-IA/1.0", "Accept": "application/json"})
+    request = Request(url, headers={"User-Agent": "Minha-Carteira/1.0", "Accept": "application/json"})
     try:
         with urlopen(request, timeout=timeout) as response:
             return json.load(response)

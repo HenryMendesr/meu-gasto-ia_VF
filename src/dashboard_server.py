@@ -1,4 +1,4 @@
-"""Servidor local autenticado do Meu Gasto IA."""
+"""Servidor local autenticado do Minha Carteira."""
 
 from argparse import ArgumentParser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -141,7 +141,7 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/health":
             self.respond(200, {
                 "ok": True,
-                "service": "meu-gasto-ia",
+                "service": "minha-carteira",
                 "database": storage.DATABASE.is_file(),
                 "expenses": len(read_expenses()),
                 "investments": len(investments.portfolio()["investments"]),
@@ -294,14 +294,14 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Abre o painel local do Meu Gasto IA")
+    parser = ArgumentParser(description="Abre o painel local do Minha Carteira")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--no-browser", action="store_true")
     options = parser.parse_args()
     subprocess.run([sys.executable, str(BUILD_DASHBOARD)], cwd=ROOT, check=True)
     server = ThreadingHTTPServer((options.host, options.port), Handler)
-    print(f"Meu Gasto IA disponível em http://{options.host}:{options.port}")
+    print(f"Minha Carteira disponível em http://{options.host}:{options.port}")
     print("Pressione Ctrl+C para encerrar.")
     if not options.no_browser:
         browser_host = "127.0.0.1" if options.host == "0.0.0.0" else options.host

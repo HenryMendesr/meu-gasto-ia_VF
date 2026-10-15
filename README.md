@@ -1,4 +1,4 @@
-# Meu Gasto IA
+# Minha Carteira
 
 PWA multiusuário para controlar gastos, renda, voucher, limites mensais e investimentos. A versão publicada usa PostgreSQL no Neon e uma API Python serverless na Vercel. Nenhuma credencial fica no navegador ou no GitHub.
 
@@ -58,8 +58,11 @@ Como layouts de PDF variam entre bancos, CSV ou OFX oferecem resultados mais pre
 - Banco Neon acessado somente pela API, usando `DATABASE_URL` secreta.
 - Cookie de sessão `HttpOnly`, `Secure` e `SameSite=Strict`.
 - Contas individuais com senha derivada por PBKDF2 e cadastro protegido por código de convite.
+- Limite de tentativas repetidas de login e de código de convite.
 - Cada consulta filtra os dados pelo proprietário autenticado.
+- Requisições de alteração vindas de outros sites são bloqueadas.
 - Sessões assinadas e válidas por 30 dias.
+- Textos importados e cadastrados são neutralizados antes de entrar no HTML.
 - Nenhuma senha, token ou chave no JavaScript.
 - APIs e página principal protegidas por autenticação.
 - Respostas financeiras com cache desativado.

@@ -9,6 +9,8 @@ import unicodedata
 
 MAX_FILE_SIZE=6_000_000
 MAX_ITEMS=500
+MAX_PDF_PAGES=40
+MAX_PDF_TEXT=2_000_000
 
 CATEGORY_RULES={
     'Alimentação':('restaurante','lanchonete','ifood','rappi','padaria','cafe','cafeteria','burger','pizza','mcdonald','subway'),
@@ -117,7 +119,15 @@ def parse_ofx(raw:bytes)->list[dict]:
 def parse_pdf(raw:bytes)->list[dict]:
     try:
         from pypdf import PdfReader
-        text='\n'.join(page.extract_text() or '' for page in PdfReader(BytesIO(raw)))
+        reader=PdfReader(BytesIO(raw),strict=True)
+        if len(reader.pages)>MAX_PDF_PAGES:raise ValueError('O PDF deve ter no máximo 40 páginas')
+        parts=[];size=0
+        for page in reader.pages:
+            content=page.extract_text() or '';size+=len(content)
+            if size>MAX_PDF_TEXT:raise ValueError('O conteúdo do PDF é muito grande')
+            parts.append(content)
+        text='\n'.join(parts)
+    except ValueError:raise
     except Exception as exc:raise ValueError('Não foi possível ler este PDF. Tente baixar o extrato em CSV ou OFX.') from exc
     result=[]
     pattern=re.compile(r'(?m)^\s*(\d{2}/\d{2}(?:/\d{2,4})?)\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*$')

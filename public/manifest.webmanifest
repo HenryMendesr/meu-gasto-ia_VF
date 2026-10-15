@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Meu Gasto IA",
-  "short_name": "Meu Gasto",
+  "name": "Minha Carteira",
+  "short_name": "Carteira",
   "description": "Controle pessoal de gastos, orçamento e investimentos.",
   "lang": "pt-BR",
   "start_url": "/",
