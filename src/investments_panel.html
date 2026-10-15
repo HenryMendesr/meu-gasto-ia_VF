@@ -1,7 +1,7 @@
   <div id="investmentsPanel" class="panel" hidden>
     <div class="investment-toolbar">
       <div><h2 style="margin:0">Minha carteira</h2><div id="investmentUpdated" class="update-stamp">Ainda não atualizada</div></div>
-      <div class="actions"><button id="refreshInvestments" class="secondary" type="button">Atualizar cotações</button><button id="newInvestment" class="save" type="button">Novo investimento</button></div>
+      <div class="actions"><button id="refreshInvestments" class="secondary" type="button">Atualizar cotações</button><button id="newInvestment" class="save new-investment-cta" type="button"><span aria-hidden="true">＋</span> Adicionar investimento</button></div>
     </div>
     <section class="grid investment-grid">
       <article class="card metric"><small>Patrimônio investido</small><strong id="portfolioCurrent">R$ 0,00</strong><div class="hint">Valor total atualizado</div></article>
@@ -15,6 +15,7 @@
     </section>
     <section class="card table-card investment-table"><div class="table-head"><h2>Investimentos</h2><select id="investmentClassFilter" class="field"><option value="">Todos</option><option value="fixed">Renda fixa</option><option value="variable">Renda variável</option></select></div><div class="scroll"><table><thead><tr><th>Investimento</th><th>Classe</th><th>Aplicado</th><th>Valor atual</th><th>Variação diária</th><th>Resultado</th><th>Rentabilidade</th><th>Ações</th></tr></thead><tbody id="investmentRows"></tbody></table><div id="investmentEmpty" class="investment-empty" hidden>Nenhum investimento cadastrado.</div></div></section>
     <div id="investmentMessage" class="message" hidden></div>
+    <button id="quickNewInvestment" class="quick-investment" type="button" aria-label="Adicionar investimento"><span aria-hidden="true">＋</span></button>
   </div>
   <div id="investmentModal" class="modal" hidden><section class="modal-card"><div class="modal-head"><h2 id="investmentFormTitle">Novo investimento</h2><button id="closeInvestmentModal" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="investmentForm" class="entry-grid investment-form">
     <input name="id" type="hidden"><label>Tipo<select name="type" required><option>Renda fixa</option><option>Ações</option><option>Fundos imobiliários</option><option>ETFs</option><option>Criptomoedas</option><option>Outros</option></select></label>
