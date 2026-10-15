@@ -3,7 +3,6 @@ from html import escape
 import os
 from pathlib import Path
 import re
-from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -15,22 +14,8 @@ WEB=ROOT/'public'
 MULTI_USER=bool(os.environ.get('DATABASE_URL'))
 
 
-class RestoreVercelRoute:
-    """Restaura o caminho original antes de o roteador ASGI processar a requisição."""
-    def __init__(self,application):self.application=application
-
-    async def __call__(self,scope,receive,send):
-        if scope.get('type')=='http':
-            query=parse_qs(scope.get('query_string',b'').decode('utf-8'))
-            route=query.get('__route',[None])[0]
-            if route:
-                path='/' if route=='home' else f'/{route.lstrip("/")}'
-                scope={**scope,'path':path,'raw_path':path.encode('utf-8')}
-        await self.application(scope,receive,send)
-
-
 fastapi_app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
-app=RestoreVercelRoute(fastapi_app)
+app=fastapi_app
 
 
 def current_user_id(request:Request)->int|None:return auth.session_user(request.cookies.get(auth.COOKIE_NAME))
