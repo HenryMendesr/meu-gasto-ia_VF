@@ -1,6 +1,5 @@
 build/
 node_modules/
-whatsapp-worker/.wrangler/
 __pycache__/
 *.pyc
 *.log
@@ -8,4 +7,11 @@ __pycache__/
 Thumbs.db
 ~$*.xls*
 backups/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/auth.json
+.env
+.env.local
+.vercel/
 

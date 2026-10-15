@@ -1,0 +1,25 @@
+  <div id="investmentsPanel" class="panel" hidden>
+    <div class="investment-toolbar">
+      <div><h2 style="margin:0">Minha carteira</h2><div id="investmentUpdated" class="update-stamp">Ainda não atualizada</div></div>
+      <div class="actions"><button id="refreshInvestments" class="secondary" type="button">Atualizar cotações</button><button id="newInvestment" class="save" type="button">Novo investimento</button></div>
+    </div>
+    <section class="grid investment-grid">
+      <article class="card metric"><small>Patrimônio investido</small><strong id="portfolioCurrent">R$ 0,00</strong><div class="hint">Valor total atualizado</div></article>
+      <article class="card metric"><small>Valor aplicado</small><strong id="portfolioApplied">R$ 0,00</strong><div class="hint">Total aportado</div></article>
+      <article class="card metric"><small>Lucro ou prejuízo</small><strong id="portfolioProfit">R$ 0,00</strong><div class="hint">Resultado acumulado</div></article>
+      <article class="card metric"><small>Rentabilidade</small><strong id="portfolioReturn">0,00%</strong><div class="hint">Desde as aplicações</div></article>
+    </section>
+    <section class="investment-main">
+      <article class="card"><h2>Distribuição por categoria</h2><div id="investmentAllocation"></div></article>
+      <article class="card"><h2>Evolução da carteira</h2><svg id="investmentHistory" class="history-chart" viewBox="0 0 520 190" role="img" aria-label="Histórico da carteira"></svg></article>
+    </section>
+    <section class="card table-card investment-table"><div class="table-head"><h2>Investimentos</h2><select id="investmentClassFilter" class="field"><option value="">Todos</option><option value="fixed">Renda fixa</option><option value="variable">Renda variável</option></select></div><div class="scroll"><table><thead><tr><th>Investimento</th><th>Classe</th><th>Aplicado</th><th>Valor atual</th><th>Variação diária</th><th>Resultado</th><th>Rentabilidade</th><th>Ações</th></tr></thead><tbody id="investmentRows"></tbody></table><div id="investmentEmpty" class="investment-empty" hidden>Nenhum investimento cadastrado.</div></div></section>
+    <div id="investmentMessage" class="message" hidden></div>
+  </div>
+  <div id="investmentModal" class="modal" hidden><section class="modal-card"><div class="modal-head"><h2 id="investmentFormTitle">Novo investimento</h2><button id="closeInvestmentModal" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="investmentForm" class="entry-grid investment-form">
+    <input name="id" type="hidden"><label>Tipo<select name="type" required><option>Renda fixa</option><option>Ações</option><option>Fundos imobiliários</option><option>ETFs</option><option>Criptomoedas</option><option>Outros</option></select></label>
+    <div class="form-section variable-field">Ativo negociado</div><label class="variable-field">Código do ativo<input name="symbol" maxlength="20" placeholder="Ex.: PETR4, IVVB11, BTC-BRL"></label><label class="variable-field">Quantidade<input name="quantity" type="number" min="0.00000001" step="any"></label><label class="variable-field">Preço médio (R$)<input name="average_price" type="number" min="0.00000001" step="any"></label><label class="variable-field">Data da compra<input name="purchase_date" type="date"></label><label class="variable-field">Cotação manual (opcional)<input name="current_price" type="number" min="0" step="any" placeholder="Usada se a API falhar"></label>
+    <div class="form-section fixed-field">Renda fixa</div><label class="fixed-field">Nome do investimento<input name="name" maxlength="120" placeholder="Ex.: CDB liquidez diária"></label><label class="fixed-field">Instituição financeira<input name="institution" maxlength="120"></label><label class="fixed-field">Valor aplicado (R$)<input name="amount_invested" type="number" min="0.01" step="0.01"></label><label class="fixed-field">Data da aplicação<input name="application_date" type="date"></label><label class="fixed-field">Rentabilidade<select name="profitability_type"><option>CDI</option><option>Prefixado</option><option>IPCA + taxa</option><option>Outro</option></select></label><label class="fixed-field">Taxa contratada (%)<input name="contracted_rate" type="number" min="0" step="0.01" placeholder="Ex.: 110 para 110% do CDI"></label><label class="fixed-field">Vencimento (opcional)<input name="maturity_date" type="date"></label><label class="fixed-field">Saldo atual manual (opcional)<input name="current_value_manual" type="number" min="0" step="0.01"></label>
+    <div class="image-box fixed-field"><strong>Preencher usando uma imagem</strong><div class="sub">Escolha uma captura do banco. Confira e corrija todos os campos antes de salvar.</div><input id="investmentImage" type="file" accept="image/png,image/jpeg,image/webp"><button id="extractInvestmentImage" class="secondary" type="button">Ler imagem</button><textarea id="ocrPreview" readonly hidden aria-label="Texto identificado"></textarea></div>
+    <button class="save" type="submit">Salvar investimento</button><div id="investmentFormMessage" class="message" hidden></div>
+  </form></section></div>

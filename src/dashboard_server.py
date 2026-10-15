@@ -1,292 +1,144 @@
-"""Servidor local do Meu Gasto IA: formulário web -> XLSM -> dashboard."""
+"""Servidor local autenticado do Meu Gasto IA."""
 
 from argparse import ArgumentParser
-from datetime import date
-from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.cookies import SimpleCookie
+from html import escape
 import json
-import os
 from pathlib import Path
+import re
 import subprocess
 import sys
-import tempfile
-from threading import Lock, Timer
-from urllib.parse import urlparse
+from threading import Timer
+from urllib.parse import parse_qs, urlparse
 import webbrowser
-from zipfile import ZIP_DEFLATED, ZipFile
-import xml.etree.ElementTree as ET
+
+try:
+    from src import auth, investments, runtime_storage as storage
+except ImportError:  # execução direta: python src/dashboard_server.py
+    import auth, investments, runtime_storage as storage
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "web"
-XLSM = ROOT / "excel/Controle_Gastos_Automatico.xlsm"
+WEB = ROOT / "public"
 BUILD_DASHBOARD = ROOT / "src/build_dashboard.py"
-VALIDATE = ROOT / "src/validate_xlsm.py"
-BACKUPS = ROOT / "backups"
-NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-ET.register_namespace("", NS)
-
-CATEGORIES = {
-    "Alimentação", "Mercado", "Transporte", "Moradia", "Saúde",
-    "Educação", "Lazer", "Compras", "Assinaturas", "Contas",
-    "Viagem", "Presentes", "Outros",
-}
-PAYMENTS = {"Pix", "Crédito", "Débito", "Dinheiro", "Transferência", "Voucher", "Não informado"}
-WRITE_LOCK = Lock()
+read_expenses = storage.read_expenses
+read_incomes = storage.read_incomes
+read_budgets = storage.read_budgets
+add_expense = storage.add_expense
+set_income = storage.set_income
+set_budget = storage.set_budget
+DuplicateExpenseError = storage.DuplicateExpenseError
 
 
-class DuplicateExpenseError(ValueError):
-    pass
-
-
-def set_value(sheet: ET.Element, row: int, column: str, value: str, kind: str) -> None:
-    cell = sheet.find(f'.//{{{NS}}}c[@r="{column}{row}"]')
-    if cell is None:
-        raise ValueError(f"Célula {column}{row} não encontrada")
-    for child in list(cell):
-        cell.remove(child)
-    cell.set("t", kind)
-    node = ET.SubElement(cell, f"{{{NS}}}v")
-    node.text = value
-
-
-def cell_value(sheet: ET.Element, row: int, column: str) -> str | None:
-    cell = sheet.find(f'.//{{{NS}}}c[@r="{column}{row}"]')
-    if cell is None:
-        return None
-    return cell.findtext(f"{{{NS}}}v")
-
-
-def read_expenses() -> list[dict]:
-    with ZipFile(XLSM) as source:
-        sheet = ET.fromstring(source.read("xl/worksheets/sheet1.xml"))
-    result = []
-    for row in range(51, 551):
-        stamp, amount = cell_value(sheet, row, "A"), cell_value(sheet, row, "F")
-        if not stamp or not amount:
-            continue
-        result.append({
-            "row": row,
-            "date": stamp[:10],
-            "where": cell_value(sheet, row, "B") or "",
-            "category": cell_value(sheet, row, "C") or "",
-            "payment": cell_value(sheet, row, "D") or "",
-            "description": cell_value(sheet, row, "E") or "",
-            "amount": round(float(amount), 2),
-        })
-    return result
-
-
-def create_backup() -> Path:
-    BACKUPS.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-    destination = BACKUPS / f"Controle_Gastos_Automatico-{stamp}.xlsm"
-    destination.write_bytes(XLSM.read_bytes())
-    backups = sorted(BACKUPS.glob("Controle_Gastos_Automatico-*.xlsm"), reverse=True)
-    for old in backups[20:]:
-        old.unlink()
-    return destination
-
-
-def save_workbook(parts: dict[str, bytes]) -> Path:
-    handle, temporary_name = tempfile.mkstemp(
-        prefix="controle-gastos-", suffix=".xlsm", dir=XLSM.parent
-    )
-    os.close(handle)
-    temporary = Path(temporary_name)
-    try:
-        with ZipFile(temporary, "w", ZIP_DEFLATED) as destination:
-            for name, data in parts.items():
-                destination.writestr(name, data)
-        with ZipFile(temporary) as check:
-            if check.testzip() is not None:
-                raise ValueError("A planilha gerada ficou corrompida")
-        backup = create_backup()
-        os.replace(temporary, XLSM)
-    finally:
-        temporary.unlink(missing_ok=True)
-    subprocess.run([sys.executable, str(VALIDATE)], cwd=ROOT, check=True)
+def rebuild_dashboard() -> None:
     subprocess.run([sys.executable, str(BUILD_DASHBOARD)], cwd=ROOT, check=True)
-    return backup
-
-
-def read_incomes() -> dict[str, dict[str, float]]:
-    with ZipFile(XLSM) as source:
-        sheet = ET.fromstring(source.read("xl/worksheets/sheet1.xml"))
-    result = {}
-    for row in range(2, 101):
-        month = cell_value(sheet, row, "X")
-        if not month:
-            continue
-        result[month] = {
-            "cash": round(float(cell_value(sheet, row, "Y") or 0), 2),
-            "voucher": round(float(cell_value(sheet, row, "Z") or 0), 2),
-        }
-    return result
-
-
-def set_income(payload: dict) -> dict:
-    month = str(payload.get("month", ""))
-    try:
-        date.fromisoformat(f"{month}-01")
-        cash = round(float(payload.get("cash", 0)), 2)
-        voucher = round(float(payload.get("voucher", 0)), 2)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("Mês ou valores de renda inválidos") from exc
-    if cash < 0 or voucher < 0 or cash > 10_000_000 or voucher > 10_000_000:
-        raise ValueError("Os valores de renda precisam ser positivos")
-
-    with WRITE_LOCK:
-        with ZipFile(XLSM) as source:
-            parts = {name: source.read(name) for name in source.namelist()}
-        sheet = ET.fromstring(parts["xl/worksheets/sheet1.xml"])
-        target_row = None
-        for row in range(2, 101):
-            saved_month = cell_value(sheet, row, "X")
-            if saved_month == month or (saved_month is None and target_row is None):
-                target_row = row
-                if saved_month == month:
-                    break
-        if target_row is None:
-            raise ValueError("Não há espaço para cadastrar outro mês")
-        set_value(sheet, target_row, "X", month, "str")
-        set_value(sheet, target_row, "Y", f"{cash:.2f}", "n")
-        set_value(sheet, target_row, "Z", f"{voucher:.2f}", "n")
-        parts["xl/worksheets/sheet1.xml"] = ET.tostring(
-            sheet, encoding="utf-8", xml_declaration=True
-        )
-        backup = save_workbook(parts)
-    return {"month": month, "cash": cash, "voucher": voucher, "backup": backup.name}
-
-
-def read_budgets() -> dict[str, dict[str, float]]:
-    with ZipFile(XLSM) as source:
-        sheet = ET.fromstring(source.read("xl/worksheets/sheet1.xml"))
-    result: dict[str, dict[str, float]] = {}
-    for row in range(102, 551):
-        month = cell_value(sheet, row, "X")
-        category = cell_value(sheet, row, "Y")
-        limit = cell_value(sheet, row, "Z")
-        if month and category and limit is not None:
-            result.setdefault(month, {})[category] = round(float(limit), 2)
-    return result
-
-
-def set_budget(payload: dict) -> dict:
-    month = str(payload.get("month", ""))
-    category = str(payload.get("category", "")).strip()
-    try:
-        date.fromisoformat(f"{month}-01")
-        limit = round(float(payload.get("limit", 0)), 2)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("Mês ou limite inválido") from exc
-    if category not in CATEGORIES:
-        raise ValueError("Categoria inválida")
-    if limit < 0 or limit > 10_000_000:
-        raise ValueError("O limite precisa ser positivo")
-
-    with WRITE_LOCK:
-        with ZipFile(XLSM) as source:
-            parts = {name: source.read(name) for name in source.namelist()}
-        sheet = ET.fromstring(parts["xl/worksheets/sheet1.xml"])
-        target_row = None
-        for row in range(102, 551):
-            saved_month = cell_value(sheet, row, "X")
-            saved_category = cell_value(sheet, row, "Y")
-            if (saved_month == month and saved_category == category) or (
-                saved_month is None and target_row is None
-            ):
-                target_row = row
-                if saved_month == month and saved_category == category:
-                    break
-        if target_row is None:
-            raise ValueError("Não há espaço para cadastrar outro limite")
-        set_value(sheet, target_row, "X", month, "str")
-        set_value(sheet, target_row, "Y", category, "str")
-        set_value(sheet, target_row, "Z", f"{limit:.2f}", "n")
-        parts["xl/worksheets/sheet1.xml"] = ET.tostring(
-            sheet, encoding="utf-8", xml_declaration=True
-        )
-        backup = save_workbook(parts)
-    return {"month": month, "category": category, "limit": limit, "backup": backup.name}
-
-
-def add_expense(payload: dict) -> dict:
-    try:
-        expense_date = date.fromisoformat(str(payload["date"]))
-        amount = round(float(payload["amount"]), 2)
-        where = str(payload["where"]).strip()
-        category = str(payload["category"]).strip()
-        payment = str(payload["payment"]).strip()
-        description = str(payload.get("description", "")).strip()
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ValueError("Preencha data, valor, local, categoria e pagamento") from exc
-
-    if amount <= 0 or amount > 10_000_000:
-        raise ValueError("O valor deve ser maior que zero")
-    if not where or len(where) > 100 or len(description) > 200:
-        raise ValueError("Revise o local ou a descrição")
-    if category not in CATEGORIES or payment not in PAYMENTS:
-        raise ValueError("Categoria ou pagamento inválido")
-
-    allow_duplicate = payload.get("allow_duplicate") is True
-
-    with WRITE_LOCK:
-        with ZipFile(XLSM) as source:
-            parts = {name: source.read(name) for name in source.namelist()}
-        sheet = ET.fromstring(parts["xl/worksheets/sheet1.xml"])
-
-        normalized = (
-            expense_date.isoformat(), where.casefold(), category, payment,
-            description.casefold(), amount,
-        )
-        for existing in read_expenses():
-            candidate = (
-                existing["date"], existing["where"].casefold(), existing["category"],
-                existing["payment"], existing["description"].casefold(), existing["amount"],
-            )
-            if candidate == normalized and not allow_duplicate:
-                raise DuplicateExpenseError(
-                    f"Este gasto já existe na linha {existing['row']}"
-                )
-
-        target_row = None
-        for row in range(51, 551):
-            cell = sheet.find(f'.//{{{NS}}}c[@r="A{row}"]')
-            if cell is not None and cell.find(f"{{{NS}}}v") is None:
-                target_row = row
-                break
-        if target_row is None:
-            raise ValueError("O histórico atingiu o limite de 500 lançamentos")
-
-        stamp = f"{expense_date.isoformat()}T12:00:00.000Z"
-        set_value(sheet, target_row, "A", stamp, "d")
-        set_value(sheet, target_row, "B", where, "str")
-        set_value(sheet, target_row, "C", category, "str")
-        set_value(sheet, target_row, "D", payment, "str")
-        set_value(sheet, target_row, "E", description, "str")
-        set_value(sheet, target_row, "F", f"{amount:.2f}", "n")
-        parts["xl/worksheets/sheet1.xml"] = ET.tostring(
-            sheet, encoding="utf-8", xml_declaration=True
-        )
-
-        backup = save_workbook(parts)
-        return {"row": target_row, "backup": backup.name}
 
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB), **kwargs)
 
+    def end_headers(self) -> None:
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+        super().end_headers()
+
+    def session_token(self) -> str | None:
+        cookie = SimpleCookie(self.headers.get("Cookie", ""))
+        value = cookie.get(auth.COOKIE_NAME)
+        return value.value if value else None
+
+    def authenticated(self) -> bool:
+        return auth.verify_session(self.session_token())
+
+    def secure_cookie(self) -> bool:
+        host = self.headers.get("Host", "").split(":", 1)[0]
+        return self.headers.get("X-Forwarded-Proto") == "https" or host not in {"127.0.0.1", "localhost", "::1"}
+
+    def set_session_cookie(self, token: str) -> None:
+        secure = "; Secure" if self.secure_cookie() else ""
+        self.send_header("Set-Cookie", f"{auth.COOKIE_NAME}={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={auth.SESSION_SECONDS}{secure}")
+
+    def clear_session_cookie(self) -> None:
+        secure = "; Secure" if self.secure_cookie() else ""
+        self.send_header("Set-Cookie", f"{auth.COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0{secure}")
+
+    def redirect(self, location: str, token: str | None = None, clear: bool = False) -> None:
+        self.send_response(303)
+        if token:
+            self.set_session_cookie(token)
+        if clear:
+            self.clear_session_cookie()
+        self.send_header("Location", location)
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
+    def auth_page(self, setup: bool, error: str = "") -> None:
+        template = (WEB / "auth.html").read_text(encoding="utf-8")
+        if setup:
+            fields = '<label>Crie sua senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label><label>Confirme a senha<input name="confirmation" type="password" minlength="10" autocomplete="new-password" required></label>'
+            values = {"__TITLE__": "Primeiro acesso", "__SUBTITLE__": "Proteja seus dados com uma senha", "__ACTION__": "/setup", "__FIELDS__": fields, "__BUTTON__": "Criar acesso"}
+        else:
+            fields = '<label>Senha<input name="password" type="password" autocomplete="current-password" required autofocus></label>'
+            values = {"__TITLE__": "Entrar", "__SUBTITLE__": "Acesse seu controle financeiro", "__ACTION__": "/login", "__FIELDS__": fields, "__BUTTON__": "Entrar"}
+        values["__ERROR__"] = f'<div class="error">{escape(error)}</div>' if error else ""
+        for key, value in values.items():
+            template = template.replace(key, value)
+        body = template.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def require_auth(self) -> bool:
+        if self.authenticated():
+            return True
+        if urlparse(self.path).path.startswith("/api/"):
+            self.respond(401, {"ok": False, "error": "Faça login para continuar"})
+        else:
+            self.redirect("/setup" if not auth.configured() else "/login")
+        return False
+
+    def valid_request_origin(self) -> bool:
+        fetch_site = self.headers.get("Sec-Fetch-Site")
+        return fetch_site in (None, "same-origin", "none")
+
     def do_GET(self) -> None:
         path = urlparse(self.path).path
+        if path in {"/manifest.webmanifest", "/service-worker.js", "/offline.html"} or path.startswith("/icons/"):
+            super().do_GET()
+            return
+        if path == "/setup":
+            if auth.configured():
+                self.redirect("/login")
+            else:
+                self.auth_page(True)
+            return
+        if path == "/login":
+            if self.authenticated():
+                self.redirect("/")
+            else:
+                self.auth_page(False)
+            return
+        if not self.require_auth():
+            return
         if path == "/api/health":
             self.respond(200, {
                 "ok": True,
                 "service": "meu-gasto-ia",
-                "excel": XLSM.is_file(),
+                "database": storage.DATABASE.is_file(),
                 "expenses": len(read_expenses()),
+                "investments": len(investments.portfolio()["investments"]),
             })
+            return
+        if path == "/api/bootstrap":
+            self.respond(200, {"ok": True, "expenses": read_expenses(), "incomes": read_incomes(), "budgets": read_budgets(), "portfolio": investments.portfolio()})
             return
         if path == "/api/expenses":
             self.respond(200, {"ok": True, "expenses": read_expenses()})
@@ -297,34 +149,129 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/budgets":
             self.respond(200, {"ok": True, "budgets": read_budgets()})
             return
+        if path == "/api/investments":
+            self.respond(200, {"ok": True, **investments.portfolio()})
+            return
         super().do_GET()
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
-        if path not in {"/api/expenses", "/api/incomes", "/api/budgets"}:
+        if path in {"/setup", "/login"}:
+            if not self.valid_request_origin():
+                self.send_error(403)
+                return
+            length = int(self.headers.get("Content-Length", "0"))
+            values = parse_qs(self.rfile.read(min(length, 4096)).decode("utf-8"))
+            password = values.get("password", [""])[0]
+            if path == "/setup":
+                try:
+                    auth.setup(password, values.get("confirmation", [""])[0])
+                    self.redirect("/", auth.create_session())
+                except ValueError as exc:
+                    self.auth_page(True, str(exc))
+            elif auth.verify_password(password):
+                self.redirect("/", auth.create_session())
+            else:
+                self.auth_page(False, "Senha incorreta")
+            return
+        if path == "/logout":
+            self.redirect("/login", clear=True)
+            return
+        if not self.valid_request_origin():
+            self.respond(403, {"ok": False, "error": "Origem não autorizada"})
+            return
+        if not self.require_auth():
+            return
+        if path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image"}:
             self.send_error(404)
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            if length <= 0 or length > 16_384:
+            maximum = 12_000_000 if path == "/api/investments/extract-image" else 65_536
+            if length <= 0 or length > maximum:
                 raise ValueError("Requisição inválida")
             payload = json.loads(self.rfile.read(length))
             if path == "/api/incomes":
                 result = set_income(payload)
+                rebuild_dashboard()
                 self.respond(200, {"ok": True, **result})
                 return
             if path == "/api/budgets":
                 result = set_budget(payload)
+                rebuild_dashboard()
+                self.respond(200, {"ok": True, **result})
+                return
+            if path == "/api/investments":
+                item = investments.create_investment(payload)
+                rebuild_dashboard()
+                self.respond(201, {"ok": True, "investment": item})
+                return
+            if path == "/api/investments/refresh":
+                result = investments.refresh_investments()
+                rebuild_dashboard()
+                self.respond(200, {"ok": True, **result})
+                return
+            if path == "/api/investments/extract-image":
+                result = investments.extract_image(str(payload.get("image", "")))
                 self.respond(200, {"ok": True, **result})
                 return
             result = add_expense(payload)
+            rebuild_dashboard()
             self.respond(201, {"ok": True, **result})
         except DuplicateExpenseError as exc:
             self.respond(409, {"ok": False, "code": "duplicate", "error": str(exc)})
         except (ValueError, json.JSONDecodeError) as exc:
             self.respond(400, {"ok": False, "error": str(exc)})
+        except KeyError as exc:
+            self.respond(404, {"ok": False, "error": str(exc).strip("'")})
         except Exception:
-            self.respond(500, {"ok": False, "error": "Não foi possível salvar o gasto"})
+            self.respond(500, {"ok": False, "error": "Não foi possível concluir a operação"})
+
+    def do_PUT(self) -> None:
+        if not self.valid_request_origin():
+            self.respond(403, {"ok": False, "error": "Origem não autorizada"})
+            return
+        if not self.require_auth():
+            return
+        path = urlparse(self.path).path
+        match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
+        if not match:
+            self.send_error(404)
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > 65_536:
+                raise ValueError("Requisição inválida")
+            payload = json.loads(self.rfile.read(length))
+            item = investments.update_investment(match.group(1), payload)
+            rebuild_dashboard()
+            self.respond(200, {"ok": True, "investment": item})
+        except KeyError as exc:
+            self.respond(404, {"ok": False, "error": str(exc).strip("'")})
+        except (ValueError, json.JSONDecodeError) as exc:
+            self.respond(400, {"ok": False, "error": str(exc)})
+        except Exception:
+            self.respond(500, {"ok": False, "error": "Não foi possível editar o investimento"})
+
+    def do_DELETE(self) -> None:
+        if not self.valid_request_origin():
+            self.respond(403, {"ok": False, "error": "Origem não autorizada"})
+            return
+        if not self.require_auth():
+            return
+        path = urlparse(self.path).path
+        match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
+        if not match:
+            self.send_error(404)
+            return
+        try:
+            investments.delete_investment(match.group(1))
+            rebuild_dashboard()
+            self.respond(200, {"ok": True})
+        except KeyError as exc:
+            self.respond(404, {"ok": False, "error": str(exc).strip("'")})
+        except Exception:
+            self.respond(500, {"ok": False, "error": "Não foi possível excluir o investimento"})
 
     def respond(self, status: int, payload: dict) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")

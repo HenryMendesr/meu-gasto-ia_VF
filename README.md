@@ -1,93 +1,86 @@
-# Meu Gasto IA — versão Excel
+# Meu Gasto IA
 
-Controle financeiro pessoal feito em Excel, pensado para funcionar sozinho e ser simples de usar.
+PWA pessoal para controlar gastos, renda, voucher, limites mensais e investimentos. A versão publicada usa PostgreSQL no Neon e uma API Python serverless na Vercel. Nenhuma credencial fica no navegador ou no GitHub.
 
-![Prévia da planilha](docs/preview.png)
+## Publicação na Vercel
 
-## Baixar e usar
+Importe este repositório na Vercel e mantenha as configurações automáticas. Antes do primeiro deploy, cadastre em **Settings → Environment Variables**:
 
-O arquivo pronto está em [`excel/Controle_Gastos_Automatico.xlsm`](excel/Controle_Gastos_Automatico.xlsm).
+- `DATABASE_URL`: conexão com pooling fornecida pelo Neon.
+- `APP_PASSWORD`: senha forte usada para entrar no aplicativo.
+- `SESSION_SECRET`: valor aleatório longo usado para assinar as sessões.
 
-1. Baixe o arquivo `.xlsm`.
-2. Abra pelo Excel para computador.
-3. Se o Excel solicitar, habilite as macros do arquivo.
-4. Preencha apenas os campos amarelos.
+Marque as três variáveis para **Production**, **Preview** e **Development**. Não use valores do arquivo `.env.example`; ele contém somente exemplos.
 
-## Funcionalidades
+A Vercel fornece HTTPS automaticamente. O aplicativo não precisa de computador ligado nem de uma porta aberta no roteador.
 
-- Cadastro rápido de gastos.
-- Exclusão de lançamentos feitos por engano.
-- Salário, gastos, saldo e despesas fixas calculados automaticamente.
-- Gráficos separados do mês atual e do mês anterior.
-- Controle de parcela do carro e gasolina.
-- Histórico com até 500 lançamentos.
-- Uma única aba visível para facilitar o uso.
+## Migrar os dados locais
 
-## Estrutura
-
-- `excel/`: versão pronta para utilização.
-- `src/build.mjs`: criação da planilha, fórmulas, visual e gráficos.
-- `src/build_xlsm.py`: inclusão das macros e preparação do `.xlsm`.
-- `src/cfb_vba.py` e `src/template.bin`: suporte à montagem do projeto VBA.
-- `docs/preview.png`: imagem de demonstração.
-
-## Desenvolvimento
-
-Execute os comandos a partir da raiz do repositório:
+O banco SQLite local está ignorado pelo Git e nunca é enviado à Vercel. Para transferir os dados existentes uma única vez, defina `DATABASE_URL` somente no terminal local e execute:
 
 ```bash
-node src/build.mjs
-python3 src/build_xlsm.py
-python3 src/validate_xlsm.py
+python3 scripts/migrate_to_neon.py
 ```
 
-O primeiro comando gera `build/Controle_Gastos_Automatico.xlsx`. Ele requer Node.js e o pacote privado `@oai/artifact-tool`, que precisa estar disponível no ambiente de geração. O segundo comando inclui as macros e cria a versão final em `excel/`. O terceiro verifica a integridade do arquivo, as fórmulas, a visibilidade das abas, os botões e as macros.
+O script cancela a operação se encontrar gastos no Neon, evitando duplicidade. A conexão nunca deve ser adicionada a arquivos versionados.
 
-O caminho dos arquivos é calculado a partir da localização dos scripts, portanto os comandos funcionam mesmo quando o repositório estiver em outra pasta.
+## Instalar como aplicativo
 
-## Painel web
+- **Android:** abra o endereço HTTPS no Chrome e toque em **Instalar app**.
+- **iPhone/iPad:** abra no Safari e use **Compartilhar → Adicionar à Tela de Início**.
+- **Computador:** abra no Chrome ou Edge e use o ícone de instalação na barra de endereço.
 
-O painel em [`web/index.html`](web/index.html) funciona sem servidor e pode ser aberto diretamente no navegador. Ele mostra entradas, gastos, saldo, categorias e histórico com filtros.
+O manifesto abre o app em janela independente. O service worker armazena somente ícones, manifesto e a página offline; páginas autenticadas, APIs e informações financeiras não entram no cache.
 
-Depois de atualizar a planilha, gere novamente o painel com:
+## Funcionamento offline
 
-```bash
-python3 src/build_dashboard.py
-```
+Quando não houver conexão, o aplicativo mostra uma tela clara de indisponibilidade. Consultas e alterações precisam de internet porque o banco fica no Neon. Cotações e CDI também dependem das respectivas fontes externas.
 
-O valor do salário e do voucher de cada mês pode ser ajustado no próprio painel. Use o botão **Salvar salário e voucher no Excel** para gravar os dois valores na planilha.
+Novas versões são baixadas em segundo plano. Quando um service worker novo estiver pronto, o aplicativo oferece o botão **Atualizar** e só recarrega depois da confirmação.
 
-Para usar também a aba **Lançar gasto** e gravar diretamente no Excel, execute:
+## Investimentos
+
+A aba **Investimentos** aceita renda fixa, ações, fundos imobiliários, ETFs, criptomoedas e outros ativos. A atualização consulta primeiro a Brapi para ativos brasileiros, usa o Yahoo Finance como alternativa e busca o CDI na série 12 do Banco Central.
+
+O preenchimento por imagem continua disponível na execução local quando o Tesseract está instalado. A Vercel não inclui o Tesseract; na versão hospedada, esses campos devem ser preenchidos manualmente até uma futura integração com OCR em nuvem.
+
+## Segurança
+
+- Banco Neon acessado somente pela API, usando `DATABASE_URL` secreta.
+- Cookie de sessão `HttpOnly`, `Secure` e `SameSite=Strict`.
+- Sessões assinadas e válidas por 30 dias.
+- Nenhuma senha, token ou chave no JavaScript.
+- APIs e página principal protegidas por autenticação.
+- Respostas financeiras com cache desativado.
+- Arquivos `.env`, banco SQLite e configuração da Vercel ignorados pelo Git.
+
+## Uso local
+
+Para usar a versão local com SQLite, execute:
 
 ```bash
 python3 src/dashboard_server.py
 ```
 
-Depois abra `http://127.0.0.1:8765`. Cada novo gasto é salvo na planilha, validado e exibido no dashboard automaticamente. O Excel não precisa ficar aberto.
+No Windows, também é possível abrir `INICIAR_PAINEL.bat`. O primeiro acesso local permite criar uma senha. Os dados ficam em `data/meu_gasto.db`, com até 20 backups em `backups/app/`.
 
-No Windows, basta dar dois cliques em `INICIAR_PAINEL.bat`. O servidor e o endereço correto serão abertos automaticamente. Não abra `web/index.html` diretamente para lançar gastos, pois páginas abertas como arquivo não têm permissão para alterar a planilha.
-
-O painel mostra **Conectado ao Excel** quando o salvamento está disponível. A versão aberta pelo GitHub Pages serve somente para consulta, pois um site estático não consegue modificar um arquivo no computador ou no repositório.
-
-O dashboard controla separadamente a renda em dinheiro e o crédito do voucher. Selecione `Voucher` como forma de pagamento para que o gasto apareça no saldo e no gráfico exclusivos do benefício.
-
-Também é possível definir um limite mensal para cada categoria. O painel mostra o valor utilizado, quanto ainda pode ser gasto e alertas quando restarem 20%, 10% ou 5% do limite. Os limites ficam armazenados no próprio Excel e variam por mês.
-
-Antes de cada alteração, o servidor cria automaticamente uma cópia da planilha em `backups/` e mantém as 20 mais recentes. Lançamentos idênticos exigem confirmação para evitar duplicidade.
-
-Execute os testes do armazenamento com:
+## Desenvolvimento
 
 ```bash
+python3 -m pip install -r requirements.txt
 python3 -m unittest discover -s tests -v
+SANITIZE_BUILD=1 python3 src/build_dashboard.py
 ```
 
-O contrato preparado para a futura integração está documentado em [`docs/INTEGRACAO_WHATSAPP.md`](docs/INTEGRACAO_WHATSAPP.md).
+O último comando gera o HTML versionado sem incorporar dados locais.
 
-## Serviço do WhatsApp
+Arquivos principais:
 
-A primeira versão do serviço oficial, sem IA, está em [`whatsapp-worker/`](whatsapp-worker/README.md). Ela aceita mensagens no formato `71 gasolina crédito`, mantém contas privadas por telefone e limita o administrador a bloquear ou apagar perfis e históricos.
-
-O serviço utiliza a API oficial da Meta e Cloudflare Workers com banco D1. A implantação exige uma conta Cloudflare, um aplicativo Meta e um número dedicado; nenhum segredo deve ser salvo no repositório.
-
-> A planilha pronta não precisa de Node.js nem Python. Basta utilizar o Excel para computador.
-
+- `api/index.py`: API FastAPI para a Vercel.
+- `src/cloud_storage.py`: persistência PostgreSQL/Neon.
+- `src/storage.py`: persistência SQLite local.
+- `src/runtime_storage.py`: seleção automática do banco.
+- `scripts/migrate_to_neon.py`: migração única do SQLite.
+- `vercel.json`: rotas, função e cabeçalhos da Vercel.
+- `public/manifest.webmanifest`: instalação da PWA.
+- `public/service-worker.js`: cache seguro e atualização.

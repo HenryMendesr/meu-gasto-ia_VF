@@ -1,8 +1,0 @@
-1. Extraia o arquivo ZIP no computador.
-2. Abra o repositório: https://github.com/HenryMendesr/meu-gasto-ia_VF
-3. Clique em "Add file" e depois em "Upload files".
-4. Abra a pasta extraída e arraste TODO o conteúdo dela para a página.
-   Arraste README.md, .gitignore e as pastas docs, excel e src.
-5. No fim da página, clique em "Commit changes".
-
-Pronto. O projeto ficará organizado no GitHub e a planilha estará na pasta excel.
