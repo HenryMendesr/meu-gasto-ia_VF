@@ -81,10 +81,10 @@ class Handler(SimpleHTTPRequestHandler):
         template = (WEB / "auth.html").read_text(encoding="utf-8")
         if setup:
             fields = '<label>Crie sua senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label><label>Confirme a senha<input name="confirmation" type="password" minlength="10" autocomplete="new-password" required></label>'
-            values = {"__TITLE__": "Primeiro acesso", "__SUBTITLE__": "Proteja seus dados com uma senha", "__ACTION__": "/setup", "__FIELDS__": fields, "__BUTTON__": "Criar acesso"}
+            values = {"__TITLE__": "Primeiro acesso", "__SUBTITLE__": "Proteja seus dados com uma senha", "__ACTION__": "/setup", "__FIELDS__": fields, "__BUTTON__": "Criar acesso", "__FOOTER__": ""}
         else:
             fields = '<label>Senha<input name="password" type="password" autocomplete="current-password" required autofocus></label>'
-            values = {"__TITLE__": "Entrar", "__SUBTITLE__": "Acesse seu controle financeiro", "__ACTION__": "/login", "__FIELDS__": fields, "__BUTTON__": "Entrar"}
+            values = {"__TITLE__": "Entrar", "__SUBTITLE__": "Acesse seu controle financeiro", "__ACTION__": "/login", "__FIELDS__": fields, "__BUTTON__": "Entrar", "__FOOTER__": ""}
         values["__ERROR__"] = f'<div class="error">{escape(error)}</div>' if error else ""
         for key, value in values.items():
             template = template.replace(key, value)

@@ -1,16 +1,17 @@
 # Meu Gasto IA
 
-PWA pessoal para controlar gastos, renda, voucher, limites mensais e investimentos. A versão publicada usa PostgreSQL no Neon e uma API Python serverless na Vercel. Nenhuma credencial fica no navegador ou no GitHub.
+PWA multiusuário para controlar gastos, renda, voucher, limites mensais e investimentos. A versão publicada usa PostgreSQL no Neon e uma API Python serverless na Vercel. Nenhuma credencial fica no navegador ou no GitHub.
 
 ## Publicação na Vercel
 
 Importe este repositório na Vercel e mantenha as configurações automáticas. Antes do primeiro deploy, cadastre em **Settings → Environment Variables**:
 
 - `DATABASE_URL`: conexão com pooling fornecida pelo Neon.
-- `APP_PASSWORD`: senha forte usada para entrar no aplicativo.
+- `APP_PASSWORD`: senha temporária que também funciona como código de convite caso `REGISTRATION_CODE` não esteja definido.
+- `REGISTRATION_CODE`: código privado compartilhado somente com familiares e amigos autorizados.
 - `SESSION_SECRET`: valor aleatório longo usado para assinar as sessões.
 
-Marque as três variáveis para **Production**, **Preview** e **Development**. Não use valores do arquivo `.env.example`; ele contém somente exemplos.
+Marque as quatro variáveis para **Production**, **Preview** e **Development**. Não use valores do arquivo `.env.example`; ele contém somente exemplos.
 
 A Vercel fornece HTTPS automaticamente. O aplicativo não precisa de computador ligado nem de uma porta aberta no roteador.
 
@@ -19,10 +20,10 @@ A Vercel fornece HTTPS automaticamente. O aplicativo não precisa de computador 
 O banco SQLite local está ignorado pelo Git e nunca é enviado à Vercel. Para transferir os dados existentes uma única vez, defina `DATABASE_URL` somente no terminal local e execute:
 
 ```bash
-python3 scripts/migrate_to_neon.py
+python3 scripts/migrate_to_neon.py --email seu-email@exemplo.com
 ```
 
-O script cancela a operação se encontrar gastos no Neon, evitando duplicidade. A conexão nunca deve ser adicionada a arquivos versionados.
+Crie sua conta no aplicativo antes de executar o comando. O script cancela a operação se encontrar gastos nessa conta no Neon, evitando duplicidade. A conexão nunca deve ser adicionada a arquivos versionados.
 
 ## Instalar como aplicativo
 
@@ -48,6 +49,8 @@ O preenchimento por imagem continua disponível na execução local quando o Tes
 
 - Banco Neon acessado somente pela API, usando `DATABASE_URL` secreta.
 - Cookie de sessão `HttpOnly`, `Secure` e `SameSite=Strict`.
+- Contas individuais com senha derivada por PBKDF2 e cadastro protegido por código de convite.
+- Cada consulta filtra os dados pelo proprietário autenticado.
 - Sessões assinadas e válidas por 30 dias.
 - Nenhuma senha, token ou chave no JavaScript.
 - APIs e página principal protegidas por autenticação.

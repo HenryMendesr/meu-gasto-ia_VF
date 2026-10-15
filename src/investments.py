@@ -39,8 +39,8 @@ def empty_store() -> dict:
     return {"version": 1, "updated_at": None, "investments": [], "history": []}
 
 
-def load_store() -> dict:
-    data = storage.load_investments()
+def load_store(user_id: int | None = None) -> dict:
+    data = storage.load_investments(user_id)
     if not isinstance(data, dict) or not isinstance(data.get("investments"), list):
         raise ValueError("O arquivo de investimentos está inválido")
     data.setdefault("history", [])
@@ -48,8 +48,8 @@ def load_store() -> dict:
     return data
 
 
-def save_store(data: dict) -> None:
-    storage.save_investments(data)
+def save_store(data: dict, user_id: int | None = None) -> None:
+    storage.save_investments(data, user_id)
 
 
 def number(value, field: str, *, required: bool = True, minimum: float = 0) -> float | None:
@@ -198,8 +198,8 @@ def calculated(item: dict) -> dict:
     return result
 
 
-def portfolio() -> dict:
-    store = load_store()
+def portfolio(user_id: int | None = None) -> dict:
+    store = load_store(user_id)
     items = [calculated(item) for item in store["investments"]]
     applied = round(sum(item["amount_applied"] for item in items), 2)
     current = round(sum(item["current_value"] for item in items), 2)
@@ -222,42 +222,42 @@ def record_snapshot(store: dict) -> None:
     store["history"] = store["history"][-730:]
 
 
-def create_investment(payload: dict) -> dict:
-    store = load_store()
+def create_investment(payload: dict, user_id: int | None = None) -> dict:
+    store = load_store(user_id)
     item = normalize_payload(payload)
     store["investments"].append(item)
     store["updated_at"] = now_iso()
     record_snapshot(store)
-    save_store(store)
+    save_store(store, user_id)
     return calculated(item)
 
 
-def update_investment(item_id: str, payload: dict) -> dict:
-    store = load_store()
+def update_investment(item_id: str, payload: dict, user_id: int | None = None) -> dict:
+    store = load_store(user_id)
     for index, existing in enumerate(store["investments"]):
         if existing["id"] == item_id:
             item = normalize_payload(payload, existing)
             store["investments"][index] = item
             store["updated_at"] = now_iso()
             record_snapshot(store)
-            save_store(store)
+            save_store(store, user_id)
             return calculated(item)
     raise KeyError("Investimento não encontrado")
 
 
-def delete_investment(item_id: str) -> None:
-    store = load_store()
+def delete_investment(item_id: str, user_id: int | None = None) -> None:
+    store = load_store(user_id)
     before = len(store["investments"])
     store["investments"] = [item for item in store["investments"] if item["id"] != item_id]
     if len(store["investments"]) == before:
         raise KeyError("Investimento não encontrado")
     store["updated_at"] = now_iso()
     record_snapshot(store)
-    save_store(store)
+    save_store(store, user_id)
 
 
-def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Callable = fetch_cdi_rate) -> dict:
-    store = load_store()
+def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Callable = fetch_cdi_rate, user_id: int | None = None) -> dict:
+    store = load_store(user_id)
     errors = []
     cdi = None
     for item in store["investments"]:
@@ -273,8 +273,8 @@ def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Call
             errors.append({"id": item["id"], "name": item.get("symbol") or item.get("name"), "error": str(exc)})
     store["updated_at"] = now_iso()
     record_snapshot(store)
-    save_store(store)
-    result = portfolio()
+    save_store(store, user_id)
+    result = portfolio(user_id)
     result["errors"] = errors
     return result
 

@@ -85,11 +85,11 @@ def verify_password(password: str) -> bool:
     return hmac.compare_digest(_encode(digest), data["password_hash"])
 
 
-def create_session(now: int | None = None) -> str:
+def create_session(user_id: int | str = 1, now: int | None = None) -> str:
     secret = os.environ.get("SESSION_SECRET")
     data = _read() if not secret else None
     payload = json.dumps(
-        {"exp": (now or int(time.time())) + SESSION_SECONDS, "nonce": secrets.token_hex(8)},
+        {"sub": str(user_id), "exp": (now or int(time.time())) + SESSION_SECONDS, "nonce": secrets.token_hex(8)},
         separators=(",", ":"),
     ).encode("utf-8")
     encoded = _encode(payload)
@@ -98,17 +98,23 @@ def create_session(now: int | None = None) -> str:
     return f"{encoded}.{_encode(signature)}"
 
 
-def verify_session(token: str | None, now: int | None = None) -> bool:
+def session_user(token: str | None, now: int | None = None) -> int | None:
     if not token or not configured():
-        return False
+        return None
     try:
         encoded, supplied = token.split(".", 1)
         secret = os.environ.get("SESSION_SECRET")
         key = secret.encode("utf-8") if secret else _decode(_read()["session_secret"])
-        expected = hmac.new(key, encoded.encode("ascii"), hashlib.sha256).digest()
-        if not hmac.compare_digest(expected, _decode(supplied)):
-            return False
+        expected = _encode(hmac.new(key, encoded.encode("ascii"), hashlib.sha256).digest())
+        if not hmac.compare_digest(expected, supplied):
+            return None
         payload = json.loads(_decode(encoded))
-        return int(payload["exp"]) >= (now or int(time.time()))
+        if int(payload["exp"]) < (now or int(time.time())):
+            return None
+        return int(payload["sub"])
     except (ValueError, KeyError, TypeError, json.JSONDecodeError):
-        return False
+        return None
+
+
+def verify_session(token: str | None, now: int | None = None) -> bool:
+    return session_user(token, now) is not None

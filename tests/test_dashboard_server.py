@@ -66,6 +66,9 @@ class AppStorageTests(unittest.TestCase):
         self.assertFalse(auth.verify_password("senha-incorreta"))
         token = auth.create_session(now=1000)
         self.assertTrue(auth.verify_session(token, now=1001))
+        self.assertEqual(1, auth.session_user(token, now=1001))
+        second_user_token = auth.create_session(42, now=1000)
+        self.assertEqual(42, auth.session_user(second_user_token, now=1001))
         self.assertFalse(auth.verify_session(token + "x", now=1001))
         self.assertFalse(auth.verify_session(token, now=1000 + auth.SESSION_SECONDS + 1))
 

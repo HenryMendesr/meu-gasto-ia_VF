@@ -83,7 +83,7 @@ def create_backup() -> Path:
     return destination
 
 
-def read_expenses() -> list[dict]:
+def read_expenses(user_id: int | None = None) -> list[dict]:
     initialize()
     with connect() as db:
         rows = db.execute("SELECT id,expense_date,amount,place,category,payment,description FROM expenses ORDER BY expense_date,id").fetchall()
@@ -91,7 +91,7 @@ def read_expenses() -> list[dict]:
              "where": row["place"], "category": row["category"], "payment": row["payment"], "description": row["description"]} for row in rows]
 
 
-def add_expense(payload: dict) -> dict:
+def add_expense(payload: dict, user_id: int | None = None) -> dict:
     try:
         expense_date = date.fromisoformat(str(payload["date"])).isoformat()
         amount = round(float(payload["amount"]), 2)
@@ -121,14 +121,14 @@ def add_expense(payload: dict) -> dict:
     return {"row": cursor.lastrowid, "id": cursor.lastrowid, "backup": backup.name}
 
 
-def read_incomes() -> dict[str, dict[str, float]]:
+def read_incomes(user_id: int | None = None) -> dict[str, dict[str, float]]:
     initialize()
     with connect() as db:
         rows = db.execute("SELECT month,cash,voucher FROM incomes").fetchall()
     return {row["month"]: {"cash": round(row["cash"], 2), "voucher": round(row["voucher"], 2)} for row in rows}
 
 
-def set_income(payload: dict) -> dict:
+def set_income(payload: dict, user_id: int | None = None) -> dict:
     month = str(payload.get("month", ""))
     try:
         date.fromisoformat(f"{month}-01")
@@ -145,7 +145,7 @@ def set_income(payload: dict) -> dict:
     return {"month": month, "cash": cash, "voucher": voucher, "backup": backup.name}
 
 
-def read_budgets() -> dict[str, dict[str, float]]:
+def read_budgets(user_id: int | None = None) -> dict[str, dict[str, float]]:
     initialize()
     with connect() as db:
         rows = db.execute("SELECT month,category,amount FROM budgets").fetchall()
@@ -155,7 +155,7 @@ def read_budgets() -> dict[str, dict[str, float]]:
     return result
 
 
-def set_budget(payload: dict) -> dict:
+def set_budget(payload: dict, user_id: int | None = None) -> dict:
     month, category = str(payload.get("month", "")), str(payload.get("category", "")).strip()
     try:
         date.fromisoformat(f"{month}-01")
@@ -172,14 +172,14 @@ def set_budget(payload: dict) -> dict:
     return {"month": month, "category": category, "limit": amount, "backup": backup.name}
 
 
-def load_investments() -> dict:
+def load_investments(user_id: int | None = None) -> dict:
     initialize()
     with connect() as db:
         row = db.execute("SELECT value FROM app_state WHERE key='investments'").fetchone()
     return json.loads(row["value"]) if row else {"version": 1, "updated_at": None, "investments": [], "history": []}
 
 
-def save_investments(data: dict) -> None:
+def save_investments(data: dict, user_id: int | None = None) -> None:
     with LOCK:
         create_backup()
         with connect() as db:
