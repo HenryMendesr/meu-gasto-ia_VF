@@ -38,6 +38,14 @@ class WebSecurityTests(unittest.TestCase):
         self.assertIn("Secure", cookie)
         self.assertIn("SameSite=strict", cookie)
         self.assertIn("Max-Age=2592000", cookie)
+        self.assertIn("expires=", cookie.lower())
+
+    def test_login_form_supports_password_managers(self):
+        response = self.client.get("/login")
+        self.assertIn('autocomplete="on"', response.text)
+        self.assertIn('autocomplete="username"', response.text)
+        self.assertIn('autocomplete="current-password"', response.text)
+        self.assertIn('name="remember" type="checkbox" value="1" checked', response.text)
 
     def test_vercel_public_host_is_accepted(self):
         with patch("api.index.auth.verify_password", return_value=True), patch.dict(

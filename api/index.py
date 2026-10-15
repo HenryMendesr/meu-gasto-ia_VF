@@ -1,5 +1,6 @@
 """Aplicação ASGI multiusuário para Vercel."""
 from html import escape
+from datetime import datetime, timedelta, timezone
 import os
 from pathlib import Path
 import re
@@ -88,8 +89,8 @@ def auth_html(*,register:bool=False,error:str='')->HTMLResponse:
         ])
         values={'__TITLE__':'Criar conta','__SUBTITLE__':'Seus dados serão privados e separados','__ACTION__':'/register','__FIELDS__':fields,'__BUTTON__':'Criar minha conta','__FOOTER__':'Já possui uma conta? <a href="/login">Entrar</a>'}
     else:
-        email='<label>E-mail<input name="email" type="email" maxlength="254" autocomplete="username" required autofocus></label>' if MULTI_USER else ''
-        fields=email+'<label>Senha<input name="password" type="password" autocomplete="current-password" required></label><label class="remember-access"><input name="remember" type="checkbox" value="1"><span><strong>Manter conectado</strong><small>Salvar o acesso neste dispositivo por 30 dias</small></span></label>'
+        email='<label>E-mail<input id="username" name="email" type="email" inputmode="email" maxlength="254" autocomplete="username" required autofocus></label>' if MULTI_USER else ''
+        fields=email+'<label>Senha<input id="password" name="password" type="password" autocomplete="current-password" required></label><label class="remember-access"><input name="remember" type="checkbox" value="1" checked><span><strong>Continuar conectado</strong><small>Manter esta conta aberta por 30 dias neste aparelho</small></span></label><div class="password-manager-hint">Para preencher a senha automaticamente, aceite a opção “Salvar senha” oferecida pelo navegador.</div>'
         footer='<a href="/register">Criar uma conta com convite</a>' if MULTI_USER else ''
         values={'__TITLE__':'Entrar','__SUBTITLE__':'Acesse seu controle financeiro','__ACTION__':'/login','__FIELDS__':fields,'__BUTTON__':'Entrar','__FOOTER__':footer}
     values['__ERROR__']=f'<div class="error">{escape(error)}</div>' if error else ''
@@ -97,7 +98,7 @@ def auth_html(*,register:bool=False,error:str='')->HTMLResponse:
     return HTMLResponse(template,headers={'Cache-Control':'no-store'})
 
 def set_session(response:RedirectResponse,user_id:int,persistent:bool=True)->RedirectResponse:
-    cookie_options={'max_age':auth.SESSION_SECONDS} if persistent else {}
+    cookie_options={'max_age':auth.SESSION_SECONDS,'expires':datetime.now(timezone.utc)+timedelta(seconds=auth.SESSION_SECONDS)} if persistent else {}
     response.set_cookie(auth.COOKIE_NAME,auth.create_session(user_id),httponly=True,secure=True,samesite='strict',path='/',**cookie_options)
     return response
 
