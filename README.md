@@ -43,6 +43,8 @@ Novas versões são baixadas em segundo plano. Quando um service worker novo est
 
 A aba **Investimentos** aceita renda fixa, ações, fundos imobiliários, ETFs, criptomoedas e outros ativos. A atualização consulta primeiro a Brapi para ativos brasileiros, usa o Yahoo Finance como alternativa e busca o CDI na série 12 do Banco Central.
 
+Cada investimento possui uma seta para abrir seu gráfico individual. Ações, FIIs, ETFs e criptomoedas consultam o histórico de mercado no Yahoo Finance somente quando o gráfico é aberto. Renda fixa apresenta uma evolução estimada pela taxa cadastrada. Os períodos disponíveis são 1 mês, 3 meses, 6 meses, 1 ano e 5 anos.
+
 O preenchimento por imagem continua disponível na execução local quando o Tesseract está instalado. A Vercel não inclui o Tesseract; na versão hospedada, esses campos devem ser preenchidos manualmente até uma futura integração com OCR em nuvem.
 
 ## Importação de extratos

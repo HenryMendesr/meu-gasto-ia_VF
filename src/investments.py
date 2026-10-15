@@ -159,6 +159,72 @@ def fetch_quote(symbol: str) -> dict:
     return {"price": round(price, 8), "daily_change_percent": round(change, 4), "source": "Yahoo Finance", "updated_at": now_iso()}
 
 
+def fetch_market_history(symbol: str, period: str = "1y") -> dict:
+    ranges = {"1m": ("1mo", "1d"), "3m": ("3mo", "1d"), "6m": ("6mo", "1d"),
+              "1y": ("1y", "1d"), "5y": ("5y", "1wk")}
+    if period not in ranges:
+        raise ValueError("Período inválido")
+    chart_range, interval = ranges[period]
+    ticker = symbol if symbol.endswith(YAHOO_SUFFIX) or "-" in symbol else f"{symbol}{YAHOO_SUFFIX}"
+    data = fetch_json(f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(ticker)}?interval={interval}&range={chart_range}")
+    try:
+        result = data["chart"]["result"][0]
+        timestamps = result["timestamp"]
+        quote_data = result["indicators"]["quote"][0]["close"]
+        points = [{"date": datetime.fromtimestamp(stamp, timezone.utc).date().isoformat(), "price": round(float(price), 8)}
+                  for stamp, price in zip(timestamps, quote_data) if price is not None]
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        raise ValueError(f"Histórico de {symbol} não encontrado") from exc
+    if not points:
+        raise ValueError(f"Histórico de {symbol} não encontrado")
+    return {"source": "Yahoo Finance", "points": points[-260:]}
+
+
+def fixed_income_history(item: dict, period: str) -> list[dict]:
+    ranges = {"1m": 31, "3m": 92, "6m": 183, "1y": 366, "5y": 1827}
+    if period not in ranges:
+        raise ValueError("Período inválido")
+    start = date.fromisoformat(item["application_date"])
+    end = date.today()
+    visible_start = max(start, end - timedelta(days=ranges[period]))
+    total_days = max(1, (end - start).days)
+    steps = min(60, max(2, (end - visible_start).days + 1))
+    dates = [visible_start + timedelta(days=round(index * max(0, (end - visible_start).days) / (steps - 1))) for index in range(steps)]
+    applied = item["amount_invested"]
+    manual = item.get("current_value_manual")
+    points = []
+    for current_date in dates:
+        elapsed = max(0, (current_date - start).days)
+        if manual is not None and total_days:
+            value = applied * ((manual / applied) ** (elapsed / total_days))
+        else:
+            rate = item["contracted_rate"] / 100
+            if item["profitability_type"] == "CDI":
+                rate *= (item.get("cdi_rate") or 0) / 100
+            value = applied * ((1 + rate) ** (elapsed / 365))
+        points.append({"date": current_date.isoformat(), "value": round(value, 2)})
+    return points
+
+
+def investment_history(item_id: str, period: str = "1y", user_id: int | None = None,
+                       market_fetcher: Callable = fetch_market_history) -> dict:
+    item = next((entry for entry in load_store(user_id)["investments"] if entry["id"] == item_id), None)
+    if not item:
+        raise KeyError("Investimento não encontrado")
+    calculated_item = calculated(item)
+    if item["type"] in VARIABLE_TYPES:
+        history = market_fetcher(item["symbol"], period)
+        points = [{**point, "value": round(point["price"] * item["quantity"], 2)} for point in history["points"]]
+        source = history["source"]
+    else:
+        points = fixed_income_history(item, period)
+        source = "Estimativa pela taxa cadastrada"
+    return {"id": item_id, "label": item.get("symbol") or item.get("name"), "type": item["type"],
+            "period": period, "source": source, "average_price": item.get("average_price"),
+            "amount_applied": calculated_item["amount_applied"], "current_value": calculated_item["current_value"],
+            "return_percent": calculated_item["return_percent"], "points": points}
+
+
 def fetch_cdi_rate() -> dict:
     end = date.today()
     start = end - timedelta(days=14)

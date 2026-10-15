@@ -60,6 +60,18 @@ class AppStorageTests(unittest.TestCase):
         self.assertGreater(items[fixed["id"]]["current_value"], 1000)
         self.assertEqual(240, items[stock["id"]]["current_value"])
 
+    def test_individual_investment_history_is_calculated(self):
+        stock = investments.create_investment({"type": "Ações", "symbol": "PETR4", "quantity": 2, "average_price": 30, "purchase_date": "2025-01-01"})
+        history = investments.investment_history(stock["id"], "1m", market_fetcher=lambda symbol, period: {
+            "source": "Teste", "points": [{"date": "2026-10-01", "price": 31}, {"date": "2026-10-15", "price": 34}],
+        })
+        self.assertEqual("PETR4", history["label"])
+        self.assertEqual(68, history["points"][-1]["value"])
+        fixed = investments.create_investment({"type": "Renda fixa", "name": "CDB", "institution": "Banco", "amount_invested": 1000, "application_date": "2025-01-01", "profitability_type": "Prefixado", "contracted_rate": 12})
+        fixed_history = investments.investment_history(fixed["id"], "1y")
+        self.assertGreaterEqual(len(fixed_history["points"]), 2)
+        self.assertGreater(fixed_history["points"][-1]["value"], fixed_history["points"][0]["value"])
+
     def test_password_hash_and_signed_session(self):
         auth.setup("uma-senha-segura", "uma-senha-segura")
         self.assertTrue(auth.verify_password("uma-senha-segura"))

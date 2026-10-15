@@ -119,6 +119,15 @@ async def extract_image(request:Request):
     try:return {'ok':True,**investments.extract_image(str((await request.json()).get('image','')))}
     except ValueError as exc:return json_error(400,str(exc))
 
+@fastapi_app.get('/api/investments/{item_id}/history')
+def investment_history(item_id:str,request:Request,period:str='1y'):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    if not re.fullmatch(r'[a-f0-9]{32}',item_id):return json_error(404,'Investimento não encontrado')
+    try:return {'ok':True,**investments.investment_history(item_id,period,uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except ValueError as exc:return json_error(400,str(exc))
+
 @fastapi_app.post('/api/statements/preview')
 async def preview_statement(request:Request,file:UploadFile=File(...)):
     uid=protected(request)
