@@ -21,7 +21,9 @@ PBKDF2_ITERATIONS = 600_000
 
 
 def configured() -> bool:
-    return bool(os.environ.get("APP_PASSWORD") and os.environ.get("SESSION_SECRET")) or AUTH_FILE.is_file()
+    hosted = os.environ.get("DATABASE_URL") and os.environ.get("SESSION_SECRET")
+    legacy_environment = os.environ.get("APP_PASSWORD") and os.environ.get("SESSION_SECRET")
+    return bool(hosted or legacy_environment) or AUTH_FILE.is_file()
 
 
 def _encode(raw: bytes) -> str:

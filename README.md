@@ -7,7 +7,7 @@ PWA multiusuário para controlar gastos, renda, voucher, limites mensais e inves
 Importe este repositório na Vercel e mantenha as configurações automáticas. Antes do primeiro deploy, cadastre em **Settings → Environment Variables**:
 
 - `DATABASE_URL`: conexão com pooling fornecida pelo Neon.
-- `APP_PASSWORD`: senha temporária que também funciona como código de convite caso `REGISTRATION_CODE` não esteja definido.
+- `APP_PASSWORD`: compatibilidade com a versão anterior; depois de configurar `REGISTRATION_CODE` e criar sua conta, pode ser removida.
 - `REGISTRATION_CODE`: código privado compartilhado somente com familiares e amigos autorizados.
 - `SESSION_SECRET`: valor aleatório longo usado para assinar as sessões.
 
