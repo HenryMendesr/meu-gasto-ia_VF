@@ -1,20 +1,20 @@
   <div id="investmentsPanel" class="panel" hidden>
     <section class="portfolio-shell">
-    <div class="investment-toolbar">
-      <div class="portfolio-heading"><span class="portfolio-kicker">Visão geral</span><h2 style="margin:0">Minha carteira</h2><div id="investmentUpdated" class="update-stamp">Ainda não atualizada</div></div>
+    <div class="investment-toolbar section-heading">
+      <div class="portfolio-heading"><span class="eyebrow">Patrimônio</span><h2>Minha carteira</h2><p>Acompanhe a composição e a evolução dos seus investimentos.</p><div id="investmentUpdated" class="update-stamp">Ainda não atualizada</div></div>
       <div class="actions"><button id="refreshInvestments" class="secondary" type="button">Atualizar cotações</button><button id="newInvestment" class="save new-investment-cta" type="button"><span aria-hidden="true">＋</span> Adicionar investimento</button></div>
     </div>
-    <section class="grid investment-grid">
-      <article class="card metric"><small>Patrimônio investido</small><strong id="portfolioCurrent">R$ 0,00</strong><div class="hint">Valor total atualizado</div></article>
-      <article class="card metric"><small>Valor aplicado</small><strong id="portfolioApplied">R$ 0,00</strong><div class="hint">Total aportado</div></article>
-      <article class="card metric"><small>Lucro ou prejuízo</small><strong id="portfolioProfit">R$ 0,00</strong><div class="hint">Resultado acumulado</div></article>
-      <article class="card metric"><small>Rentabilidade</small><strong id="portfolioReturn">0,00%</strong><div class="hint">Desde as aplicações</div></article>
+    <section class="investment-summary">
+      <div class="investment-primary"><small>Patrimônio investido</small><strong id="portfolioCurrent">R$ 0,00</strong><span>Valor total atualizado</span></div>
+      <div><small>Valor aplicado</small><strong id="portfolioApplied">R$ 0,00</strong><span>Total aportado</span></div>
+      <div><small>Resultado acumulado</small><strong id="portfolioProfit">R$ 0,00</strong><span>Lucro ou prejuízo</span></div>
+      <div><small>Rentabilidade</small><strong id="portfolioReturn">0,00%</strong><span>Desde as aplicações</span></div>
     </section>
     <section class="investment-main">
-      <article class="card"><h2>Distribuição por categoria</h2><div id="investmentAllocation"></div></article>
-      <article class="card"><h2>Evolução da carteira</h2><svg id="investmentHistory" class="history-chart" viewBox="0 0 520 190" role="img" aria-label="Histórico da carteira"></svg></article>
+      <section class="investment-visual"><span class="eyebrow">Composição</span><h3>Distribuição por categoria</h3><div id="investmentAllocation"></div></section>
+      <section class="investment-visual"><span class="eyebrow">Histórico</span><h3>Evolução da carteira</h3><svg id="investmentHistory" class="history-chart" viewBox="0 0 520 190" role="img" aria-label="Histórico da carteira"></svg></section>
     </section>
-    <section class="card table-card investment-table"><div class="table-head"><h2>Investimentos</h2><select id="investmentClassFilter" class="field"><option value="">Todos</option><option value="fixed">Renda fixa</option><option value="variable">Renda variável</option></select></div><div class="scroll"><table><thead><tr><th aria-label="Detalhes"></th><th>Investimento</th><th>Classe</th><th>Aplicado</th><th>Valor atual</th><th>Variação diária</th><th>Resultado</th><th>Rentabilidade</th><th>Ações</th></tr></thead><tbody id="investmentRows"></tbody></table><div id="investmentEmpty" class="investment-empty" hidden>Nenhum investimento cadastrado.</div></div></section>
+    <section class="table-card investment-table"><div class="table-head"><div><span class="eyebrow">Posições</span><h3>Seus investimentos</h3></div><select id="investmentClassFilter" class="field"><option value="">Todos</option><option value="fixed">Renda fixa</option><option value="variable">Renda variável</option></select></div><div class="scroll"><table><thead><tr><th aria-label="Detalhes"></th><th>Investimento</th><th>Classe</th><th>Aplicado</th><th>Valor atual</th><th>Variação diária</th><th>Resultado</th><th>Rentabilidade</th><th>Ações</th></tr></thead><tbody id="investmentRows"></tbody></table><div id="investmentEmpty" class="investment-empty" hidden>Nenhum investimento cadastrado.</div></div></section>
     </section>
     <div id="investmentMessage" class="message" hidden></div>
     <button id="quickNewInvestment" class="quick-investment" type="button" aria-label="Adicionar investimento"><span aria-hidden="true">＋</span></button>
