@@ -53,11 +53,17 @@ Na aba **Lançar gasto**, a área **Importar extrato** aceita arquivos CSV, OFX 
 
 Linhas de saldo, como **saldo do dia**, saldo anterior e saldo disponível, são descartadas. Créditos são separados dos gastos e podem ser classificados como salário, pagamento recebido, transferência recebida, reembolso, rendimentos ou outras entradas. Essas entradas aparecem em um gráfico próprio no dashboard e não consomem limites de gastos.
 
+A conferência também mostra confiança, possíveis duplicidades, transferências próprias, recorrências, tarifas, juros, estornos e compras parceladas encontradas na descrição. Quando há evidência de salário, o aplicativo sugere dia, valor habitual e origem; a renda mensal só é atualizada se o usuário marcar a confirmação antes de importar.
+
 Como layouts de PDF variam entre bancos, CSV ou OFX oferecem resultados mais precisos. A prévia sempre deve ser conferida antes de salvar.
 
 ## Limites mensais
 
 A aba **Limites** permite criar categorias personalizadas e definir, editar ou remover o teto de cada categoria por mês. O resumo mostra o limite total, o valor utilizado e o saldo disponível, com alertas em amarelo a partir de 80% e em vermelho ao ultrapassar 100%. O dashboard apresenta o mesmo acompanhamento em barras compactas e os valores são recalculados quando um gasto é criado, editado ou excluído.
+
+## Compras parceladas
+
+Ao escolher **Crédito**, o lançamento pode ser dividido em até 120 parcelas. O sistema calcula os centavos, permite ajustar o valor regular, coloca a diferença na última parcela e distribui as cobranças a partir da data informada. As parcelas pertencem a um grupo, aparecem nos meses futuros e podem ser editadas ou excluídas individualmente ou em conjunto. Como ainda não há cadastro de cartões, fechamento e vencimento, a data da primeira cobrança é a referência explícita para o calendário.
 
 ## Segurança
 
