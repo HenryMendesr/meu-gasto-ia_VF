@@ -119,8 +119,21 @@ class AppStorageTests(unittest.TestCase):
         raw = b"<OFX><STMTTRN><DTPOSTED>20261013<TRNAMT>-25.50<NAME>UBER</STMTTRN><STMTTRN><DTPOSTED>20261014<TRNAMT>100.00<NAME>ESTORNO</STMTTRN></OFX>"
         items = statement_import.parse_statement("conta.ofx", raw)
         self.assertEqual("Transporte", items[0]["category"])
-        self.assertTrue(items[0]["selected"])
-        self.assertFalse(items[1]["selected"])
+        self.assertEqual("expense", items[0]["kind"])
+        self.assertEqual("income", items[1]["kind"])
+        self.assertTrue(items[1]["selected"])
+
+    def test_statement_ignores_daily_balance_and_classifies_income(self):
+        raw = b"<OFX><STMTTRN><DTPOSTED>20261013<TRNAMT>2500.00<NAME>SALARIO</STMTTRN><STMTTRN><DTPOSTED>20261013<TRNAMT>4321.10<NAME>SALDO DO DIA</STMTTRN></OFX>"
+        items = statement_import.parse_statement("conta.ofx", raw)
+        self.assertEqual(1, len(items))
+        self.assertEqual("income", items[0]["kind"])
+        self.assertEqual("Salário", items[0]["category"])
+
+    def test_income_entry_is_stored_separately_from_expenses(self):
+        storage.add_income_entry({"date": "2026-10-13", "amount": 2500, "where": "Empresa", "category": "Salário", "description": "Folha"})
+        self.assertEqual([], storage.read_expenses())
+        self.assertEqual("Salário", storage.read_income_entries()[0]["category"])
 
 
 if __name__ == "__main__": unittest.main()

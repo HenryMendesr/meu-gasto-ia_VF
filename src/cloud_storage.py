@@ -45,6 +45,7 @@ def initialize():
             CREATE TABLE IF NOT EXISTS budgets(month VARCHAR(7) NOT NULL,category VARCHAR(40) NOT NULL,amount NUMERIC(14,2) NOT NULL DEFAULT 0,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(month,category));
             CREATE TABLE IF NOT EXISTS app_state(key VARCHAR(80) PRIMARY KEY,value JSONB NOT NULL);
             CREATE TABLE IF NOT EXISTS budget_categories(user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,name VARCHAR(40) NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(user_id,name));
+            CREATE TABLE IF NOT EXISTS income_entries(id BIGSERIAL PRIMARY KEY,entry_date DATE NOT NULL,amount NUMERIC(14,2) NOT NULL CHECK(amount>0),source VARCHAR(100) NOT NULL,category VARCHAR(40) NOT NULL,description VARCHAR(200) NOT NULL DEFAULT '',user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
             ALTER TABLE expenses ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE incomes ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE budgets ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
@@ -163,6 +164,25 @@ def set_income(payload:dict,user_id:int)->dict:
     initialize()
     with connect() as db,db.cursor() as c:c.execute('INSERT INTO incomes(user_id,month,cash,voucher) VALUES(%s,%s,%s,%s) ON CONFLICT(user_id,month) DO UPDATE SET cash=EXCLUDED.cash,voucher=EXCLUDED.voucher,updated_at=NOW()',(user_id,month,cash,voucher));db.commit()
     return {'month':month,'cash':cash,'voucher':voucher}
+
+
+def read_income_entries(user_id:int)->list[dict]:
+    initialize()
+    with connect() as db,db.cursor() as c:c.execute('SELECT id,entry_date,amount,source,category,description FROM income_entries WHERE user_id=%s ORDER BY entry_date,id',(user_id,));rows=c.fetchall()
+    return [{'id':r['id'],'date':r['entry_date'].isoformat(),'amount':round(float(r['amount']),2),'source':r['source'],'category':r['category'],'description':r['description']} for r in rows]
+
+
+def add_income_entry(payload:dict,user_id:int)->dict:
+    categories={'Salário','Pagamento recebido','Transferência recebida','Reembolso','Rendimentos','Outras entradas'}
+    try:entry_date=date.fromisoformat(str(payload['date']));amount=round(float(payload['amount']),2);source=str(payload['where']).strip();category=str(payload['category']).strip();description=str(payload.get('description','')).strip()
+    except (KeyError,TypeError,ValueError) as exc:raise ValueError('Revise os dados da entrada') from exc
+    if amount<=0 or amount>10_000_000 or not source or len(source)>100 or category not in categories or len(description)>200:raise ValueError('Revise os dados da entrada')
+    initialize()
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT id FROM income_entries WHERE user_id=%s AND entry_date=%s AND amount=%s AND lower(source)=lower(%s) AND category=%s LIMIT 1',(user_id,entry_date,amount,source,category));duplicate=c.fetchone()
+        if duplicate:raise DuplicateExpenseError(f"Esta entrada já existe no lançamento {duplicate['id']}")
+        c.execute('INSERT INTO income_entries(user_id,entry_date,amount,source,category,description) VALUES(%s,%s,%s,%s,%s,%s) RETURNING id',(user_id,entry_date,amount,source,category,description));item_id=c.fetchone()['id'];db.commit()
+    return {'id':item_id}
 
 
 def read_budgets(user_id:int)->dict:

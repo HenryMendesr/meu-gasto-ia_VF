@@ -30,7 +30,15 @@ DATE_HEADERS=('data','date','data da compra','data compra','data de lancamento',
 DESC_HEADERS=('descricao','description','titulo','title','estabelecimento','historico','memo','detalhes')
 AMOUNT_HEADERS=('valor','amount','valor da compra','valor compra','total')
 DEBIT_HEADERS=('debito','debit','valor debito')
-SKIP_TERMS=('total da fatura','pagamento recebido','saldo anterior','limite disponivel','vencimento da fatura')
+SKIP_TERMS=('total da fatura','saldo anterior','saldo do dia','saldo diario','saldo atual','saldo em conta','saldo disponivel','saldo final','saldo inicial','saldo bloqueado','vencimento da fatura')
+INCOME_CATEGORIES=('Salário','Pagamento recebido','Transferência recebida','Reembolso','Rendimentos','Outras entradas')
+INCOME_RULES={
+    'Salário':('salario','folha de pagamento','pagamento salario','proventos'),
+    'Pagamento recebido':('pagamento recebido','recebimento','deposito','credito em conta'),
+    'Transferência recebida':('pix recebido','ted recebida','transferencia recebida','doc recebido'),
+    'Reembolso':('reembolso','estorno','devolucao'),
+    'Rendimentos':('rendimento','juros','dividendo','provento'),
+}
 
 
 def plain(value:str)->str:
@@ -65,11 +73,20 @@ def suggestion(description:str)->tuple[str,float]:
     return '',0.0
 
 
+def income_suggestion(description:str)->tuple[str,float]:
+    text=plain(description)
+    for category,terms in INCOME_RULES.items():
+        if any(term in text for term in terms):return category,.94
+    return 'Outras entradas',.45
+
+
 def item(transaction_date:str,description:str,amount:float)->dict|None:
     description=' '.join(description.split()).strip(' -;')[:100]
     if not description or amount==0 or any(term in plain(description) for term in SKIP_TERMS):return None
-    category,confidence=suggestion(description)
-    return {'date':parse_date(transaction_date),'amount':abs(round(amount,2)),'where':description,'category':category,'confidence':confidence,'payment':'Crédito','description':'','selected':amount>0}
+    expense_category,expense_confidence=suggestion(description)
+    income_category,income_confidence=income_suggestion(description)
+    is_income=amount>0 and income_confidence>.5
+    return {'date':parse_date(transaction_date),'amount':abs(round(amount,2)),'where':description,'kind':'income' if is_income else 'expense','category':income_category if is_income else expense_category,'confidence':income_confidence if is_income else expense_confidence,'payment':'Crédito','description':'','selected':True}
 
 
 def _column(fieldnames:list[str],candidates:tuple[str,...])->str|None:
@@ -94,8 +111,6 @@ def parse_csv(raw:bytes)->list[dict]:
         try:parsed=item(row.get(date_col,'') or '',row.get(desc_col,'') or '',parse_amount(row.get(amount_col,'') or ''))
         except (ValueError,TypeError):continue
         if parsed:
-            # Bancos divergem no sinal usado para compras em CSV; a revisão permite desmarcar estornos.
-            parsed['selected']=True
             result.append(parsed)
     return result
 
@@ -111,7 +126,6 @@ def parse_ofx(raw:bytes)->list[dict]:
             description=tag('MEMO') or tag('NAME');parsed=item(transaction_date,description,parse_amount(tag('TRNAMT')))
         except (ValueError,TypeError):continue
         if parsed:
-            parsed['selected']=tag('TRNAMT').strip().startswith('-')
             result.append(parsed)
     return result
 
@@ -148,5 +162,5 @@ def parse_statement(filename:str,raw:bytes)->list[dict]:
     parsers={'csv':parse_csv,'ofx':parse_ofx,'pdf':parse_pdf}
     if suffix not in parsers:raise ValueError('Envie um arquivo CSV, OFX ou PDF')
     result=parsers[suffix](raw)[:MAX_ITEMS]
-    if not result:raise ValueError('Nenhum gasto foi identificado no arquivo')
+    if not result:raise ValueError('Nenhum lançamento foi identificado no arquivo')
     return result

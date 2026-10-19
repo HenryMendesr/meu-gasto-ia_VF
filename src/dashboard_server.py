@@ -148,7 +148,7 @@ class Handler(SimpleHTTPRequestHandler):
             })
             return
         if path == "/api/bootstrap":
-            self.respond(200, {"ok": True, "expenses": read_expenses(), "incomes": read_incomes(), "budgets": read_budgets(), "categories": storage.read_categories(), "portfolio": investments.portfolio()})
+            self.respond(200, {"ok": True, "expenses": read_expenses(), "incomes": read_incomes(), "income_entries": storage.read_income_entries(), "budgets": read_budgets(), "categories": storage.read_categories(), "portfolio": investments.portfolio()})
             return
         if path == "/api/expenses":
             self.respond(200, {"ok": True, "expenses": read_expenses()})

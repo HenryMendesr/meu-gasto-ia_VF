@@ -53,6 +53,15 @@ def initialize() -> None:
                 voucher REAL NOT NULL DEFAULT 0,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS income_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entry_date TEXT NOT NULL,
+                amount REAL NOT NULL CHECK(amount > 0),
+                source TEXT NOT NULL,
+                category TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             CREATE TABLE IF NOT EXISTS budgets (
                 month TEXT NOT NULL,
                 category TEXT NOT NULL,
@@ -179,6 +188,36 @@ def set_income(payload: dict, user_id: int | None = None) -> dict:
             db.execute("INSERT INTO incomes(month,cash,voucher) VALUES(?,?,?) ON CONFLICT(month) DO UPDATE SET cash=excluded.cash,voucher=excluded.voucher,updated_at=CURRENT_TIMESTAMP",
                        (month, cash, voucher))
     return {"month": month, "cash": cash, "voucher": voucher, "backup": backup.name}
+
+
+def read_income_entries(user_id: int | None = None) -> list[dict]:
+    initialize()
+    with connect() as db:
+        rows = db.execute("SELECT id,entry_date,amount,source,category,description FROM income_entries ORDER BY entry_date,id").fetchall()
+    return [{"id": row["id"], "date": row["entry_date"], "amount": round(row["amount"], 2), "source": row["source"], "category": row["category"], "description": row["description"]} for row in rows]
+
+
+def add_income_entry(payload: dict, user_id: int | None = None) -> dict:
+    categories = {"Salário", "Pagamento recebido", "Transferência recebida", "Reembolso", "Rendimentos", "Outras entradas"}
+    try:
+        entry_date = date.fromisoformat(str(payload["date"])).isoformat()
+        amount = round(float(payload["amount"]), 2)
+        source, category = str(payload["where"]).strip(), str(payload["category"]).strip()
+        description = str(payload.get("description", "")).strip()
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Revise os dados da entrada") from exc
+    if amount <= 0 or amount > 10_000_000 or not source or len(source) > 100 or category not in categories or len(description) > 200:
+        raise ValueError("Revise os dados da entrada")
+    initialize()
+    with LOCK:
+        with connect() as db:
+            duplicate = db.execute("SELECT id FROM income_entries WHERE entry_date=? AND amount=? AND lower(source)=lower(?) AND category=? LIMIT 1", (entry_date, amount, source, category)).fetchone()
+            if duplicate:
+                raise DuplicateExpenseError(f"Esta entrada já existe no lançamento {duplicate['id']}")
+        backup = create_backup()
+        with connect() as db:
+            cursor = db.execute("INSERT INTO income_entries(entry_date,amount,source,category,description) VALUES(?,?,?,?,?)", (entry_date, amount, source, category, description))
+    return {"id": cursor.lastrowid, "backup": backup.name}
 
 
 def read_budgets(user_id: int | None = None) -> dict[str, dict[str, float]]:

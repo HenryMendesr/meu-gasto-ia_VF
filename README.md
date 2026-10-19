@@ -51,6 +51,8 @@ O preenchimento por imagem continua disponível na execução local quando o Tes
 
 Na aba **Lançar gasto**, a área **Importar extrato** aceita arquivos CSV, OFX e PDF de até 6 MB e mostra no máximo 500 linhas por vez. O arquivo é processado apenas para gerar uma prévia e não é armazenado. Categorias conhecidas são sugeridas pelo estabelecimento; itens sem correspondência ficam destacados e exigem categoria manual. Comentários, seleção das linhas e categorias podem ser revisados antes da confirmação. Lançamentos duplicados são ignorados durante a importação.
 
+Linhas de saldo, como **saldo do dia**, saldo anterior e saldo disponível, são descartadas. Créditos são separados dos gastos e podem ser classificados como salário, pagamento recebido, transferência recebida, reembolso, rendimentos ou outras entradas. Essas entradas aparecem em um gráfico próprio no dashboard e não consomem limites de gastos.
+
 Como layouts de PDF variam entre bancos, CSV ou OFX oferecem resultados mais precisos. A prévia sempre deve ser conferida antes de salvar.
 
 ## Limites mensais
