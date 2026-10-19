@@ -7,6 +7,10 @@ import json
 from pathlib import Path
 import sqlite3
 from threading import Lock
+try:
+    from src.finance_rules import installment_plan
+except ImportError:
+    from finance_rules import installment_plan
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,12 +49,18 @@ def initialize() -> None:
                 category TEXT NOT NULL,
                 payment TEXT NOT NULL,
                 description TEXT NOT NULL DEFAULT '',
+                installment_group TEXT,
+                installment_number INTEGER,
+                installment_count INTEGER,
+                original_total REAL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS incomes (
                 month TEXT PRIMARY KEY,
                 cash REAL NOT NULL DEFAULT 0,
                 voucher REAL NOT NULL DEFAULT 0,
+                payday INTEGER,
+                source TEXT NOT NULL DEFAULT '',
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS income_entries (
@@ -78,6 +88,14 @@ def initialize() -> None:
                 value TEXT NOT NULL
             );
         """)
+        columns = {row["name"] for row in db.execute("PRAGMA table_info(expenses)").fetchall()}
+        for name, definition in (("installment_group", "TEXT"), ("installment_number", "INTEGER"), ("installment_count", "INTEGER"), ("original_total", "REAL")):
+            if name not in columns:
+                db.execute(f"ALTER TABLE expenses ADD COLUMN {name} {definition}")
+        db.execute("CREATE UNIQUE INDEX IF NOT EXISTS expenses_installment_uidx ON expenses(installment_group,installment_number) WHERE installment_group IS NOT NULL")
+        income_columns = {row["name"] for row in db.execute("PRAGMA table_info(incomes)").fetchall()}
+        if "payday" not in income_columns: db.execute("ALTER TABLE incomes ADD COLUMN payday INTEGER")
+        if "source" not in income_columns: db.execute("ALTER TABLE incomes ADD COLUMN source TEXT NOT NULL DEFAULT ''")
         db.executemany("INSERT OR IGNORE INTO budget_categories(name) VALUES(?)", ((name,) for name in sorted(CATEGORIES)))
         if first_run:
             investment_data = {"version": 1, "updated_at": None, "investments": [], "history": []}
@@ -100,9 +118,11 @@ def create_backup() -> Path:
 def read_expenses(user_id: int | None = None) -> list[dict]:
     initialize()
     with connect() as db:
-        rows = db.execute("SELECT id,expense_date,amount,place,category,payment,description FROM expenses ORDER BY expense_date,id").fetchall()
+        rows = db.execute("SELECT id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total FROM expenses ORDER BY expense_date,id").fetchall()
     return [{"id": row["id"], "row": row["id"], "date": row["expense_date"], "amount": round(row["amount"], 2),
-             "where": row["place"], "category": row["category"], "payment": row["payment"], "description": row["description"]} for row in rows]
+             "where": row["place"], "category": row["category"], "payment": row["payment"], "description": row["description"],
+             "installment_group": row["installment_group"], "installment_number": row["installment_number"],
+             "installment_count": row["installment_count"], "original_total": round(row["original_total"], 2) if row["original_total"] is not None else None} for row in rows]
 
 
 def add_expense(payload: dict, user_id: int | None = None) -> dict:
@@ -121,17 +141,29 @@ def add_expense(payload: dict, user_id: int | None = None) -> dict:
         raise ValueError("Revise o local ou a descrição")
     if category not in set(read_categories()) or payment not in PAYMENTS:
         raise ValueError("Categoria ou pagamento inválido")
+    installments = None
+    if payment == "Crédito" and payload.get("installment") in (True, "true", "yes", "sim", "1"):
+        installments = installment_plan(amount, payload.get("installment_count"), payload.get("first_charge_date") or expense_date, payload.get("installment_amount"))
     initialize()
     with LOCK:
         with connect() as db:
             duplicate = db.execute("SELECT id FROM expenses WHERE expense_date=? AND amount=? AND lower(place)=lower(?) AND category=? AND payment=? AND lower(description)=lower(?) LIMIT 1",
                                    (expense_date, amount, place, category, payment, description)).fetchone()
+            if installments and not duplicate:
+                duplicate = db.execute("SELECT id FROM expenses WHERE installment_number=1 AND expense_date=? AND original_total=? AND lower(place)=lower(?) LIMIT 1", (installments[0]["date"], amount, place)).fetchone()
             if duplicate and payload.get("allow_duplicate") is not True:
                 raise DuplicateExpenseError(f"Este gasto já existe no lançamento {duplicate['id']}")
         backup = create_backup()
         with connect() as db:
-            cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description) VALUES(?,?,?,?,?,?)",
-                                (expense_date, amount, place, category, payment, description))
+            if installments:
+                ids = []
+                for part in installments:
+                    part_description = f"{description} · Parcela {part['number']}/{part['count']}".strip(" ·")
+                    cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                                        (part["date"], part["amount"], place, category, payment, part_description, part["group"], part["number"], part["count"], part["original_total"]))
+                    ids.append(cursor.lastrowid)
+                return {"row": ids[0], "id": ids[0], "ids": ids, "installment_group": installments[0]["group"], "backup": backup.name}
+            cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description) VALUES(?,?,?,?,?,?)", (expense_date, amount, place, category, payment, description))
     return {"row": cursor.lastrowid, "id": cursor.lastrowid, "backup": backup.name}
 
 
@@ -150,18 +182,28 @@ def update_expense(item_id: int, payload: dict, user_id: int | None = None) -> d
     with LOCK:
         backup = create_backup()
         with connect() as db:
-            cursor = db.execute("UPDATE expenses SET expense_date=?,amount=?,place=?,category=?,payment=?,description=? WHERE id=?",
-                                (expense_date, amount, place, category, payment, description, int(item_id)))
+            current = db.execute("SELECT installment_group FROM expenses WHERE id=?", (int(item_id),)).fetchone()
+            if not current:
+                raise KeyError("Gasto não encontrado")
+            if payload.get("scope") == "all" and current["installment_group"]:
+                cursor = db.execute("UPDATE expenses SET amount=?,original_total=?*installment_count,place=?,category=?,payment=?,description=CASE WHEN installment_number IS NOT NULL THEN ? || ' · Parcela ' || installment_number || '/' || installment_count ELSE ? END WHERE installment_group=?",
+                                    (amount, amount, place, category, payment, description, description, current["installment_group"]))
+            else:
+                cursor = db.execute("UPDATE expenses SET expense_date=?,amount=?,place=?,category=?,payment=?,description=? WHERE id=?",
+                                    (expense_date, amount, place, category, payment, description, int(item_id)))
             if not cursor.rowcount:
                 raise KeyError("Gasto não encontrado")
     return {"id": int(item_id), "backup": backup.name}
 
 
-def delete_expense(item_id: int, user_id: int | None = None) -> None:
+def delete_expense(item_id: int, user_id: int | None = None, scope: str = "single") -> None:
     with LOCK:
         create_backup()
         with connect() as db:
-            cursor = db.execute("DELETE FROM expenses WHERE id=?", (int(item_id),))
+            current = db.execute("SELECT installment_group FROM expenses WHERE id=?", (int(item_id),)).fetchone()
+            if not current:
+                raise KeyError("Gasto não encontrado")
+            cursor = db.execute("DELETE FROM expenses WHERE installment_group=?", (current["installment_group"],)) if scope == "all" and current["installment_group"] else db.execute("DELETE FROM expenses WHERE id=?", (int(item_id),))
             if not cursor.rowcount:
                 raise KeyError("Gasto não encontrado")
 
@@ -169,8 +211,8 @@ def delete_expense(item_id: int, user_id: int | None = None) -> None:
 def read_incomes(user_id: int | None = None) -> dict[str, dict[str, float]]:
     initialize()
     with connect() as db:
-        rows = db.execute("SELECT month,cash,voucher FROM incomes").fetchall()
-    return {row["month"]: {"cash": round(row["cash"], 2), "voucher": round(row["voucher"], 2)} for row in rows}
+        rows = db.execute("SELECT month,cash,voucher,payday,source FROM incomes").fetchall()
+    return {row["month"]: {"cash": round(row["cash"], 2), "voucher": round(row["voucher"], 2), "payday": row["payday"], "source": row["source"]} for row in rows}
 
 
 def set_income(payload: dict, user_id: int | None = None) -> dict:
@@ -178,16 +220,20 @@ def set_income(payload: dict, user_id: int | None = None) -> dict:
     try:
         date.fromisoformat(f"{month}-01")
         cash, voucher = round(float(payload.get("cash", 0)), 2), round(float(payload.get("voucher", 0)), 2)
+        payday = int(payload["payday"]) if payload.get("payday") not in (None, "") else None
+        source = str(payload.get("source", "")).strip()
     except (TypeError, ValueError) as exc:
         raise ValueError("Mês ou valores de renda inválidos") from exc
     if min(cash, voucher) < 0 or max(cash, voucher) > 10_000_000:
         raise ValueError("Os valores de renda precisam ser positivos")
+    if payday is not None and not 1 <= payday <= 31 or len(source) > 100:
+        raise ValueError("Revise o dia ou a origem da renda")
     with LOCK:
         backup = create_backup()
         with connect() as db:
-            db.execute("INSERT INTO incomes(month,cash,voucher) VALUES(?,?,?) ON CONFLICT(month) DO UPDATE SET cash=excluded.cash,voucher=excluded.voucher,updated_at=CURRENT_TIMESTAMP",
-                       (month, cash, voucher))
-    return {"month": month, "cash": cash, "voucher": voucher, "backup": backup.name}
+            db.execute("INSERT INTO incomes(month,cash,voucher,payday,source) VALUES(?,?,?,?,?) ON CONFLICT(month) DO UPDATE SET cash=excluded.cash,voucher=excluded.voucher,payday=excluded.payday,source=excluded.source,updated_at=CURRENT_TIMESTAMP",
+                       (month, cash, voucher, payday, source))
+    return {"month": month, "cash": cash, "voucher": voucher, "payday": payday, "source": source, "backup": backup.name}
 
 
 def read_income_entries(user_id: int | None = None) -> list[dict]:

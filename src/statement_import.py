@@ -5,6 +5,7 @@ import csv
 from datetime import date
 from io import BytesIO, StringIO
 import re
+from statistics import median
 import unicodedata
 
 MAX_FILE_SIZE=6_000_000
@@ -29,7 +30,8 @@ CATEGORY_RULES={
 DATE_HEADERS=('data','date','data da compra','data compra','data de lancamento','data lancamento')
 DESC_HEADERS=('descricao','description','titulo','title','estabelecimento','historico','memo','detalhes')
 AMOUNT_HEADERS=('valor','amount','valor da compra','valor compra','total')
-DEBIT_HEADERS=('debito','debit','valor debito')
+DEBIT_HEADERS=('debito','debit','valor debito','saidas','saida')
+CREDIT_HEADERS=('credito','credit','valor credito','entradas','entrada')
 SKIP_TERMS=('total da fatura','saldo anterior','saldo do dia','saldo diario','saldo atual','saldo em conta','saldo disponivel','saldo final','saldo inicial','saldo bloqueado','vencimento da fatura')
 INCOME_CATEGORIES=('Salário','Pagamento recebido','Transferência recebida','Reembolso','Rendimentos','Outras entradas')
 INCOME_RULES={
@@ -39,6 +41,10 @@ INCOME_RULES={
     'Reembolso':('reembolso','estorno','devolucao'),
     'Rendimentos':('rendimento','juros','dividendo','provento'),
 }
+TRANSFER_OWN_TERMS=('entre contas','mesma titularidade','transferencia interna','resgate automatico','aplicacao automatica')
+FEE_TERMS=('tarifa','taxa bancaria','cesta de servicos','anuidade','encargos')
+INTEREST_TERMS=('juros','mora','rotativo','iof')
+REFUND_TERMS=('estorno','reembolso','devolucao','credito compra')
 
 
 def plain(value:str)->str:
@@ -47,23 +53,24 @@ def plain(value:str)->str:
 
 def parse_date(value:str)->str:
     value=value.strip().split('T')[0]
-    for pattern in (r'^(\d{4})-(\d{2})-(\d{2})$',r'^(\d{2})/(\d{2})/(\d{4})$',r'^(\d{2})-(\d{2})-(\d{4})$'):
+    for pattern in (r'^(\d{4})-(\d{2})-(\d{2})$',r'^(\d{2})/(\d{2})/(\d{4})$',r'^(\d{2})-(\d{2})-(\d{4})$',r'^(\d{2})/(\d{2})/(\d{2})$'):
         match=re.match(pattern,value)
         if match:
-            parts=match.groups();iso=value if pattern.startswith('^(\\d{4}') else f'{parts[2]}-{parts[1]}-{parts[0]}'
+            parts=match.groups();year=('20'+parts[2]) if len(parts[2])==2 else parts[2];iso=value if pattern.startswith('^(\\d{4}') else f'{year}-{parts[1]}-{parts[0]}'
             date.fromisoformat(iso)
             return iso
     raise ValueError('Data inválida')
 
 
 def parse_amount(value:str)->float:
+    marker=plain(value)[-1:] if value.strip() else ''
     cleaned=re.sub(r'[^\d,\.\-()]','',value.strip())
     negative=cleaned.startswith('-') or (cleaned.startswith('(') and cleaned.endswith(')'))
     cleaned=cleaned.strip('-()')
     if ',' in cleaned:cleaned=cleaned.replace('.','').replace(',','.')
     elif cleaned.count('.')>1:cleaned=cleaned.replace('.','')
     amount=round(float(cleaned),2)
-    return -amount if negative else amount
+    return -amount if negative or marker=='d' else amount
 
 
 def suggestion(description:str)->tuple[str,float]:
@@ -86,7 +93,55 @@ def item(transaction_date:str,description:str,amount:float)->dict|None:
     expense_category,expense_confidence=suggestion(description)
     income_category,income_confidence=income_suggestion(description)
     is_income=amount>0 and income_confidence>.5
-    return {'date':parse_date(transaction_date),'amount':abs(round(amount,2)),'where':description,'kind':'income' if is_income else 'expense','category':income_category if is_income else expense_category,'confidence':income_confidence if is_income else expense_confidence,'payment':'Crédito','description':'','selected':True}
+    text=plain(description);flags=[]
+    if any(term in text for term in FEE_TERMS):expense_category,expense_confidence='Contas',.9;flags.append('tarifa')
+    if any(term in text for term in INTEREST_TERMS):expense_category,expense_confidence='Contas',.9;flags.append('juros')
+    if any(term in text for term in REFUND_TERMS):income_category,income_confidence,is_income='Reembolso',.94,True;flags.append('estorno/reembolso')
+    installment_match=re.search(r'(?:parc(?:ela)?\s*)?(\d{1,3})\s*(?:/|de)\s*(\d{1,3})',text)
+    installment={"number":int(installment_match.group(1)),"count":int(installment_match.group(2))} if installment_match and int(installment_match.group(2))>1 else None
+    if installment:flags.append('compra parcelada')
+    return {'date':parse_date(transaction_date),'amount':abs(round(amount,2)),'where':description,'kind':'income' if is_income else 'expense','category':income_category if is_income else expense_category,'confidence':income_confidence if is_income else expense_confidence,'payment':'Crédito','description':'','selected':True,'flags':flags,'installment':installment,'needs_review':expense_confidence<.7 if not is_income else income_confidence<.7}
+
+
+def merchant_key(description:str)->str:
+    text=plain(description)
+    text=re.sub(r'\b(?:pix|ted|doc|compra|debito|credito|pagamento|parcela|parc)\b',' ',text)
+    text=re.sub(r'\b\d{1,3}\s*(?:/|de)\s*\d{1,3}\b|\d+',' ',text)
+    return ' '.join(text.split())[:60]
+
+
+def analyze(items:list[dict],existing_expenses:list[dict]|None=None,income_entries:list[dict]|None=None)->dict:
+    existing_expenses=existing_expenses or [];income_entries=income_entries or []
+    existing={(entry['date'],round(float(entry['amount']),2),plain(entry.get('where',''))) for entry in existing_expenses}
+    existing_income={(entry['date'],round(float(entry['amount']),2),plain(entry.get('source',''))) for entry in income_entries}
+    groups={}
+    for entry in items:groups.setdefault(merchant_key(entry['where']),[]).append(entry)
+    for entry in items:
+        text=plain(entry['where']);entry['duplicate']=(entry['date'],entry['amount'],text) in (existing_income if entry['kind']=='income' else existing)
+        if entry['duplicate']:entry['flags'].append('possível duplicidade');entry['needs_review']=True
+        if any(term in text for term in TRANSFER_OWN_TERMS):entry.update(kind='transfer',category='Transferência própria',confidence=.96,selected=False,needs_review=True);entry['flags'].append('transferência própria')
+        peers=groups.get(merchant_key(entry['where']),[]);months={peer['date'][:7] for peer in peers};amounts=[peer['amount'] for peer in peers]
+        if len(months)>=2 and max(amounts)-min(amounts)<=max(1,median(amounts)*.08):
+            entry['recurring']=True;entry['flags'].append('recorrente')
+            if entry['kind']=='expense' and not entry['category']:entry['category']='Assinaturas';entry['confidence']=max(entry['confidence'],.78)
+        else:entry['recurring']=False
+    # Pares de mesmo valor e data próxima são candidatos a transferência entre contas próprias.
+    for index,left in enumerate(items):
+        for right in items[index+1:]:
+            if left['kind']==right['kind'] or abs(left['amount']-right['amount'])>.009:continue
+            if abs((date.fromisoformat(left['date'])-date.fromisoformat(right['date'])).days)>1:continue
+            if any(term in plain(left['where']+' '+right['where']) for term in ('pix','ted','transfer')):
+                for entry in (left,right):entry.update(kind='transfer',category='Transferência própria',selected=False,needs_review=True,confidence=.82);entry['flags'].append('possível transferência própria')
+    salaries=[entry for entry in items if entry['kind']=='income' and entry['category']=='Salário']
+    income_suggestion=None
+    if salaries:
+        values=[entry['amount'] for entry in salaries];days=[int(entry['date'][8:10]) for entry in salaries];origins=[entry['where'] for entry in salaries]
+        typical=round(float(median(values)),2);spread=max(values)-min(values) if len(values)>1 else 0
+        income_suggestion={'day':round(float(median(days))), 'amount':typical, 'source':max(set(origins),key=origins.count),
+                           'varies':spread>max(1,typical*.03),'samples':len(salaries),'confidence':'alta' if len(salaries)>=2 else 'média',
+                           'month':salaries[-1]['date'][:7]}
+    recurring=[{'name':key,'kind':entries[0]['kind'],'amount':round(float(median([entry['amount'] for entry in entries])),2),'months':len({entry['date'][:7] for entry in entries})} for key,entries in groups.items() if len({entry['date'][:7] for entry in entries})>=2]
+    return {'items':items,'income_suggestion':income_suggestion,'recurring':recurring,'review_count':sum(entry['needs_review'] for entry in items),'duplicates':sum(entry['duplicate'] for entry in items),'transfers':sum(entry['kind']=='transfer' for entry in items)}
 
 
 def _column(fieldnames:list[str],candidates:tuple[str,...])->str|None:
@@ -104,11 +159,15 @@ def parse_csv(raw:bytes)->list[dict]:
     except csv.Error:dialect=csv.excel
     reader=csv.DictReader(StringIO(text),dialect=dialect)
     fields=reader.fieldnames or []
-    date_col=_column(fields,DATE_HEADERS);desc_col=_column(fields,DESC_HEADERS);amount_col=_column(fields,AMOUNT_HEADERS) or _column(fields,DEBIT_HEADERS)
-    if not all((date_col,desc_col,amount_col)):raise ValueError('O CSV precisa ter colunas de data, descrição e valor')
+    date_col=_column(fields,DATE_HEADERS);desc_col=_column(fields,DESC_HEADERS);amount_col=_column(fields,AMOUNT_HEADERS);debit_col=_column(fields,DEBIT_HEADERS);credit_col=_column(fields,CREDIT_HEADERS)
+    if not date_col or not desc_col or not (amount_col or debit_col or credit_col):raise ValueError('O CSV precisa ter colunas de data, descrição e valor')
     result=[]
     for row in reader:
-        try:parsed=item(row.get(date_col,'') or '',row.get(desc_col,'') or '',parse_amount(row.get(amount_col,'') or ''))
+        try:
+            if amount_col:amount=parse_amount(row.get(amount_col,'') or '')
+            elif row.get(debit_col or '','').strip():amount=-abs(parse_amount(row.get(debit_col,'') or ''))
+            else:amount=abs(parse_amount(row.get(credit_col or '','') or ''))
+            parsed=item(row.get(date_col,'') or '',row.get(desc_col,'') or '',amount)
         except (ValueError,TypeError):continue
         if parsed:
             result.append(parsed)

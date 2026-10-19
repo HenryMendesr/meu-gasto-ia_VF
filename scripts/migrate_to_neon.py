@@ -28,9 +28,12 @@ def main():
         cloud_storage.add_expense(payload,uid)
     incomes=storage.read_incomes()
     for month,values in incomes.items():cloud_storage.set_income({'month':month,**values},uid)
+    income_entries=storage.read_income_entries()
+    for item in income_entries:cloud_storage.add_income_entry({'date':item['date'],'amount':item['amount'],'where':item['source'],'category':item['category'],'description':item['description']},uid)
+    for category in storage.read_categories():cloud_storage.add_category(category,uid)
     for month,categories in storage.read_budgets().items():
         for category,limit in categories.items():cloud_storage.set_budget({'month':month,'category':category,'limit':limit},uid)
     cloud_storage.save_investments(storage.load_investments(),uid)
-    print(f"Migração concluída para {options.email}: {len(expenses)} gastos, {len(incomes)} meses de renda e {len(storage.load_investments().get('investments',[]))} investimentos.")
+    print(f"Migração concluída para {options.email}: {len(expenses)} gastos, {len(income_entries)} entradas, {len(incomes)} meses de renda e {len(storage.load_investments().get('investments',[]))} investimentos.")
 
 if __name__=='__main__':main()

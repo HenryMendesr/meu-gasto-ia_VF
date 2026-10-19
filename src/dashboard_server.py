@@ -4,6 +4,8 @@ from argparse import ArgumentParser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from http.cookies import SimpleCookie
 from html import escape
+from email import policy
+from email.parser import BytesParser
 import json
 from pathlib import Path
 import re
@@ -14,9 +16,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
-    from src import auth, investments, runtime_storage as storage
+    from src import auth, investments, runtime_storage as storage, statement_import
 except ImportError:  # execução direta: python src/dashboard_server.py
-    import auth, investments, runtime_storage as storage
+    import auth, investments, runtime_storage as storage, statement_import
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -195,15 +197,43 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.require_auth():
             return
-        if path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image"}:
+        if path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
             self.send_error(404)
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            maximum = 12_000_000 if path == "/api/investments/extract-image" else 65_536
+            maximum = statement_import.MAX_FILE_SIZE+200_000 if path == "/api/statements/preview" else 12_000_000 if path == "/api/investments/extract-image" else 2_000_000 if path == "/api/statements/import" else 65_536
             if length <= 0 or length > maximum:
                 raise ValueError("Requisição inválida")
-            payload = json.loads(self.rfile.read(length))
+            raw_body = self.rfile.read(length)
+            if path == "/api/statements/preview":
+                header = f"Content-Type: {self.headers.get('Content-Type','')}\r\nMIME-Version: 1.0\r\n\r\n".encode()
+                message = BytesParser(policy=policy.default).parsebytes(header + raw_body)
+                file_part = next((part for part in message.iter_parts() if part.get_filename()), None)
+                if not file_part: raise ValueError("Escolha um arquivo")
+                items = statement_import.parse_statement(file_part.get_filename() or "", file_part.get_payload(decode=True) or b"")
+                analysis = statement_import.analyze(items, read_expenses(), storage.read_income_entries())
+                self.respond(200, {"ok": True, **analysis, "count": len(items), "needs_review": sum(not item["category"] or item.get("needs_review") for item in items)})
+                return
+            payload = json.loads(raw_body)
+            if path == "/api/statements/import":
+                items=payload.get("items",[])
+                if not isinstance(items,list) or not items or len(items)>statement_import.MAX_ITEMS:raise ValueError("Selecione de 1 a 500 lançamentos")
+                imported=income_imported=skipped=0;errors=[]
+                for position,item in enumerate(items,1):
+                    if not isinstance(item,dict) or item.get("selected") is False or item.get("kind")=="transfer":continue
+                    if not str(item.get("category","")).strip():errors.append({"line":position,"error":"Escolha uma categoria"});continue
+                    entry={"date":item.get("date"),"amount":item.get("amount"),"where":item.get("where"),"category":item.get("category"),"payment":item.get("payment","Crédito"),"description":item.get("description","")}
+                    try:
+                        if item.get("kind")=="income":storage.add_income_entry(entry);income_imported+=1
+                        else:add_expense(entry);imported+=1
+                    except DuplicateExpenseError:skipped+=1
+                    except ValueError as exc:errors.append({"line":position,"error":str(exc)})
+                suggestion=payload.get("income_suggestion") if payload.get("confirm_income_suggestion") is True else None
+                if isinstance(suggestion,dict):
+                    current=read_incomes().get(str(suggestion.get("month","")),{})
+                    set_income({"month":suggestion.get("month"),"cash":suggestion.get("amount"),"voucher":current.get("voucher",0),"payday":suggestion.get("day"),"source":suggestion.get("source","")})
+                rebuild_dashboard();self.respond(200,{"ok":not errors,"imported":imported,"income_imported":income_imported,"skipped":skipped,"income_updated":bool(suggestion),"errors":errors});return
             if path == "/api/incomes":
                 result = set_income(payload)
                 rebuild_dashboard()
@@ -289,7 +319,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         try:
             if investment_match: investments.delete_investment(investment_match.group(1))
-            elif expense_match: storage.delete_expense(int(expense_match.group(1)))
+            elif expense_match: storage.delete_expense(int(expense_match.group(1)),scope=parse_qs(urlparse(self.path).query).get("scope",["single"])[0])
             elif budget_match: storage.delete_budget(budget_match.group(1), unquote(budget_match.group(2)))
             else: storage.delete_category(unquote(category_match.group(1)))
             rebuild_dashboard()

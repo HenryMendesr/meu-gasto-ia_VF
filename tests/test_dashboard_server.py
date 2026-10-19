@@ -28,7 +28,7 @@ class AppStorageTests(unittest.TestCase):
         storage.set_income({"month": "2026-10", "cash": 4200, "voucher": 850})
         storage.set_budget({"month": "2026-10", "category": "Alimentação", "limit": 700})
         self.assertEqual(18.75, storage.read_expenses()[0]["amount"])
-        self.assertEqual({"cash": 4200.0, "voucher": 850.0}, storage.read_incomes()["2026-10"])
+        self.assertEqual({"cash": 4200.0, "voucher": 850.0, "payday": None, "source": ""}, storage.read_incomes()["2026-10"])
         self.assertEqual(700, storage.read_budgets()["2026-10"]["Alimentação"])
         self.assertEqual(result["id"], storage.read_expenses()[0]["id"])
         self.assertGreaterEqual(len(list(storage.BACKUPS.glob("*.db"))), 3)
@@ -38,6 +38,26 @@ class AppStorageTests(unittest.TestCase):
         with self.assertRaises(storage.DuplicateExpenseError): storage.add_expense(self.expense())
         storage.add_expense(self.expense(allow_duplicate=True))
         self.assertEqual(2, len(storage.read_expenses()))
+
+    def test_credit_installments_follow_months_and_preserve_total(self):
+        result = storage.add_expense(self.expense(
+            amount=100, payment="Crédito", installment=True, installment_count=3,
+            installment_amount=33.33, first_charge_date="2026-01-31",
+        ))
+        items = storage.read_expenses()
+        self.assertEqual(3, len(items))
+        self.assertEqual(["2026-01-31", "2026-02-28", "2026-03-31"], [item["date"] for item in items])
+        self.assertEqual(100, round(sum(item["amount"] for item in items), 2))
+        self.assertEqual([1, 2, 3], [item["installment_number"] for item in items])
+        self.assertTrue(result["installment_group"])
+
+    def test_installment_update_and_delete_can_affect_series(self):
+        storage.add_expense(self.expense(amount=90, payment="Crédito", installment=True, installment_count=3, first_charge_date="2026-10-13"))
+        second = storage.read_expenses()[1]
+        storage.update_expense(second["id"], self.expense(amount=31, payment="Crédito", description="Editado", scope="all"))
+        self.assertEqual([31, 31, 31], [item["amount"] for item in storage.read_expenses()])
+        storage.delete_expense(second["id"], scope="all")
+        self.assertEqual([], storage.read_expenses())
 
     def test_rejects_invalid_financial_data(self):
         with self.assertRaises(ValueError): storage.add_expense(self.expense(amount=0))
@@ -129,6 +149,27 @@ class AppStorageTests(unittest.TestCase):
         self.assertEqual(1, len(items))
         self.assertEqual("income", items[0]["kind"])
         self.assertEqual("Salário", items[0]["category"])
+
+    def test_statement_analysis_finds_income_recurring_and_own_transfer(self):
+        items = [
+            statement_import.item("2026-09-05", "SALARIO EMPRESA XPTO", 3000),
+            statement_import.item("2026-10-05", "SALARIO EMPRESA XPTO", 3150),
+            statement_import.item("2026-09-10", "NETFLIX", -39.90),
+            statement_import.item("2026-10-10", "NETFLIX", -39.90),
+            statement_import.item("2026-10-12", "PIX ENTRE CONTAS", -500),
+        ]
+        analysis = statement_import.analyze([item for item in items if item])
+        self.assertEqual(5, analysis["income_suggestion"]["day"])
+        self.assertTrue(analysis["income_suggestion"]["varies"])
+        self.assertTrue(any(item["recurring"] for item in analysis["items"] if "NETFLIX" in item["where"]))
+        transfer = next(item for item in analysis["items"] if "ENTRE CONTAS" in item["where"])
+        self.assertEqual("transfer", transfer["kind"])
+        self.assertFalse(transfer["selected"])
+
+    def test_statement_reads_separate_debit_and_credit_columns(self):
+        raw = "data;descricao;debito;credito\n05/10/26;SALARIO EMPRESA;;3000,00\n06/10/26;MERCADO;120,50;\n".encode()
+        items = statement_import.parse_statement("conta.csv", raw)
+        self.assertEqual(["income", "expense"], [item["kind"] for item in items])
 
     def test_income_entry_is_stored_separately_from_expenses(self):
         storage.add_income_entry({"date": "2026-10-13", "amount": 2500, "where": "Empresa", "category": "Salário", "description": "Folha"})

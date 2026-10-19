@@ -199,7 +199,8 @@ async def preview_statement(request:Request,file:UploadFile=File(...)):
     try:
         raw=await file.read(statement_import.MAX_FILE_SIZE+1)
         items=statement_import.parse_statement(file.filename or '',raw)
-        return {'ok':True,'items':items,'count':len(items),'expenses':sum(item['kind']=='expense' for item in items),'incomes':sum(item['kind']=='income' for item in items),'needs_review':sum(not item['category'] for item in items)}
+        analysis=statement_import.analyze(items,storage.read_expenses(uid),storage.read_income_entries(uid))
+        return {'ok':True,**analysis,'count':len(items),'expenses':sum(item['kind']=='expense' for item in items),'incomes':sum(item['kind']=='income' for item in items),'needs_review':sum(not item['category'] or item.get('needs_review') for item in items)}
     except ValueError as exc:return json_error(400,str(exc))
 
 @fastapi_app.post('/api/statements/import')
@@ -211,7 +212,7 @@ async def import_statement(request:Request):
     if not isinstance(items,list) or not items or len(items)>statement_import.MAX_ITEMS:return json_error(400,'Selecione de 1 a 500 lançamentos')
     imported=income_imported=skipped=0;errors=[]
     for position,item in enumerate(items,1):
-        if not isinstance(item,dict) or item.get('selected') is False:continue
+        if not isinstance(item,dict) or item.get('selected') is False or item.get('kind')=='transfer':continue
         if not str(item.get('category','')).strip():errors.append({'line':position,'error':'Escolha uma categoria'});continue
         entry={'date':item.get('date'),'amount':item.get('amount'),'where':item.get('where'),'category':item.get('category'),'payment':item.get('payment','Crédito'),'description':item.get('description','')}
         try:
@@ -219,7 +220,12 @@ async def import_statement(request:Request):
             else:storage.add_expense(entry,uid);imported+=1
         except storage.DuplicateExpenseError:skipped+=1
         except ValueError as exc:errors.append({'line':position,'error':str(exc)})
-    return {'ok':not errors,'imported':imported,'income_imported':income_imported,'skipped':skipped,'errors':errors}
+    suggestion=payload.get('income_suggestion') if payload.get('confirm_income_suggestion') is True else None
+    if isinstance(suggestion,dict):
+        current=storage.read_incomes(uid).get(str(suggestion.get('month','')), {})
+        try:storage.set_income({'month':suggestion.get('month'),'cash':suggestion.get('amount'),'voucher':current.get('voucher',0),'payday':suggestion.get('day'),'source':suggestion.get('source','')},uid)
+        except ValueError as exc:errors.append({'line':0,'error':str(exc)})
+    return {'ok':not errors,'imported':imported,'income_imported':income_imported,'skipped':skipped,'income_updated':bool(suggestion) and not any(error['line']==0 for error in errors),'errors':errors}
 @fastapi_app.put('/api/investments/{item_id}')
 async def update_investment(item_id:str,request:Request):
     uid=protected(request)
@@ -247,7 +253,7 @@ async def update_expense(item_id:int,request:Request):
 def remove_expense(item_id:int,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    try:storage.delete_expense(item_id,uid);return {'ok':True}
+    try:storage.delete_expense(item_id,uid,request.query_params.get('scope','single'));return {'ok':True}
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
 
 @fastapi_app.delete('/api/budgets/{month}/{category}')
