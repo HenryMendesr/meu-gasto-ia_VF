@@ -53,6 +53,10 @@ Na aba **Lançar gasto**, a área **Importar extrato** aceita arquivos CSV, OFX 
 
 Como layouts de PDF variam entre bancos, CSV ou OFX oferecem resultados mais precisos. A prévia sempre deve ser conferida antes de salvar.
 
+## Limites mensais
+
+A aba **Limites** permite criar categorias personalizadas e definir, editar ou remover o teto de cada categoria por mês. O resumo mostra o limite total, o valor utilizado e o saldo disponível, com alertas em amarelo a partir de 80% e em vermelho ao ultrapassar 100%. O dashboard apresenta o mesmo acompanhamento em barras compactas e os valores são recalculados quando um gasto é criado, editado ou excluído.
+
 ## Segurança
 
 - Banco Neon acessado somente pela API, usando `DATABASE_URL` secreta.

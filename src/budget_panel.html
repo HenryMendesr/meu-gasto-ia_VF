@@ -1,0 +1,11 @@
+  <div id="budgetsPanel" class="panel" hidden>
+    <section class="budget-page">
+      <header class="section-heading"><div><span class="eyebrow">Planejamento mensal</span><h2>Limites de gastos</h2><p>Organize quanto pode gastar e acompanhe cada categoria em tempo real.</p></div><button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria</button></header>
+      <div class="budget-period"><label>Mês de referência<select id="budgetMonth" class="field"></select></label></div>
+      <section class="budget-summary" aria-label="Resumo dos limites"><div><span>Limite total</span><strong id="budgetTotal">R$ 0,00</strong></div><div><span>Já utilizado</span><strong id="budgetUsed">R$ 0,00</strong></div><div><span>Disponível</span><strong id="budgetAvailable">R$ 0,00</strong></div></section>
+      <div id="limitsMessage" class="message" hidden></div>
+      <section class="limits-section"><div class="section-title"><h3>Limites por categoria</h3><span>Toque no valor para editar</span></div><div id="limitsList" class="limits-list"></div></section>
+      <section class="budget-history"><div class="section-title"><h3>Histórico mensal</h3><span>Limite, gasto e saldo</span></div><div id="budgetHistoryList"></div></section>
+    </section>
+    <div id="categoryModal" class="modal" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2>Nova categoria</h2><button id="closeCategoryModal" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="categoryForm" class="entry-grid"><label class="wide">Nome da categoria<input name="name" maxlength="40" placeholder="Ex.: Gasolina" required></label><button class="save" type="submit">Criar categoria</button><div id="categoryMessage" class="message" hidden></div></form></section></div>
+  </div>
