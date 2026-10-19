@@ -10,7 +10,7 @@ import re
 import subprocess
 import sys
 from threading import Timer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
@@ -148,7 +148,7 @@ class Handler(SimpleHTTPRequestHandler):
             })
             return
         if path == "/api/bootstrap":
-            self.respond(200, {"ok": True, "expenses": read_expenses(), "incomes": read_incomes(), "budgets": read_budgets(), "portfolio": investments.portfolio()})
+            self.respond(200, {"ok": True, "expenses": read_expenses(), "incomes": read_incomes(), "budgets": read_budgets(), "categories": storage.read_categories(), "portfolio": investments.portfolio()})
             return
         if path == "/api/expenses":
             self.respond(200, {"ok": True, "expenses": read_expenses()})
@@ -158,6 +158,9 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if path == "/api/budgets":
             self.respond(200, {"ok": True, "budgets": read_budgets()})
+            return
+        if path == "/api/categories":
+            self.respond(200, {"ok": True, "categories": storage.read_categories()})
             return
         if path == "/api/investments":
             self.respond(200, {"ok": True, **investments.portfolio()})
@@ -192,7 +195,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.require_auth():
             return
-        if path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image"}:
+        if path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image"}:
             self.send_error(404)
             return
         try:
@@ -210,6 +213,11 @@ class Handler(SimpleHTTPRequestHandler):
                 result = set_budget(payload)
                 rebuild_dashboard()
                 self.respond(200, {"ok": True, **result})
+                return
+            if path == "/api/categories":
+                name = storage.add_category(payload.get("name", ""))
+                rebuild_dashboard()
+                self.respond(201, {"ok": True, "category": name})
                 return
             if path == "/api/investments":
                 item = investments.create_investment(payload)
@@ -244,8 +252,10 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         path = urlparse(self.path).path
-        match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
-        if not match:
+        investment_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
+        expense_match = re.fullmatch(r"/api/expenses/(\d+)", path)
+        category_match = re.fullmatch(r"/api/categories/(.+)", path)
+        if not investment_match and not expense_match and not category_match:
             self.send_error(404)
             return
         try:
@@ -253,9 +263,9 @@ class Handler(SimpleHTTPRequestHandler):
             if length <= 0 or length > 65_536:
                 raise ValueError("Requisição inválida")
             payload = json.loads(self.rfile.read(length))
-            item = investments.update_investment(match.group(1), payload)
+            item = investments.update_investment(investment_match.group(1), payload) if investment_match else storage.update_expense(int(expense_match.group(1)), payload) if expense_match else storage.rename_category(unquote(category_match.group(1)), payload.get("name", ""))
             rebuild_dashboard()
-            self.respond(200, {"ok": True, "investment": item})
+            self.respond(200, {"ok": True, "investment": item} if investment_match else {"ok": True, **item} if expense_match else {"ok": True, "category": item})
         except KeyError as exc:
             self.respond(404, {"ok": False, "error": str(exc).strip("'")})
         except (ValueError, json.JSONDecodeError) as exc:
@@ -270,12 +280,18 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         path = urlparse(self.path).path
-        match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
-        if not match:
+        investment_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
+        expense_match = re.fullmatch(r"/api/expenses/(\d+)", path)
+        budget_match = re.fullmatch(r"/api/budgets/(\d{4}-\d{2})/(.+)", path)
+        category_match = re.fullmatch(r"/api/categories/(.+)", path)
+        if not any((investment_match, expense_match, budget_match, category_match)):
             self.send_error(404)
             return
         try:
-            investments.delete_investment(match.group(1))
+            if investment_match: investments.delete_investment(investment_match.group(1))
+            elif expense_match: storage.delete_expense(int(expense_match.group(1)))
+            elif budget_match: storage.delete_budget(budget_match.group(1), unquote(budget_match.group(2)))
+            else: storage.delete_category(unquote(category_match.group(1)))
             rebuild_dashboard()
             self.respond(200, {"ok": True})
         except KeyError as exc:

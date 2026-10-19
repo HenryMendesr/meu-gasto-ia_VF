@@ -145,7 +145,7 @@ def bootstrap(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
     user=storage.get_user(uid) if MULTI_USER else {'id':1,'name':'Você','email':''}
-    return {'ok':True,'user':user,'expenses':storage.read_expenses(uid),'incomes':storage.read_incomes(uid),'budgets':storage.read_budgets(uid),'portfolio':investments.portfolio(uid)}
+    return {'ok':True,'user':user,'expenses':storage.read_expenses(uid),'incomes':storage.read_incomes(uid),'budgets':storage.read_budgets(uid),'categories':storage.read_categories(uid),'portfolio':investments.portfolio(uid)}
 @fastapi_app.get('/api/{resource}')
 def read_resource(resource:str,request:Request):
     uid=protected(request)
@@ -153,6 +153,7 @@ def read_resource(resource:str,request:Request):
     if resource=='expenses':return {'ok':True,'expenses':storage.read_expenses(uid)}
     if resource=='incomes':return {'ok':True,'incomes':storage.read_incomes(uid)}
     if resource=='budgets':return {'ok':True,'budgets':storage.read_budgets(uid)}
+    if resource=='categories':return {'ok':True,'categories':storage.read_categories(uid)}
     if resource=='investments':return {'ok':True,**investments.portfolio(uid)}
     return json_error(404,'Rota não encontrada')
 @fastapi_app.post('/api/{resource}')
@@ -164,6 +165,7 @@ async def create_resource(resource:str,request:Request):
         if resource=='expenses':return JSONResponse({'ok':True,**storage.add_expense(payload,uid)},status_code=201)
         if resource=='incomes':return {'ok':True,**storage.set_income(payload,uid)}
         if resource=='budgets':return {'ok':True,**storage.set_budget(payload,uid)}
+        if resource=='categories':return JSONResponse({'ok':True,'category':storage.add_category(payload.get('name',''),uid)},status_code=201)
         if resource=='investments':return JSONResponse({'ok':True,'investment':investments.create_investment(payload,uid)},status_code=201)
         return json_error(404,'Rota não encontrada')
     except storage.DuplicateExpenseError as exc:return JSONResponse({'ok':False,'code':'duplicate','error':str(exc)},status_code=409)
@@ -230,3 +232,40 @@ def remove_investment(item_id:str,request:Request):
     if isinstance(uid,JSONResponse):return uid
     try:investments.delete_investment(item_id,uid);return {'ok':True}
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
+
+@fastapi_app.put('/api/expenses/{item_id}')
+async def update_expense(item_id:int,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**storage.update_expense(item_id,await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except ValueError as exc:return json_error(400,str(exc))
+
+@fastapi_app.delete('/api/expenses/{item_id}')
+def remove_expense(item_id:int,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:storage.delete_expense(item_id,uid);return {'ok':True}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+
+@fastapi_app.delete('/api/budgets/{month}/{category}')
+def remove_budget(month:str,category:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:storage.delete_budget(month,category,uid);return {'ok':True}
+    except ValueError as exc:return json_error(400,str(exc))
+
+@fastapi_app.delete('/api/categories/{category}')
+def remove_category(category:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:storage.delete_category(category,uid);return {'ok':True}
+    except ValueError as exc:return json_error(400,str(exc))
+
+@fastapi_app.put('/api/categories/{category}')
+async def rename_category(category:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,'category':storage.rename_category(category,(await request.json()).get('name',''),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except ValueError as exc:return json_error(400,str(exc))

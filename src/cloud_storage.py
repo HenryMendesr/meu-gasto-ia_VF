@@ -44,6 +44,7 @@ def initialize():
             CREATE TABLE IF NOT EXISTS incomes(month VARCHAR(7) PRIMARY KEY,cash NUMERIC(14,2) NOT NULL DEFAULT 0,voucher NUMERIC(14,2) NOT NULL DEFAULT 0,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
             CREATE TABLE IF NOT EXISTS budgets(month VARCHAR(7) NOT NULL,category VARCHAR(40) NOT NULL,amount NUMERIC(14,2) NOT NULL DEFAULT 0,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(month,category));
             CREATE TABLE IF NOT EXISTS app_state(key VARCHAR(80) PRIMARY KEY,value JSONB NOT NULL);
+            CREATE TABLE IF NOT EXISTS budget_categories(user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,name VARCHAR(40) NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(user_id,name));
             ALTER TABLE expenses ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE incomes ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE budgets ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
@@ -120,13 +121,32 @@ def add_expense(payload:dict,user_id:int)->dict:
     except (KeyError,TypeError,ValueError) as exc:raise ValueError('Preencha data, valor, local, categoria e pagamento') from exc
     if amount<=0 or amount>10_000_000:raise ValueError('O valor deve ser maior que zero')
     if not place or len(place)>100 or len(description)>200:raise ValueError('Revise o local ou a descrição')
-    if category not in CATEGORIES or payment not in PAYMENTS:raise ValueError('Categoria ou pagamento inválido')
+    if category not in set(read_categories(user_id)) or payment not in PAYMENTS:raise ValueError('Categoria ou pagamento inválido')
     initialize()
     with connect() as db,db.cursor() as c:
         c.execute('SELECT id FROM expenses WHERE user_id=%s AND expense_date=%s AND amount=%s AND lower(place)=lower(%s) AND category=%s AND payment=%s AND lower(description)=lower(%s) LIMIT 1',(user_id,expense_date,amount,place,category,payment,description));duplicate=c.fetchone()
         if duplicate and payload.get('allow_duplicate') is not True:raise DuplicateExpenseError(f"Este gasto já existe no lançamento {duplicate['id']}")
         c.execute('INSERT INTO expenses(user_id,expense_date,amount,place,category,payment,description) VALUES(%s,%s,%s,%s,%s,%s,%s) RETURNING id',(user_id,expense_date,amount,place,category,payment,description));item_id=c.fetchone()['id'];db.commit()
     return {'row':item_id,'id':item_id}
+
+
+def update_expense(item_id:int,payload:dict,user_id:int)->dict:
+    try:expense_date=date.fromisoformat(str(payload['date']));amount=round(float(payload['amount']),2);place=str(payload['where']).strip();category=str(payload['category']).strip();payment=str(payload['payment']).strip();description=str(payload.get('description','')).strip()
+    except (KeyError,TypeError,ValueError) as exc:raise ValueError('Preencha data, valor, local, categoria e pagamento') from exc
+    if amount<=0 or amount>10_000_000 or not place or len(place)>100 or len(description)>200:raise ValueError('Revise os dados do gasto')
+    if category not in set(read_categories(user_id)) or payment not in PAYMENTS:raise ValueError('Categoria ou pagamento inválido')
+    with connect() as db,db.cursor() as c:
+        c.execute('UPDATE expenses SET expense_date=%s,amount=%s,place=%s,category=%s,payment=%s,description=%s WHERE id=%s AND user_id=%s',(expense_date,amount,place,category,payment,description,item_id,user_id))
+        if not c.rowcount:raise KeyError('Gasto não encontrado')
+        db.commit()
+    return {'id':item_id}
+
+
+def delete_expense(item_id:int,user_id:int)->None:
+    with connect() as db,db.cursor() as c:
+        c.execute('DELETE FROM expenses WHERE id=%s AND user_id=%s',(item_id,user_id))
+        if not c.rowcount:raise KeyError('Gasto não encontrado')
+        db.commit()
 
 
 def read_incomes(user_id:int)->dict:
@@ -156,10 +176,53 @@ def set_budget(payload:dict,user_id:int)->dict:
     month=str(payload.get('month',''));category=str(payload.get('category','')).strip()
     try:date.fromisoformat(f'{month}-01');amount=round(float(payload.get('limit',0)),2)
     except (TypeError,ValueError) as exc:raise ValueError('Mês ou limite inválido') from exc
-    if category not in CATEGORIES or amount<0 or amount>10_000_000:raise ValueError('Categoria ou limite inválido')
+    if category not in set(read_categories(user_id)) or amount<0 or amount>10_000_000:raise ValueError('Categoria ou limite inválido')
     initialize()
     with connect() as db,db.cursor() as c:c.execute('INSERT INTO budgets(user_id,month,category,amount) VALUES(%s,%s,%s,%s) ON CONFLICT(user_id,month,category) DO UPDATE SET amount=EXCLUDED.amount,updated_at=NOW()',(user_id,month,category,amount));db.commit()
     return {'month':month,'category':category,'limit':amount}
+
+
+def delete_budget(month:str,category:str,user_id:int)->None:
+    date.fromisoformat(f'{month}-01')
+    with connect() as db,db.cursor() as c:c.execute('DELETE FROM budgets WHERE user_id=%s AND month=%s AND category=%s',(user_id,month,category));db.commit()
+
+
+def read_categories(user_id:int)->list[str]:
+    initialize()
+    with connect() as db,db.cursor() as c:
+        c.executemany('INSERT INTO budget_categories(user_id,name) VALUES(%s,%s) ON CONFLICT DO NOTHING',((user_id,name) for name in sorted(CATEGORIES)))
+        c.execute('SELECT name FROM budget_categories WHERE user_id=%s ORDER BY name',(user_id,));rows=c.fetchall();db.commit()
+    return [r['name'] for r in rows]
+
+
+def add_category(name:str,user_id:int)->str:
+    name=str(name).strip()
+    if len(name)<2 or len(name)>40:raise ValueError('Use um nome de categoria entre 2 e 40 caracteres')
+    initialize()
+    with connect() as db,db.cursor() as c:c.execute('INSERT INTO budget_categories(user_id,name) VALUES(%s,%s) ON CONFLICT DO NOTHING',(user_id,name));db.commit()
+    return name
+
+
+def delete_category(name:str,user_id:int)->None:
+    name=str(name).strip()
+    if name in CATEGORIES:raise ValueError('As categorias padrão não podem ser excluídas')
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT 1 FROM expenses WHERE user_id=%s AND category=%s LIMIT 1',(user_id,name))
+        if c.fetchone():raise ValueError('Esta categoria possui gastos e não pode ser excluída')
+        c.execute('DELETE FROM budgets WHERE user_id=%s AND category=%s',(user_id,name));c.execute('DELETE FROM budget_categories WHERE user_id=%s AND name=%s',(user_id,name));db.commit()
+
+
+def rename_category(name:str,new_name:str,user_id:int)->str:
+    name,new_name=str(name).strip(),str(new_name).strip()
+    if name in CATEGORIES:raise ValueError('As categorias padrão não podem ser renomeadas')
+    if len(new_name)<2 or len(new_name)>40:raise ValueError('Use um nome de categoria entre 2 e 40 caracteres')
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT 1 FROM budget_categories WHERE user_id=%s AND name=%s',(user_id,name))
+        if not c.fetchone():raise KeyError('Categoria não encontrada')
+        c.execute('SELECT 1 FROM budget_categories WHERE user_id=%s AND name=%s',(user_id,new_name))
+        if c.fetchone():raise ValueError('Já existe uma categoria com este nome')
+        c.execute('INSERT INTO budget_categories(user_id,name) VALUES(%s,%s) ON CONFLICT DO NOTHING',(user_id,new_name));c.execute('UPDATE expenses SET category=%s WHERE user_id=%s AND category=%s',(new_name,user_id,name));c.execute('UPDATE budgets SET category=%s WHERE user_id=%s AND category=%s',(new_name,user_id,name));c.execute('DELETE FROM budget_categories WHERE user_id=%s AND name=%s',(user_id,name));db.commit()
+    return new_name
 
 
 def load_investments(user_id:int)->dict:

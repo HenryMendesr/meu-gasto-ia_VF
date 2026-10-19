@@ -44,6 +44,29 @@ class AppStorageTests(unittest.TestCase):
         with self.assertRaises(ValueError): storage.set_income({"month": "errado", "cash": 1, "voucher": 0})
         with self.assertRaises(ValueError): storage.set_budget({"month": "2026-10", "category": "Inventada", "limit": 1})
 
+    def test_budget_category_and_expense_changes_recalculate_source_data(self):
+        storage.add_category("Gasolina")
+        self.assertIn("Gasolina", storage.read_categories())
+        storage.set_budget({"month": "2026-10", "category": "Gasolina", "limit": 500})
+        created = storage.add_expense(self.expense(category="Gasolina", amount=320, payment="Crédito"))
+        storage.rename_category("Gasolina", "Combustível")
+        self.assertIn("Combustível", storage.read_categories())
+        storage.update_expense(created["id"], self.expense(category="Combustível", amount=450, payment="Crédito"))
+        month_expenses = [item for item in storage.read_expenses() if item["date"].startswith("2026-10")]
+        self.assertEqual(450, sum(item["amount"] for item in month_expenses if item["category"] == "Combustível"))
+        storage.delete_expense(created["id"])
+        self.assertEqual([], storage.read_expenses())
+        storage.delete_budget("2026-10", "Combustível")
+        self.assertNotIn("Combustível", storage.read_budgets().get("2026-10", {}))
+        storage.delete_category("Combustível")
+        self.assertNotIn("Combustível", storage.read_categories())
+
+    def test_category_with_expenses_cannot_be_deleted(self):
+        storage.add_category("Gasolina")
+        storage.add_expense(self.expense(category="Gasolina"))
+        with self.assertRaises(ValueError):
+            storage.delete_category("Gasolina")
+
     def test_investment_crud_and_calculations(self):
         stock = investments.create_investment({"type": "Ações", "symbol": "PETR4", "quantity": 10, "average_price": 30, "purchase_date": "2026-01-10", "current_price": 35})
         self.assertEqual(350, stock["current_value"])
