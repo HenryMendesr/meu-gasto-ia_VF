@@ -58,7 +58,24 @@
       <details class="focus-panel"><summary><div><span class="eyebrow">Movimentações</span><strong>Categorias e lista de gastos</strong></div><span class="summary-toggle" aria-hidden="true"></span></summary><div class="focus-content"><div class="focus-content-inner"><div class="detail-columns"><section class="flow-section"><div class="section-title"><h3>Gastos em dinheiro</h3></div><div id="bars" class="bars"></div></section><section class="flow-section"><div class="section-title"><h3>Uso do voucher</h3></div><div id="voucherBars" class="bars"></div></section></div><section class="table-card"><div class="table-head"><div><span class="eyebrow">Movimentações</span><h3>Histórico de gastos</h3></div><input id="search" class="field search" placeholder="Buscar gasto..."></div><div class="scroll"><table><thead><tr><th>Data</th><th>Onde</th><th>Categoria</th><th>Pagamento</th><th>Descrição</th><th style="text-align:right">Valor</th><th>Ações</th></tr></thead><tbody id="rows"></tbody></table><div id="empty" class="empty" hidden>Nenhum gasto encontrado.</div></div></section></div></div></details>
     </div>
   </div>
-  <div id="entryPanel" class="panel" hidden><header class="section-heading entry-heading"><div><span class="eyebrow">Movimentações</span><h2>Adicionar ao mês</h2><p>Escolha o jeito mais rápido para você. Tudo pode ser revisado antes de salvar.</p></div><div class="entry-switcher" role="tablist" aria-label="Forma de lançamento"><button class="active" type="button" role="tab" aria-selected="true" data-entry-view="manual"><span>✦</span> Lançamento rápido</button><button type="button" role="tab" aria-selected="false" data-entry-view="statement"><span>⇧</span> Importar extrato</button></div></header><section class="card entry" data-entry-content="manual"><span class="eyebrow">Lançamento manual</span><h2>Novo gasto</h2><div class="sub">Preencha os dados abaixo. O resumo do mês atualiza na hora.</div><form id="expenseForm" class="entry-grid">
+  <div id="entryPanel" class="panel" hidden><header class="section-heading entry-heading"><div><span class="eyebrow">Movimentações</span><h2>Adicionar ao mês</h2><p>Escolha o jeito mais rápido para você. Tudo pode ser revisado antes de salvar.</p></div><div class="entry-switcher" role="tablist" aria-label="Forma de lançamento"><button class="active" type="button" role="tab" aria-selected="true" data-entry-view="manual"><span>✦</span> Lançamento rápido</button><button type="button" role="tab" aria-selected="false" data-entry-view="statement"><span>⇧</span> Importar extrato</button></div></header><section class="card statement-upload" data-entry-content="statement" hidden>
+  <div class="statement-intro"><div class="statement-icon" aria-hidden="true">⇧</div><div><h2>Importar extrato</h2><div class="sub">Envie CSV, OFX ou PDF. Você revisa tudo antes de lançar.</div></div></div>
+  <form id="statementUploadForm" class="statement-upload-form">
+    <label class="statement-file"><span>Escolher extrato</span><input id="statementFile" name="file" type="file" accept=".csv,.ofx,.pdf,text/csv,application/pdf" required></label>
+    <button class="save" type="submit">Analisar extrato</button>
+  </form>
+  <div class="statement-tips"><span>✓ Saldos ignorados</span><span>✓ Entradas e saídas separadas</span><span>✓ Duplicados ignorados</span></div>
+  <div id="statementUploadMessage" class="message" hidden></div>
+</section>
+<section id="statementReview" class="card statement-review" hidden>
+  <div class="statement-review-head"><div><h2>Revise os lançamentos</h2><div id="statementReviewSummary" class="sub"></div></div><button id="cancelStatement" class="secondary" type="button">Cancelar</button></div>
+  <div class="statement-review-note">O saldo do dia é ignorado. Confira se cada linha é uma entrada ou saída e escolha sua categoria.</div>
+  <div id="statementInsights" class="statement-insights" hidden></div>
+  <div id="statementRows" class="statement-rows"></div>
+  <div class="statement-review-actions"><span id="statementSelectedTotal"></span><button id="importStatement" class="save" type="button">Importar selecionados</button></div>
+  <div id="statementImportMessage" class="message" hidden></div>
+</section>
+<section class="card entry" data-entry-content="manual"><span class="eyebrow">Lançamento manual</span><h2>Novo gasto</h2><div class="sub">Preencha os dados abaixo. O resumo do mês atualiza na hora.</div><form id="expenseForm" class="entry-grid">
     <label>Data<input name="date" type="date" required></label><label>Valor (R$)<input name="amount" type="number" min="0.01" step="0.01" placeholder="0,00" required></label>
     <label class="wide">Onde foi gasto<input name="where" maxlength="100" placeholder="Ex.: Posto, mercado, restaurante" required></label>
     <label>Categoria<select name="category" required><option>Alimentação</option><option>Mercado</option><option>Transporte</option><option>Moradia</option><option>Saúde</option><option>Educação</option><option>Lazer</option><option>Compras</option><option>Assinaturas</option><option>Contas</option><option>Viagem</option><option>Presentes</option><option>Outros</option></select></label>

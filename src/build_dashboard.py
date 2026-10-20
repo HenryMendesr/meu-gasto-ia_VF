@@ -177,7 +177,7 @@ html = html.replace(
     1,
 )
 html = html.replace('  <div class="foot">', budget_panel + '\n' + investment_panel + '\n  <button id="quickExpense" class="quick-expense" type="button" aria-label="Lançar novo gasto">＋</button>\n  <div class="foot">', 1)
-html = html.replace('<section class="card entry"><span class="eyebrow">Lançamento manual</span>', statement_panel + '<section class="card entry"><span class="eyebrow">Lançamento manual</span>', 1)
+html = html.replace('<section class="card entry" data-entry-content="manual"><span class="eyebrow">Lançamento manual</span>', statement_panel + '<section class="card entry" data-entry-content="manual"><span class="eyebrow">Lançamento manual</span>', 1)
 safe_investments = json.dumps(initial_investments, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 html = html.replace("let DATA=", f"const INVESTMENT_DATA={safe_investments};\nlet DATA=", 1)
 html = html.replace("</script>", investment_js + "\n" + statement_js + "\n" + budget_js + "\n" + pwa_js + "\n</script>", 1)
