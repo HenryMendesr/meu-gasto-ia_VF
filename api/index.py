@@ -16,6 +16,10 @@ from src import auth, investments, runtime_storage as storage, statement_import
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
 MULTI_USER=bool(os.environ.get('DATABASE_URL'))
+DATABASE_ERRORS=(RuntimeError,)
+if MULTI_USER:
+    import psycopg
+    DATABASE_ERRORS+=(psycopg.Error,)
 _AUTH_ATTEMPTS:dict[str,list[float]]={}
 _AUTH_LOCK=Lock()
 _AUTH_WINDOW_SECONDS=15*60
@@ -99,7 +103,7 @@ def auth_html(*,register:bool=False,error:str='')->HTMLResponse:
 
 def set_session(response:RedirectResponse,user_id:int,persistent:bool=True)->RedirectResponse:
     cookie_options={'max_age':auth.SESSION_SECONDS,'expires':datetime.now(timezone.utc)+timedelta(seconds=auth.SESSION_SECONDS)} if persistent else {}
-    response.set_cookie(auth.COOKIE_NAME,auth.create_session(user_id),httponly=True,secure=True,samesite='strict',path='/',**cookie_options)
+    response.set_cookie(auth.COOKIE_NAME,auth.create_session(user_id),httponly=True,secure=True,samesite='lax',path='/',**cookie_options)
     return response
 
 @fastapi_app.get('/')
@@ -111,7 +115,9 @@ def login(request:Request,password:str=Form(...),email:str=Form(''),remember:str
     key=auth_attempt_key(request,email or 'legacy')
     if auth_is_limited(key):return auth_html(error='Muitas tentativas. Aguarde 15 minutos e tente novamente')
     if MULTI_USER:
-        user=storage.authenticate_user(email,password)
+        try:user=storage.authenticate_user(email,password)
+        except DATABASE_ERRORS:
+            return auth_html(error='Não foi possível conectar ao banco Neon. Confira a DATABASE_URL na Vercel e tente novamente')
         if not user:auth_record_failure(key);return auth_html(error='E-mail ou senha incorretos')
         auth_clear_failures(key)
         return set_session(RedirectResponse('/',303),user['id'],persistent=remember=='1')
@@ -128,6 +134,7 @@ def register(request:Request,name:str=Form(...),email:str=Form(...),password:str
     key=auth_attempt_key(request,'register')
     if auth_is_limited(key):return auth_html(register=True,error='Muitas tentativas. Aguarde 15 minutos e tente novamente')
     try:user=storage.register_user(name,email,password,invitation_code)
+    except DATABASE_ERRORS:return auth_html(register=True,error='Não foi possível conectar ao banco Neon. Confira a DATABASE_URL na Vercel e tente novamente')
     except ValueError as exc:auth_record_failure(key);return auth_html(register=True,error=str(exc))
     auth_clear_failures(key)
     return set_session(RedirectResponse('/',303),user['id'])
@@ -139,7 +146,11 @@ def logout():
 def health(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    return {'ok':True,'service':'minha-carteira','database':True,'expenses':len(storage.read_expenses(uid)),'investments':len(investments.portfolio(uid)['investments'])}
+    try:
+        status=storage.database_status() if MULTI_USER else {'connected':True,'name':'sqlite-local'}
+        return {'ok':True,'service':'minha-carteira','database':status,'expenses':len(storage.read_expenses(uid)),'investments':len(investments.portfolio(uid)['investments'])}
+    except DATABASE_ERRORS:
+        return JSONResponse({'ok':False,'service':'minha-carteira','database':{'connected':False},'error':'Não foi possível conectar ao banco Neon'},status_code=503,headers={'Cache-Control':'no-store'})
 @fastapi_app.get('/api/bootstrap')
 def bootstrap(request:Request):
     uid=protected(request)

@@ -36,9 +36,14 @@ class WebSecurityTests(unittest.TestCase):
         self.assertEqual(303, response.status_code)
         self.assertIn("HttpOnly", cookie)
         self.assertIn("Secure", cookie)
-        self.assertIn("SameSite=strict", cookie)
+        self.assertIn("SameSite=lax", cookie)
         self.assertIn("Max-Age=2592000", cookie)
         self.assertIn("expires=", cookie.lower())
+
+        self.client.cookies.update(response.cookies)
+        with patch("api.index.auth.session_user", return_value=1):
+            reopened = self.client.get("/", follow_redirects=False)
+        self.assertEqual(200, reopened.status_code)
 
     def test_login_form_supports_password_managers(self):
         response = self.client.get("/login")

@@ -10,6 +10,7 @@ import os
 import re
 import secrets
 from threading import Lock
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 try:
     from src.finance_rules import installment_plan
 except ImportError:
@@ -28,11 +29,30 @@ EMPTY_INVESTMENTS={"version":1,"updated_at":None,"investments":[],"history":[]}
 class DuplicateExpenseError(ValueError): pass
 
 
-def connect():
-    url=os.environ.get("DATABASE_URL")
-    if not url: raise RuntimeError("DATABASE_URL não configurada")
+def database_url()->str:
+    """Normaliza a conexão copiada do Neon sem expor suas credenciais."""
+    url=(os.environ.get("DATABASE_URL") or "").strip().strip('"').strip("'")
+    if url.startswith("psql "):
+        url=url[5:].strip().strip('"').strip("'")
     url=url.replace("postgresql+psycopg://","postgresql://",1).replace("postgresql+psycopg2://","postgresql://",1)
-    return psycopg.connect(url,row_factory=dict_row,autocommit=False)
+    if url.startswith("postgres://"):url="postgresql://"+url[len("postgres://"):]
+    parsed=urlsplit(url)
+    if parsed.scheme!="postgresql" or not parsed.hostname:raise RuntimeError("DATABASE_URL inválida ou não configurada")
+    query=dict(parse_qsl(parsed.query,keep_blank_values=True))
+    query.setdefault("sslmode","require")
+    query.setdefault("connect_timeout","8")
+    return urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(query),parsed.fragment))
+
+
+def connect():
+    return psycopg.connect(database_url(),row_factory=dict_row,autocommit=False,application_name="minha-carteira")
+
+
+def database_status()->dict:
+    with connect() as db,db.cursor() as c:
+        c.execute("SELECT current_database() AS name, 1 AS ready")
+        row=c.fetchone()
+    return {"connected":row["ready"]==1,"name":row["name"]}
 
 
 def initialize():
