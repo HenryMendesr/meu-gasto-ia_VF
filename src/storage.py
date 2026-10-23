@@ -8,9 +8,9 @@ from pathlib import Path
 import sqlite3
 from threading import Lock
 try:
-    from src.finance_rules import installment_plan
+    from src.finance_rules import installment_plan, expense_finance
 except ImportError:
-    from finance_rules import installment_plan
+    from finance_rules import installment_plan, expense_finance
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,7 +89,7 @@ def initialize() -> None:
             );
         """)
         columns = {row["name"] for row in db.execute("PRAGMA table_info(expenses)").fetchall()}
-        for name, definition in (("installment_group", "TEXT"), ("installment_number", "INTEGER"), ("installment_count", "INTEGER"), ("original_total", "REAL")):
+        for name, definition in (("installment_group", "TEXT"), ("installment_number", "INTEGER"), ("installment_count", "INTEGER"), ("original_total", "REAL"), ("finance_details", "TEXT NOT NULL DEFAULT '{}'")):
             if name not in columns:
                 db.execute(f"ALTER TABLE expenses ADD COLUMN {name} {definition}")
         db.execute("CREATE UNIQUE INDEX IF NOT EXISTS expenses_installment_uidx ON expenses(installment_group,installment_number) WHERE installment_group IS NOT NULL")
@@ -118,10 +118,10 @@ def create_backup() -> Path:
 def read_expenses(user_id: int | None = None) -> list[dict]:
     initialize()
     with connect() as db:
-        rows = db.execute("SELECT id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total FROM expenses ORDER BY expense_date,id").fetchall()
+        rows = db.execute("SELECT id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total,finance_details FROM expenses ORDER BY expense_date,id").fetchall()
     return [{"id": row["id"], "row": row["id"], "date": row["expense_date"], "amount": round(row["amount"], 2),
              "where": row["place"], "category": row["category"], "payment": row["payment"], "description": row["description"],
-             "installment_group": row["installment_group"], "installment_number": row["installment_number"],
+             "finance": json.loads(row["finance_details"]), "installment_group": row["installment_group"], "installment_number": row["installment_number"],
              "installment_count": row["installment_count"], "original_total": round(row["original_total"], 2) if row["original_total"] is not None else None} for row in rows]
 
 
@@ -141,9 +141,7 @@ def add_expense(payload: dict, user_id: int | None = None) -> dict:
         raise ValueError("Revise o local ou a descrição")
     if category not in set(read_categories()) or payment not in PAYMENTS:
         raise ValueError("Categoria ou pagamento inválido")
-    installments = None
-    if payment == "Crédito" and payload.get("installment") in (True, "true", "yes", "sim", "1"):
-        installments = installment_plan(amount, payload.get("installment_count"), payload.get("first_charge_date") or expense_date, payload.get("installment_amount"))
+    expense_date, installments, finance = expense_finance(payload, expense_date, payment)
     initialize()
     with LOCK:
         with connect() as db:
@@ -159,11 +157,11 @@ def add_expense(payload: dict, user_id: int | None = None) -> dict:
                 ids = []
                 for part in installments:
                     part_description = f"{description} · Parcela {part['number']}/{part['count']}".strip(" ·")
-                    cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                                        (part["date"], part["amount"], place, category, payment, part_description, part["group"], part["number"], part["count"], part["original_total"]))
+                    cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total,finance_details) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                                        (part["date"], part["amount"], place, category, payment, part_description, part["group"], part["number"], part["count"], part["original_total"], json.dumps({**finance, **({"principal_part": part["amortization"], "interest_part": part["interest"], "balance_after": part["balance_after"]} if finance.get("debt_entry") else {})})))
                     ids.append(cursor.lastrowid)
                 return {"row": ids[0], "id": ids[0], "ids": ids, "installment_group": installments[0]["group"], "backup": backup.name}
-            cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description) VALUES(?,?,?,?,?,?)", (expense_date, amount, place, category, payment, description))
+            cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description,finance_details) VALUES(?,?,?,?,?,?,?)", (expense_date, amount, place, category, payment, description, json.dumps(finance)))
     return {"row": cursor.lastrowid, "id": cursor.lastrowid, "backup": backup.name}
 
 
@@ -179,6 +177,7 @@ def update_expense(item_id: int, payload: dict, user_id: int | None = None) -> d
         raise ValueError("Revise os dados do gasto")
     if category not in set(read_categories()) or payment not in PAYMENTS:
         raise ValueError("Categoria ou pagamento inválido")
+    expense_date, _, finance = expense_finance({**payload, "installment": False}, expense_date, payment)
     with LOCK:
         backup = create_backup()
         with connect() as db:
@@ -189,8 +188,8 @@ def update_expense(item_id: int, payload: dict, user_id: int | None = None) -> d
                 cursor = db.execute("UPDATE expenses SET amount=?,original_total=?*installment_count,place=?,category=?,payment=?,description=CASE WHEN installment_number IS NOT NULL THEN ? || ' · Parcela ' || installment_number || '/' || installment_count ELSE ? END WHERE installment_group=?",
                                     (amount, amount, place, category, payment, description, description, current["installment_group"]))
             else:
-                cursor = db.execute("UPDATE expenses SET expense_date=?,amount=?,place=?,category=?,payment=?,description=? WHERE id=?",
-                                    (expense_date, amount, place, category, payment, description, int(item_id)))
+                cursor = db.execute("UPDATE expenses SET expense_date=?,amount=?,place=?,category=?,payment=?,description=?,finance_details=CASE WHEN installment_group IS NULL THEN ? ELSE finance_details END WHERE id=?",
+                                    (expense_date, amount, place, category, payment, description, json.dumps(finance), int(item_id)))
             if not cursor.rowcount:
                 raise KeyError("Gasto não encontrado")
     return {"id": int(item_id), "backup": backup.name}

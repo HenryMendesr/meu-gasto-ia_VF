@@ -12,9 +12,9 @@ import secrets
 from threading import Lock
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 try:
-    from src.finance_rules import installment_plan
+    from src.finance_rules import installment_plan, expense_finance
 except ImportError:
-    from finance_rules import installment_plan
+    from finance_rules import installment_plan, expense_finance
 
 import psycopg
 from psycopg.rows import dict_row
@@ -75,6 +75,7 @@ def initialize():
             ALTER TABLE expenses ADD COLUMN IF NOT EXISTS installment_number INTEGER;
             ALTER TABLE expenses ADD COLUMN IF NOT EXISTS installment_count INTEGER;
             ALTER TABLE expenses ADD COLUMN IF NOT EXISTS original_total NUMERIC(14,2);
+            ALTER TABLE expenses ADD COLUMN IF NOT EXISTS finance_details TEXT NOT NULL DEFAULT '{}';
             ALTER TABLE incomes ADD COLUMN IF NOT EXISTS user_id BIGINT REFERENCES users(id) ON DELETE CASCADE;
             ALTER TABLE incomes ADD COLUMN IF NOT EXISTS payday INTEGER;
             ALTER TABLE incomes ADD COLUMN IF NOT EXISTS source VARCHAR(100) NOT NULL DEFAULT '';
@@ -144,8 +145,8 @@ def get_user(user_id:int)->dict|None:
 
 def read_expenses(user_id:int)->list[dict]:
     initialize()
-    with connect() as db,db.cursor() as c:c.execute('SELECT id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total FROM expenses WHERE user_id=%s ORDER BY expense_date,id',(user_id,));rows=c.fetchall()
-    return [{'id':r['id'],'row':r['id'],'date':r['expense_date'].isoformat(),'amount':round(float(r['amount']),2),'where':r['place'],'category':r['category'],'payment':r['payment'],'description':r['description'],'installment_group':r['installment_group'],'installment_number':r['installment_number'],'installment_count':r['installment_count'],'original_total':round(float(r['original_total']),2) if r['original_total'] is not None else None} for r in rows]
+    with connect() as db,db.cursor() as c:c.execute('SELECT id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total,finance_details FROM expenses WHERE user_id=%s ORDER BY expense_date,id',(user_id,));rows=c.fetchall()
+    return [{'id':r['id'],'row':r['id'],'date':r['expense_date'].isoformat(),'amount':round(float(r['amount']),2),'where':r['place'],'category':r['category'],'payment':r['payment'],'description':r['description'],'finance':json.loads(r['finance_details']),'installment_group':r['installment_group'],'installment_number':r['installment_number'],'installment_count':r['installment_count'],'original_total':round(float(r['original_total']),2) if r['original_total'] is not None else None} for r in rows]
 
 
 def add_expense(payload:dict,user_id:int)->dict:
@@ -154,7 +155,7 @@ def add_expense(payload:dict,user_id:int)->dict:
     if amount<=0 or amount>10_000_000:raise ValueError('O valor deve ser maior que zero')
     if not place or len(place)>100 or len(description)>200:raise ValueError('Revise o local ou a descrição')
     if category not in set(read_categories(user_id)) or payment not in PAYMENTS:raise ValueError('Categoria ou pagamento inválido')
-    installments=installment_plan(amount,payload.get('installment_count'),payload.get('first_charge_date') or expense_date,payload.get('installment_amount')) if payment=='Crédito' and payload.get('installment') in (True,'true','yes','sim','1') else None
+    expense_date,installments,finance=expense_finance(payload,expense_date,payment)
     initialize()
     with connect() as db,db.cursor() as c:
         c.execute('SELECT id FROM expenses WHERE user_id=%s AND expense_date=%s AND amount=%s AND lower(place)=lower(%s) AND category=%s AND payment=%s AND lower(description)=lower(%s) LIMIT 1',(user_id,expense_date,amount,place,category,payment,description));duplicate=c.fetchone()
@@ -164,9 +165,9 @@ def add_expense(payload:dict,user_id:int)->dict:
             ids=[]
             for part in installments:
                 part_description=f"{description} · Parcela {part['number']}/{part['count']}".strip(' ·')
-                c.execute('INSERT INTO expenses(user_id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id',(user_id,part['date'],part['amount'],place,category,payment,part_description,part['group'],part['number'],part['count'],part['original_total']));ids.append(c.fetchone()['id'])
+                c.execute('INSERT INTO expenses(user_id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total,finance_details) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id',(user_id,part['date'],part['amount'],place,category,payment,part_description,part['group'],part['number'],part['count'],part['original_total'],json.dumps({**finance, **({"principal_part":part["amortization"],"interest_part":part["interest"],"balance_after":part["balance_after"]} if finance.get("debt_entry") else {})})));ids.append(c.fetchone()['id'])
             db.commit();return {'row':ids[0],'id':ids[0],'ids':ids,'installment_group':installments[0]['group']}
-        c.execute('INSERT INTO expenses(user_id,expense_date,amount,place,category,payment,description) VALUES(%s,%s,%s,%s,%s,%s,%s) RETURNING id',(user_id,expense_date,amount,place,category,payment,description));item_id=c.fetchone()['id'];db.commit()
+        c.execute('INSERT INTO expenses(user_id,expense_date,amount,place,category,payment,description,finance_details) VALUES(%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id',(user_id,expense_date,amount,place,category,payment,description,json.dumps(finance)));item_id=c.fetchone()['id'];db.commit()
     return {'row':item_id,'id':item_id}
 
 
@@ -175,12 +176,13 @@ def update_expense(item_id:int,payload:dict,user_id:int)->dict:
     except (KeyError,TypeError,ValueError) as exc:raise ValueError('Preencha data, valor, local, categoria e pagamento') from exc
     if amount<=0 or amount>10_000_000 or not place or len(place)>100 or len(description)>200:raise ValueError('Revise os dados do gasto')
     if category not in set(read_categories(user_id)) or payment not in PAYMENTS:raise ValueError('Categoria ou pagamento inválido')
+    expense_date,_,finance=expense_finance({**payload,"installment":False},expense_date,payment)
     with connect() as db,db.cursor() as c:
         c.execute('SELECT installment_group FROM expenses WHERE id=%s AND user_id=%s',(item_id,user_id));current=c.fetchone()
         if not current:raise KeyError('Gasto não encontrado')
         if payload.get('scope')=='all' and current['installment_group']:
             c.execute("UPDATE expenses SET amount=%s,original_total=%s*installment_count,place=%s,category=%s,payment=%s,description=%s || ' · Parcela ' || installment_number || '/' || installment_count WHERE user_id=%s AND installment_group=%s",(amount,amount,place,category,payment,description,user_id,current['installment_group']))
-        else:c.execute('UPDATE expenses SET expense_date=%s,amount=%s,place=%s,category=%s,payment=%s,description=%s WHERE id=%s AND user_id=%s',(expense_date,amount,place,category,payment,description,item_id,user_id))
+        else:c.execute('UPDATE expenses SET expense_date=%s,amount=%s,place=%s,category=%s,payment=%s,description=%s,finance_details=CASE WHEN installment_group IS NULL THEN %s ELSE finance_details END WHERE id=%s AND user_id=%s',(expense_date,amount,place,category,payment,description,json.dumps(finance),item_id,user_id))
         if not c.rowcount:raise KeyError('Gasto não encontrado')
         db.commit()
     return {'id':item_id}

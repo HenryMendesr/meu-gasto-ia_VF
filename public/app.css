@@ -67,3 +67,6 @@ body:not(.auth-page){width:100%;min-width:0}.shell{width:100%;max-width:none;mar
 
 /* Assinatura visual e respostas de interação */
 .tab{transition:color .18s ease,background .18s ease,transform .18s ease}.tab:hover{color:var(--green);transform:translateY(-1px)}.tab.active{color:#fff}.tab.active::after{display:none}.save,.install-button,.secondary{transition:transform .18s ease,background-color .18s ease,border-color .18s ease}.save:hover,.install-button:hover{transform:translateY(-1px);background:#075f47}.secondary:hover{border-color:#aebbb5;background:rgba(255,255,255,.55)}.focus-panel>summary:hover{background:rgba(255,255,255,.4)}
+
+/* Parcelamento, estimativas de amortização e compromissos agendados. */
+.entry-grid>.wide{grid-column:1/-1}.installment-preview{display:grid;gap:8px;grid-column:1/-1;line-height:1.5}.installment-preview small,.debt-estimate small,#scheduleOptions small{color:var(--muted);font-size:11px;font-weight:400}.schedule-toggle{display:flex!important;align-items:center;gap:10px!important}.schedule-toggle input{width:20px;height:20px}.debt-estimates{display:grid;gap:12px;margin-top:16px}.debt-estimate{display:grid;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#f4faf7;font-size:12px}#scheduleDateField{margin:12px 0}#scheduleDateField[hidden]{display:none}

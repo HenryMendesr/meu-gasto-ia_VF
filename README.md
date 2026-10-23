@@ -63,7 +63,23 @@ A aba **Limites** permite criar categorias personalizadas e definir, editar ou r
 
 ## Compras parceladas
 
-Ao escolher **Crédito**, o lançamento pode ser dividido em até 120 parcelas. O sistema calcula os centavos, permite ajustar o valor regular, coloca a diferença na última parcela e distribui as cobranças a partir da data informada. As parcelas pertencem a um grupo, aparecem nos meses futuros e podem ser editadas ou excluídas individualmente ou em conjunto. Como ainda não há cadastro de cartões, fechamento e vencimento, a data da primeira cobrança é a referência explícita para o calendário.
+Ao escolher **Crédito**, o lançamento pode ser dividido em até 120 parcelas. Empréstimos, dívidas e financiamentos possuem cadastro próprio na aba **Dívidas**, inclusive quando a cobrança ocorre por Pix ou transferência. Informe o valor financiado **sem juros**, a taxa **mensal** (zero para compras sem juros), a quantidade e a primeira cobrança. O app calcula parcelas fixas pela Tabela Price, separa juros e amortização e ajusta os centavos na última cobrança. A taxa aceita vírgula ou ponto.
+
+Alterar a quantidade recalcula o valor da parcela; alterar o valor recalcula a quantidade. Apagar um dos campos o preenche novamente usando o outro. Parcelas que não cobrem os juros ou exigem mais de 120 meses são rejeitadas. Os campos de gasto e parcela usam máscara monetária com duas casas: digitar `12345` mostra `123,45`.
+
+A prévia mostra quanto reservar para antecipar a última parcela ou quitar todas, com o desconto dos juros futuros. As dívidas salvas aparecem em **Detalhes financeiros**, com estimativas para as parcelas futuras a partir da data atual. O desconto usa meses de 30,4375 dias; são estimativas sem tarifas, seguros ou parcelas vencidas e precisam ser confirmadas com o credor. O app não executa amortizações no banco.
+
+As parcelas pertencem a um grupo, aparecem nos meses futuros e podem ser editadas ou excluídas individualmente ou em conjunto. A primeira cobrança define o calendário, pois ainda não há cadastro de fechamento e vencimento de cartões. Alterar uma parcela salva ajusta o compromisso registrado; não renegocia a dívida.
+
+## Empréstimos, dívidas e financiamentos
+
+A aba **Dívidas** cadastra empréstimos (pessoal, consignado e com garantia), dívidas (cartão, cheque especial, contas em atraso e renegociações) e financiamento de imóveis, veículos ou outros bens. Os campos incluem credor, saldo a pagar, juros mensais, prazo de 1 a 600 parcelas, primeiro vencimento, data do contrato, categoria e forma de pagamento. No financiamento, o valor do bem menos a entrada já paga define o principal; a entrada não gera um novo gasto. Price usa parcelas fixas e SAC usa amortização constante com parcelas decrescentes.
+
+Ao salvar, o app gera os gastos de cada parcela nos meses de vencimento, preserva a separação entre principal e juros e atualiza os gráficos. A aba mostra a curva do saldo devedor projetado, barras mensais de principal e juros, resumo dos valores, filtro por contrato e tabela com todos os vencimentos. Os dados antigos de empréstimos e financiamentos também aparecem na aba. Os gráficos são projeções pelo calendário e não comprovam pagamentos. Excluir um compromisso na aba remove todas as suas parcelas.
+
+## Agendamento de Pix e transferência
+
+Selecione **Agendar Pix ou transferência** e informe a data prevista. O gasto fica salvo nessa data, identificado como **Agendado no app**, e pode ser editado ou excluído. Esse registro serve ao planejamento financeiro: o pagamento precisa ser agendado no banco. O agendamento simples não se aplica simultaneamente a um parcelamento, que já possui seu próprio calendário.
 
 ## Segurança
 

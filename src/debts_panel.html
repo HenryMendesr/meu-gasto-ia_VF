@@ -1,0 +1,38 @@
+  <div id="debtsPanel" class="panel" hidden>
+    <header class="section-heading"><div><span class="eyebrow">Seus compromissos</span><h2>Empréstimos, dívidas e financiamentos</h2><p>Cadastre uma vez. Veja as parcelas no calendário e a projeção da dívida até a quitação.</p></div><button type="button" class="secondary" id="newDebtButton">＋ Novo compromisso</button></header>
+    <section class="debt-totals" aria-label="Resumo dos contratos"><div><small>Principal cadastrado</small><strong id="debtPrincipalTotal">R$ 0,00</strong></div><div><small>Juros previstos</small><strong id="debtInterestTotal">R$ 0,00</strong></div><div><small>Total das parcelas</small><strong id="debtPaymentsTotal">R$ 0,00</strong></div></section>
+    <div class="debt-layout">
+      <section class="debt-form-card"><h3 id="debtFormTitle">Novo compromisso</h3><p>Use o saldo que ainda precisa pagar. Parcelas anteriores já pagas ficam fora deste cadastro.</p>
+        <form id="debtForm" class="debt-form">
+          <label>Compromisso<select name="financing_kind" required><option value="loan">Empréstimo</option><option value="debt">Dívida</option><option value="asset">Financiamento de bem</option></select></label>
+          <label><span id="debtTypeLabel">Tipo de empréstimo</span><select name="debt_type" required></select></label>
+          <label class="debt-wide"><span id="debtCreditorLabel">Banco / credor</span><input name="where" maxlength="100" placeholder="Ex.: Banco ou pessoa" required></label>
+          <label class="debt-asset debt-wide" hidden>Bem financiado<input name="asset_name" maxlength="100" placeholder="Ex.: Carro, apartamento"></label>
+          <label class="debt-asset" hidden>Valor do bem (R$)<input name="asset_value" type="text" inputmode="decimal" data-money placeholder="0,00" maxlength="18"></label>
+          <label class="debt-asset" hidden>Entrada já paga (R$)<input name="down_payment" type="text" inputmode="decimal" data-money placeholder="0,00" maxlength="18"></label>
+          <label><span id="debtAmountLabel">Valor emprestado / saldo atual (R$)</span><input name="amount" type="text" inputmode="decimal" data-money placeholder="0,00" maxlength="18" required></label>
+          <label>Juros ao mês (%)<input name="interest_rate" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" value="0" maxlength="10" required></label>
+          <label>Parcelas a pagar<input name="installment_count" type="number" min="1" max="600" value="12" required></label>
+          <label>Primeiro vencimento<input name="first_charge_date" type="date" required></label>
+          <label>Data do contrato / acordo<input name="date" type="date" required></label>
+          <label>Sistema de amortização<select name="amortization_system"><option value="price">Price — parcelas fixas</option><option value="sac">SAC — parcelas decrescentes</option></select></label>
+          <label>Pagamento<select name="payment"><option>Transferência</option><option>Pix</option><option>Débito</option><option>Crédito</option><option>Dinheiro</option></select></label>
+          <label>Categoria<select name="category" required></select></label>
+          <label class="debt-wide">Observações (opcional)<input name="description" maxlength="160" placeholder="Ex.: Contrato renegociado em outubro"></label>
+          <div id="debtPreview" class="debt-preview debt-wide" aria-live="polite">Preencha o valor para ver a simulação.</div>
+          <p class="debt-wide debt-form-help">Valores com centavos automáticos: 12345 → 123,45. Use a taxa mensal do contrato, incluindo os custos financiados no saldo. Price mantém as parcelas; SAC reduz as parcelas com o tempo. A entrada já paga não gera outro gasto.</p>
+          <button type="submit" class="save debt-wide">Salvar e gerar parcelas</button><div id="debtFormMessage" class="message debt-wide" hidden></div>
+        </form>
+      </section>
+      <section class="debt-analysis"><div class="detail-heading"><div><span class="eyebrow">Projeção dos contratos</span><h3>Seu caminho até quitar</h3></div></div><label class="debt-chart-filter">Exibir contrato<select id="debtChartFilter"><option value="">Todos os compromissos</option></select></label>
+        <div id="debtChartEmpty" class="empty">Cadastre um compromisso para gerar os gráficos automaticamente.</div>
+        <div id="debtChartContent" hidden>
+          <h4>Saldo devedor projetado</h4><div id="debtBalanceChart" class="debt-chart"></div>
+          <h4>Parcelas por mês</h4><div class="debt-legend"><span><i></i> Amortização do principal</span><span><i></i> Juros</span></div><div id="debtPaymentChart" class="debt-chart debt-bars"></div>
+          <p class="debt-chart-note">Projeção considerando cada parcela paga no vencimento. Não confirma pagamentos nem inclui multas, tarifas ou seguros adicionais. Confira os valores com o credor.</p>
+          <details class="debt-schedule"><summary>Conferir calendário e valores</summary><div class="scroll"><table><thead><tr><th>Vencimento</th><th>Credor</th><th>Principal</th><th>Juros</th><th>Parcela</th></tr></thead><tbody id="debtScheduleRows"></tbody></table></div></details>
+        </div>
+      </section>
+    </div>
+    <section class="debt-contracts"><div class="section-title"><h3>Compromissos cadastrados</h3><span id="debtContractCount"></span></div><div id="debtContractList"></div></section>
+  </div>

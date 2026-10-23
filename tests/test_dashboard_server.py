@@ -51,6 +51,51 @@ class AppStorageTests(unittest.TestCase):
         self.assertEqual([1, 2, 3], [item["installment_number"] for item in items])
         self.assertTrue(result["installment_group"])
 
+    def test_financed_loan_preserves_rate_and_includes_interest(self):
+        storage.add_expense(self.expense(amount=1000, payment="Transferência", financing_kind="loan",
+                            installment=True, installment_count=12, interest_rate="2,5"))
+        items = storage.read_expenses()
+        self.assertEqual(12, len(items))
+        self.assertAlmostEqual(97.49, items[0]["amount"])
+        self.assertGreater(sum(item["amount"] for item in items), 1000)
+        self.assertEqual({"financing_kind": "loan", "interest_rate": 2.5}, items[0]["finance"])
+        self.assertTrue(all(item["original_total"] == 1000 for item in items))
+
+    def test_scheduled_pix_is_saved_on_scheduled_date_and_can_be_changed(self):
+        payload = self.expense(payment="Pix", scheduled=True, scheduled_date="2027-01-15")
+        result = storage.add_expense(payload)
+        item = storage.read_expenses()[0]
+        self.assertEqual("2027-01-15", item["date"])
+        self.assertEqual("2027-01-15", item["finance"]["scheduled_date"])
+        storage.update_expense(result["id"], {**payload, "scheduled_date": "2027-02-01"})
+        self.assertEqual("2027-02-01", storage.read_expenses()[0]["date"])
+        storage.update_expense(result["id"], {**payload, "scheduled": False})
+        self.assertEqual({}, storage.read_expenses()[0]["finance"])
+
+    def test_rejects_schedule_with_invalid_date_or_incompatible_payment(self):
+        for changes in ({"payment": "Pix", "scheduled_date": "invalid"},
+                        {"payment": "Crédito", "scheduled_date": "2027-01-01"}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                storage.add_expense(self.expense(scheduled=True, **changes))
+
+    def test_debt_contract_saves_breakdown_and_automatically_populates_calendar(self):
+        created = storage.add_expense(self.expense(
+            amount=240000, payment="Transferência", financing_kind="asset",
+            debt_entry=True, debt_type="Imóvel", asset_name="Apartamento",
+            asset_value=300000, down_payment=60000, amortization_system="sac",
+            installment=True, installment_count=360, interest_rate="0,8",
+            first_charge_date="2027-01-31"))
+        items = storage.read_expenses()
+        self.assertEqual(360, len(items))
+        self.assertEqual("2027-02-28", items[1]["date"])
+        self.assertEqual(1920, items[0]["finance"]["interest_part"])
+        self.assertEqual(666.67, items[0]["finance"]["principal_part"])
+        self.assertEqual(0, items[-1]["finance"]["balance_after"])
+        self.assertEqual(60000, items[0]["finance"]["down_payment"])
+        self.assertEqual(240000, round(sum(item["finance"]["principal_part"] for item in items), 2))
+        storage.delete_expense(created["id"], scope="all")
+        self.assertEqual([], storage.read_expenses())
+
     def test_installment_update_and_delete_can_affect_series(self):
         storage.add_expense(self.expense(amount=90, payment="Crédito", installment=True, installment_count=3, first_charge_date="2026-10-13"))
         second = storage.read_expenses()[1]
