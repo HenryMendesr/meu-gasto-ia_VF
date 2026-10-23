@@ -1,5 +1,5 @@
   <div id="debtsPanel" class="panel" hidden>
-    <header class="section-heading"><div><span class="eyebrow">Seus compromissos</span><h2>Empréstimos, dívidas e financiamentos</h2><p>Cadastre uma vez. Veja as parcelas no calendário e a projeção da dívida até a quitação.</p></div><button type="button" class="secondary" id="newDebtButton">＋ Novo compromisso</button></header>
+    <header class="section-heading"><div><span class="eyebrow">Seus compromissos</span><h2>Empréstimos, dívidas e financiamentos</h2><p>Parcelas, juros e saldo projetado.</p></div><button type="button" class="secondary" id="newDebtButton">＋ Novo compromisso</button></header>
     <section class="debt-totals" aria-label="Resumo dos contratos"><div><small>Principal cadastrado</small><strong id="debtPrincipalTotal">R$ 0,00</strong></div><div><small>Juros previstos</small><strong id="debtInterestTotal">R$ 0,00</strong></div><div><small>Total das parcelas</small><strong id="debtPaymentsTotal">R$ 0,00</strong></div></section>
     <div class="debt-layout">
       <section class="debt-form-card"><h3 id="debtFormTitle">Novo compromisso</h3><p>Use o saldo que ainda precisa pagar. Parcelas anteriores já pagas ficam fora deste cadastro.</p>
@@ -24,7 +24,7 @@
           <button type="submit" class="save debt-wide">Salvar e gerar parcelas</button><div id="debtFormMessage" class="message debt-wide" hidden></div>
         </form>
       </section>
-      <section class="debt-analysis"><div class="detail-heading"><div><span class="eyebrow">Projeção dos contratos</span><h3>Seu caminho até quitar</h3></div></div><label class="debt-chart-filter">Exibir contrato<select id="debtChartFilter"><option value="">Todos os compromissos</option></select></label>
+      <section class="debt-analysis"><div class="detail-heading"><div><span class="eyebrow">Projeção dos contratos</span><h3>Evolução da dívida</h3></div></div><label class="debt-chart-filter">Exibir contrato<select id="debtChartFilter"><option value="">Todos os compromissos</option></select></label>
         <div id="debtChartEmpty" class="empty">Cadastre um compromisso para gerar os gráficos automaticamente.</div>
         <div id="debtChartContent" hidden>
           <h4>Saldo devedor projetado</h4><div id="debtBalanceChart" class="debt-chart"></div>

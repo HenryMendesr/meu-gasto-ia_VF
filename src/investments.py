@@ -5,6 +5,7 @@ from __future__ import annotations
 from base64 import b64decode
 from binascii import Error as Base64Error
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import json
 import math
 import mimetypes
@@ -118,6 +119,27 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
             "rate_source": str(payload.get("rate_source") or (existing or {}).get("rate_source") or "Manual"),
             "rate_updated_at": payload.get("rate_updated_at", (existing or {}).get("rate_updated_at")),
         })
+        period = str(payload.get("rate_period", (existing or {}).get("rate_period", "year")))
+        if period not in {"year", "month"}:
+            raise ValueError("Escolha taxa ao mês ou ao ano")
+        if profitability_type in {"CDI", "IPCA + taxa"}:
+            period = "year"
+        mode = str(payload.get("valuation_mode") or (existing or {}).get("valuation_mode") or
+                   ("balance" if common["current_value_manual"] is not None else "automatic"))
+        if mode not in {"automatic", "balance", "manual"}:
+            raise ValueError("Forma de cálculo inválida")
+        balance_date = payload.get("current_value_date") or (existing or {}).get("current_value_date") or (existing or {}).get("updated_at", investment_today().isoformat())[:10]
+        common.update(rate_period=period, valuation_mode=mode,
+                      current_value_date=iso_date(balance_date, "Data do saldo"),
+                      ipca_rate=number(payload.get("ipca_rate", (existing or {}).get("ipca_rate")), "IPCA anual", required=False))
+        if common["contracted_rate"] > (100 if period == "month" else 1000):
+            raise ValueError("Revise a taxa contratada")
+        if mode == "automatic":
+            common["current_value_manual"] = None
+        elif common["current_value_manual"] is None:
+            raise ValueError("Informe o saldo de referência")
+        elif common["current_value_date"] < common["application_date"] or common["current_value_date"] > investment_today().isoformat():
+            raise ValueError("A data do saldo deve ficar entre a aplicação e hoje")
         if common["maturity_date"] and common["maturity_date"] < common["application_date"]:
             raise ValueError("O vencimento não pode ser anterior à aplicação")
     return common
@@ -180,30 +202,65 @@ def fetch_market_history(symbol: str, period: str = "1y") -> dict:
     return {"source": "Yahoo Finance", "points": points[-260:]}
 
 
+def investment_today() -> date:
+    return datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+
+
+def fixed_mode(item: dict) -> str:
+    return item.get("valuation_mode") or ("balance" if item.get("current_value_manual") is not None else "automatic")
+
+
+def fixed_annual_rate(item: dict) -> float | None:
+    rate = item["contracted_rate"] / 100
+    kind = item["profitability_type"]
+    if kind == "CDI":
+        if item.get("cdi_rate") is None:
+            return None
+        daily = math.expm1(math.log1p(item["cdi_rate"] / 100) / 252)
+        return math.expm1(252 * math.log1p(daily * rate))
+    if kind == "IPCA + taxa":
+        if item.get("ipca_rate") is None:
+            return None
+        return (1 + item["ipca_rate"] / 100) * (1 + rate) - 1
+    return math.expm1(12 * math.log1p(rate)) if item.get("rate_period", "year") == "month" else rate
+
+
+def fixed_income_value(item: dict, as_of: date | None = None) -> float:
+    as_of = as_of or investment_today()
+    start = date.fromisoformat(item["application_date"])
+    maturity = date.fromisoformat(item["maturity_date"]) if item.get("maturity_date") else None
+    end = min(as_of, maturity) if maturity else as_of
+    mode, rate = fixed_mode(item), fixed_annual_rate(item)
+    applied, manual = item["amount_invested"], item.get("current_value_manual")
+    if as_of < start:
+        return applied
+    if mode in {"balance", "manual"} and manual is not None:
+        reference = date.fromisoformat(item.get("current_value_date") or item.get("updated_at", item["application_date"])[:10])
+        if mode == "manual" and as_of >= reference:
+            return manual
+        if end < reference:
+            # The path to an observed balance is an estimate, not a market history.
+            span = (reference - start).days
+            fraction = min(1, max(0, (end - start).days / span)) if span else 0
+            return applied * (manual / applied) ** fraction
+        if mode == "manual" or rate is None:
+            return manual
+        return manual * math.exp(math.log1p(rate) * max(0, (end - reference).days) / 365)
+    return applied if rate is None else applied * math.exp(math.log1p(rate) * max(0, (end - start).days) / 365)
+
+
 def fixed_income_history(item: dict, period: str) -> list[dict]:
     ranges = {"1m": 31, "3m": 92, "6m": 183, "1y": 366, "5y": 1827}
     if period not in ranges:
         raise ValueError("Período inválido")
-    start = date.fromisoformat(item["application_date"])
-    end = date.today()
+    start, end = date.fromisoformat(item["application_date"]), investment_today()
+    if start > end:
+        return []
     visible_start = max(start, end - timedelta(days=ranges[period]))
-    total_days = max(1, (end - start).days)
-    steps = min(60, max(2, (end - visible_start).days + 1))
-    dates = [visible_start + timedelta(days=round(index * max(0, (end - visible_start).days) / (steps - 1))) for index in range(steps)]
-    applied = item["amount_invested"]
-    manual = item.get("current_value_manual")
-    points = []
-    for current_date in dates:
-        elapsed = max(0, (current_date - start).days)
-        if manual is not None and total_days:
-            value = applied * ((manual / applied) ** (elapsed / total_days))
-        else:
-            rate = item["contracted_rate"] / 100
-            if item["profitability_type"] == "CDI":
-                rate *= (item.get("cdi_rate") or 0) / 100
-            value = applied * ((1 + rate) ** (elapsed / 365))
-        points.append({"date": current_date.isoformat(), "value": round(value, 2)})
-    return points
+    span = (end - visible_start).days
+    steps = min(60, span + 1)
+    dates = sorted({visible_start + timedelta(days=round(index * span / max(1, steps - 1))) for index in range(steps)})
+    return [{"date": current.isoformat(), "value": round(fixed_income_value(item, current), 2)} for current in dates]
 
 
 def investment_history(item_id: str, period: str = "1y", user_id: int | None = None,
@@ -248,15 +305,18 @@ def calculated(item: dict) -> dict:
         current = item["quantity"] * (item.get("current_price") or item["average_price"])
     else:
         applied = item["amount_invested"]
-        manual = item.get("current_value_manual")
-        if manual is not None:
-            current = manual
-        else:
-            days = max(0, (date.today() - date.fromisoformat(item["application_date"])).days)
-            rate = item["contracted_rate"] / 100
-            if item["profitability_type"] == "CDI":
-                rate *= (item.get("cdi_rate") or 0) / 100
-            current = applied * ((1 + rate) ** (days / 365))
+        current = fixed_income_value(item)
+        annual = fixed_annual_rate(item)
+        today = investment_today()
+        mode = fixed_mode(item)
+        active = today >= date.fromisoformat(item["application_date"]) and (not item.get("maturity_date") or today < date.fromisoformat(item["maturity_date"]))
+        monthly = math.expm1(math.log1p(annual) / 12) if annual is not None else None
+        result.update(valuation_mode=mode, rate_period=item.get("rate_period", "year"),
+                      annual_rate_percent=round(annual * 100, 6) if annual is not None else None,
+                      monthly_rate_percent=round(monthly * 100, 6) if monthly is not None else None,
+                      monthly_estimated_gain=round(current * monthly, 2) if active and monthly is not None and mode != "manual" else None,
+                      calculation_status="manual" if mode == "manual" else "pending_rate" if annual is None else "matured" if not active and item.get("maturity_date") and today >= date.fromisoformat(item["maturity_date"]) else "estimated",
+                      calculated_on=today.isoformat())
     result["amount_applied"] = round(applied, 2)
     result["current_value"] = round(current, 2)
     result["profit_loss"] = round(current - applied, 2)
@@ -264,22 +324,43 @@ def calculated(item: dict) -> dict:
     return result
 
 
+def fixed_portfolio_history(items: list[dict]) -> list[dict]:
+    today = investment_today()
+    eligible = [item for item in items if item["application_date"] <= today.isoformat()]
+    if not eligible:
+        return []
+    start = max(min(date.fromisoformat(item["application_date"]) for item in eligible), today - timedelta(days=365))
+    span = (today - start).days
+    steps = min(60, span + 1)
+    dates = sorted({start + timedelta(days=round(index * span / max(1, steps - 1))) for index in range(steps)})
+    return [{"date": current.isoformat(),
+             "current_value": round(sum(fixed_income_value(item, current) for item in eligible if item["application_date"] <= current.isoformat()), 2),
+             "amount_applied": round(sum(item["amount_invested"] for item in eligible if item["application_date"] <= current.isoformat()), 2)} for current in dates]
+
+
 def portfolio(user_id: int | None = None) -> dict:
     store = load_store(user_id)
     items = [calculated(item) for item in store["investments"]]
     applied = round(sum(item["amount_applied"] for item in items), 2)
     current = round(sum(item["current_value"] for item in items), 2)
-    return {"investments": items, "history": store["history"], "updated_at": store["updated_at"],
+    history = [point for point in store["history"] if point.get("date") != investment_today().isoformat()]
+    if items:
+        history.append({"date": investment_today().isoformat(), "current_value": current, "amount_applied": applied})
+    estimated = bool(items) and all(item["type"] not in VARIABLE_TYPES for item in items)
+    if estimated:
+        history = fixed_portfolio_history(items)
+    return {"investments": items, "history": history[-730:], "history_source": "estimated" if estimated else "snapshots", "updated_at": store["updated_at"],
             "summary": {"amount_applied": applied, "current_value": current,
                         "profit_loss": round(current - applied, 2),
-                        "return_percent": round(((current / applied) - 1) * 100, 4) if applied else 0}}
+                        "return_percent": round(((current / applied) - 1) * 100, 4) if applied else 0,
+                        "monthly_estimated_gain": round(sum(item.get("monthly_estimated_gain") or 0 for item in items), 2)}}
 
 
 def record_snapshot(store: dict) -> None:
     items = [calculated(item) for item in store["investments"]]
     current = round(sum(item["current_value"] for item in items), 2)
     applied = round(sum(item["amount_applied"] for item in items), 2)
-    today = date.today().isoformat()
+    today = investment_today().isoformat()
     snapshot = {"date": today, "current_value": current, "amount_applied": applied}
     if store["history"] and store["history"][-1].get("date") == today:
         store["history"][-1] = snapshot

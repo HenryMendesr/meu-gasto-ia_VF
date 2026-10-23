@@ -41,11 +41,17 @@ Novas versões são baixadas em segundo plano. Quando um service worker novo est
 
 ## Investimentos
 
-A aba **Investimentos** aceita renda fixa, ações, fundos imobiliários, ETFs, criptomoedas e outros ativos. A atualização consulta primeiro a Brapi para ativos brasileiros, usa o Yahoo Finance como alternativa e busca o CDI na série 12 do Banco Central.
+A aba **Investir** aceita renda fixa, ações, fundos imobiliários, ETFs, criptomoedas e outros ativos. Os saldos de renda fixa são recalculados pela API ao abrir a carteira, voltar à aba e a cada minuto enquanto a aba está visível, sem precisar atualizar cotações. O formulário mostra uma prévia antes de salvar.
 
-Cada investimento possui uma seta para abrir seu gráfico individual. Ações, FIIs, ETFs e criptomoedas consultam o histórico de mercado no Yahoo Finance somente quando o gráfico é aberto. Renda fixa apresenta uma evolução estimada pela taxa cadastrada. Os períodos disponíveis são 1 mês, 3 meses, 6 meses, 1 ano e 5 anos.
+Para **Prefixado** e **Outro**, informe uma taxa efetiva **ao ano** ou **ao mês**. O cálculo usa juros compostos e dias corridos (ano de 365 dias), com conversão equivalente entre as taxas, e para no vencimento. A carteira apresenta saldo, rendimento acumulado, taxa equivalente mensal e rendimento bruto estimado de um mês sobre o saldo atual. A estimativa não desconta impostos, tarifas ou seguros.
 
-O preenchimento por imagem continua disponível na execução local quando o Tesseract está instalado. A Vercel não inclui o Tesseract; na versão hospedada, esses campos devem ser preenchidos manualmente até uma futura integração com OCR em nuvem.
+Em **CDI**, informe o percentual do índice e o CDI anual de referência, ou use **Atualizar taxas e cotações** para consultar a série 12 do Banco Central. O cálculo converte a referência em taxa diária com 252 dias úteis e aplica a participação contratada; o saldo é uma projeção pelo índice de referência, não uma reprodução das taxas históricas. Em **IPCA + taxa**, informe o IPCA anual de referência; o índice é composto com a taxa real contratada. Um índice ausente gera aviso e não apresenta rendimento mensal como zero conhecido.
+
+A atualização do saldo tem três modos: **Automática pela taxa** parte do valor e data da aplicação; **Render a partir de saldo informado** corrige um saldo de referência a partir da data informada; **Saldo manual** mantém o valor fornecido. Saldos manuais do cadastro antigo passam a servir como referência na data de sua última edição, para continuar rendendo sem perder o saldo informado.
+
+Carteiras só de renda fixa têm gráfico estimado desde a aplicação, com até um ano de projeção retrospectiva e valores calculados pela mesma regra do saldo. Carteiras com renda variável usam os registros de atualização. Os gráficos individuais oferecem 1 mês, 3 meses, 6 meses, 1 ano e 5 anos. Na renda variável, as cotações usam Brapi/Yahoo Finance e o gráfico consulta histórico do Yahoo Finance ao ser aberto.
+
+O preenchimento por imagem está disponível na execução local com Tesseract. Na Vercel, preencha os campos manualmente quando o OCR estiver indisponível.
 
 ## Importação de extratos
 
