@@ -16,9 +16,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
-    from src import auth, investments, runtime_storage as storage, statement_import
+    from src import auth, investments, runtime_storage as storage, statement_import, planning
 except ImportError:  # execução direta: python src/dashboard_server.py
-    import auth, investments, runtime_storage as storage, statement_import
+    import auth, investments, runtime_storage as storage, statement_import, planning
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -164,6 +164,15 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/categories":
             self.respond(200, {"ok": True, "categories": storage.read_categories()})
             return
+        if path == "/api/reports/monthly":
+            try:self.respond(200, {"ok": True, **planning.monthly_report(parse_qs(urlparse(self.path).query).get("month", [""])[0])})
+            except ValueError as exc:self.respond(400, {"ok": False, "error": str(exc)})
+            return
+        history_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/history", path)
+        if history_match:
+            try:self.respond(200, {"ok": True, **investments.investment_history(history_match.group(1), parse_qs(urlparse(self.path).query).get("period", ["3m"])[0])})
+            except (ValueError, KeyError) as exc:self.respond(400, {"ok": False, "error": str(exc)})
+            return
         if path == "/api/investments":
             self.respond(200, {"ok": True, **investments.portfolio()})
             return
@@ -198,7 +207,10 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
-        if not sale_match and path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/cash", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
+        buy_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/buys", path)
+        income_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/incomes", path)
+        payment_match = re.fullmatch(r"/api/debts/(\d+)/payment", path)
+        if not (sale_match or buy_match or income_match or payment_match) and path not in {"/api/expenses", "/api/goals", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/cash", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
             self.send_error(404)
             return
         try:
@@ -217,6 +229,15 @@ class Handler(SimpleHTTPRequestHandler):
                 self.respond(200, {"ok": True, **analysis, "count": len(items), "needs_review": sum(not item["category"] or item.get("needs_review") for item in items)})
                 return
             payload = json.loads(raw_body)
+            if path == "/api/goals":
+                result = planning.save_goal(payload)
+                self.respond(200, {"ok": True, "goal": result})
+                return
+            if buy_match or income_match or payment_match:
+                result = investments.add_buy(buy_match.group(1), payload) if buy_match else investments.add_investment_income(income_match.group(1), payload) if income_match else storage.set_debt_payment(int(payment_match.group(1)), payload)
+                rebuild_dashboard()
+                self.respond(200, {"ok": True, **result})
+                return
             if sale_match:
                 result = investments.sell_investment(sale_match.group(1), payload)
                 rebuild_dashboard()
@@ -327,6 +348,11 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         path = urlparse(self.path).path
+        goal_match = re.fullmatch(r"/api/goals/([a-f0-9]{32})", path)
+        if goal_match:
+            try:planning.delete_goal(goal_match.group(1));self.respond(200, {"ok": True})
+            except KeyError as exc:self.respond(404, {"ok": False, "error": str(exc)})
+            return
         investment_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
         expense_match = re.fullmatch(r"/api/expenses/(\d+)", path)
         budget_match = re.fullmatch(r"/api/budgets/(\d{4}-\d{2})/(.+)", path)

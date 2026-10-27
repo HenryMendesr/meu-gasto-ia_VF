@@ -1,6 +1,8 @@
   <div id="debtsPanel" class="panel" role="region" aria-label="Dívidas" hidden>
     <header class="section-heading"><div><span class="eyebrow">Seus compromissos</span><h2>Compromissos sob controle.</h2><p>Seus empréstimos, dívidas e financiamentos em uma visão clara.</p></div><button type="button" class="secondary" id="newDebtButton">＋ Novo compromisso</button></header>
-    <section class="debt-totals" aria-label="Resumo dos contratos"><div><small>Principal cadastrado</small><strong id="debtPrincipalTotal">R$ 0,00</strong></div><div><small>Juros previstos</small><strong id="debtInterestTotal">R$ 0,00</strong></div><div><small>Total das parcelas</small><strong id="debtPaymentsTotal">R$ 0,00</strong></div></section>
+    <section class="debt-totals" aria-label="Resumo dos contratos"><div><small>Principal em aberto</small><strong id="debtPrincipalTotal">R$ 0,00</strong></div><div><small>Juros pendentes</small><strong id="debtInterestTotal">R$ 0,00</strong></div><div><small>Parcelas em aberto</small><strong id="debtPaymentsTotal">R$ 0,00</strong></div></section>
+    <div id="debtPaidSummary" class="debt-paid-summary"></div>
+    <div id="debtStatusMessage" class="message" hidden></div>
     <div class="debt-layout">
       <section class="debt-form-card"><h3 id="debtFormTitle">Novo compromisso</h3><p>Use o saldo que ainda precisa pagar. Parcelas anteriores já pagas ficam fora deste cadastro.</p>
         <div id="debtEditNotice" class="debt-edit-notice" hidden></div><form id="debtForm" class="debt-form">
@@ -29,10 +31,13 @@
         <div id="debtChartContent" hidden>
           <h4>Saldo devedor projetado</h4><div id="debtBalanceChart" class="debt-chart"></div>
           <h4>Parcelas por mês</h4><div class="debt-legend"><span><i></i> Amortização do principal</span><span><i></i> Juros</span></div><div id="debtPaymentChart" class="debt-chart debt-bars"></div>
-          <p class="debt-chart-note">Projeção considerando cada parcela paga no vencimento. Não confirma pagamentos nem inclui multas, tarifas ou seguros adicionais. Confira os valores com o credor.</p>
-          <details class="debt-schedule"><summary>Conferir calendário e valores</summary><div class="scroll"><table><thead><tr><th>Vencimento</th><th>Credor</th><th>Principal</th><th>Juros</th><th>Parcela</th></tr></thead><tbody id="debtScheduleRows"></tbody></table></div></details>
+          <p class="debt-chart-note">Projeção das parcelas ainda em aberto, considerando pagamento no vencimento. Parcelas marcadas como pagas saem do saldo pendente. Não confirma pagamentos nem inclui multas, tarifas ou seguros adicionais. Confira os valores com o credor.</p>
+
         </div>
+          <details class="debt-schedule"><summary>Calendário e pagamentos</summary><div class="scroll"><table><thead><tr><th>Vencimento</th><th>Credor</th><th>Principal</th><th>Juros</th><th>Parcela</th><th>Status</th><th>Ação</th></tr></thead><tbody id="debtScheduleRows"></tbody></table></div><div id="debtPaymentCards" class="debt-payment-cards"></div></details>
       </section>
     </div>
     <section class="debt-contracts"><div class="section-title"><h3>Compromissos cadastrados</h3><span id="debtContractCount"></span></div><div id="debtContractList"></div></section>
   </div>
+
+<div id="debtPaymentModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="debtPaymentTitle" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2 id="debtPaymentTitle">Registrar pagamento</h2><button id="closeDebtPayment" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="debtPaymentForm" class="entry-grid"><input name="id" type="hidden"><p id="debtPaymentDescription" class="wide"></p><label class="wide">Data em que pagou<input name="paid_date" type="date" required></label><p class="wide quote-meta">Marca a parcela existente como paga. Não cria outro gasto e não movimenta o caixa dos investimentos.</p><div id="debtPaymentMessage" class="message error" hidden></div><button class="save" type="submit">Confirmar pagamento</button></form></section></div>

@@ -8,9 +8,9 @@ from pathlib import Path
 import sqlite3
 from threading import Lock
 try:
-    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update
+    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
 except ImportError:
-    from finance_rules import installment_plan, expense_finance, prepare_debt_update
+    from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -181,9 +181,15 @@ def update_expense(item_id: int, payload: dict, user_id: int | None = None) -> d
     with LOCK:
         backup = create_backup()
         with connect() as db:
-            current = db.execute("SELECT installment_group FROM expenses WHERE id=?", (int(item_id),)).fetchone()
+            current = db.execute("SELECT installment_group,finance_details FROM expenses WHERE id=?", (int(item_id),)).fetchone()
             if not current:
                 raise KeyError("Gasto não encontrado")
+            if json.loads(current["finance_details"]).get("paid"):
+                raise ValueError("Desfaça a baixa antes de alterar uma parcela paga")
+            if payload.get("scope") == "all" and current["installment_group"]:
+                rows = db.execute("SELECT finance_details FROM expenses WHERE installment_group=?", (current["installment_group"],)).fetchall()
+                if any(json.loads(row["finance_details"]).get("paid") for row in rows):
+                    raise ValueError("Desfaça as baixas antes de alterar todas as parcelas")
             if payload.get("scope") == "all" and current["installment_group"]:
                 cursor = db.execute("UPDATE expenses SET amount=?,original_total=?*installment_count,place=?,category=?,payment=?,description=CASE WHEN installment_number IS NOT NULL THEN ? || ' · Parcela ' || installment_number || '/' || installment_count ELSE ? END WHERE installment_group=?",
                                     (amount, amount, place, category, payment, description, description, current["installment_group"]))
@@ -204,6 +210,9 @@ def update_debt(item_id: int, payload: dict, user_id: int | None = None) -> dict
             if not current or not current["installment_group"] or json.loads(current["finance_details"]).get("financing_kind") not in {"loan", "debt", "asset"}:
                 raise KeyError("Compromisso não encontrado")
             group = current["installment_group"]
+            records = db.execute("SELECT finance_details FROM expenses WHERE installment_group=?", (group,)).fetchall()
+            if any(json.loads(record["finance_details"]).get("paid") for record in records):
+                raise ValueError("Há parcelas pagas. Desfaça a baixa antes de alterar o contrato")
             db.execute("DELETE FROM expenses WHERE installment_group=?", (group,))
             ids = []
             for part in draft["parts"]:
@@ -224,6 +233,9 @@ def delete_expense(item_id: int, user_id: int | None = None, scope: str = "singl
             current = db.execute("SELECT installment_group FROM expenses WHERE id=?", (int(item_id),)).fetchone()
             if not current:
                 raise KeyError("Gasto não encontrado")
+            records = db.execute("SELECT finance_details FROM expenses WHERE installment_group=?", (current["installment_group"],)).fetchall() if scope == "all" and current["installment_group"] else db.execute("SELECT finance_details FROM expenses WHERE id=?", (int(item_id),)).fetchall()
+            if any(json.loads(record["finance_details"]).get("paid") for record in records):
+                raise ValueError("Desfaça a baixa das parcelas pagas antes de excluir")
             cursor = db.execute("DELETE FROM expenses WHERE installment_group=?", (current["installment_group"],)) if scope == "all" and current["installment_group"] else db.execute("DELETE FROM expenses WHERE id=?", (int(item_id),))
             if not cursor.rowcount:
                 raise KeyError("Gasto não encontrado")
@@ -401,3 +413,16 @@ def mutate_investments(operation, user_id: int | None = None):
             db.execute("INSERT INTO app_state(key,value) VALUES('investments',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                        (json.dumps(data, ensure_ascii=False),))
     return result
+
+
+def set_debt_payment(item_id: int, payload: dict, user_id: int | None = None) -> dict:
+    initialize()
+    with LOCK:
+        create_backup()
+        with connect() as db:
+            row = db.execute("SELECT finance_details FROM expenses WHERE id=?", (item_id,)).fetchone()
+            if not row:
+                raise KeyError("Parcela não encontrada")
+            finance = debt_payment_metadata(json.loads(row["finance_details"]), payload)
+            db.execute("UPDATE expenses SET finance_details=? WHERE id=?", (json.dumps(finance), item_id))
+    return {"id": item_id, "finance": finance}

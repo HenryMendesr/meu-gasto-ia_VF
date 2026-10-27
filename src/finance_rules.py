@@ -198,3 +198,24 @@ def expense_finance(payload, expense_date, payment):
         if dedicated:
             details.update(calculation_mode=mode, installment_amount=parts[0]["amount"])
     return expense_date, parts, details
+
+
+def debt_payment_metadata(finance, payload):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    if finance.get('financing_kind') not in {'loan', 'debt', 'asset'}:
+        raise ValueError('Este lançamento não é uma parcela de dívida')
+    if not isinstance(payload, dict) or not isinstance(payload.get('paid'), bool):
+        raise ValueError('Informe se a parcela foi paga')
+    updated = {**finance, 'paid': payload['paid']}
+    if payload['paid']:
+        try:
+            day = date.fromisoformat(str(payload.get('paid_date')))
+        except (TypeError, ValueError) as exc:
+            raise ValueError('Informe a data do pagamento') from exc
+        if day.year < 1900 or day > datetime.now(ZoneInfo('America/Sao_Paulo')).date() or (finance.get('contract_date') and day.isoformat() < finance['contract_date']):
+            raise ValueError('A data do pagamento deve ficar entre o contrato e hoje')
+        updated['paid_date'] = day.isoformat()
+    else:
+        updated.pop('paid_date', None)
+    return updated

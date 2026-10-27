@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
-from src import auth, investments, runtime_storage as storage, statement_import
+from src import auth, investments, runtime_storage as storage, statement_import, planning
 
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
@@ -167,6 +167,14 @@ def read_resource(resource:str,request:Request):
     if resource=='categories':return {'ok':True,'categories':storage.read_categories(uid)}
     if resource=='investments':return {'ok':True,**investments.portfolio(uid)}
     return json_error(404,'Rota não encontrada')
+@fastapi_app.post('/api/goals')
+async def save_goal(request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,'goal':planning.save_goal(await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.post('/api/{resource}')
 async def create_resource(resource:str,request:Request):
     uid=protected(request)
@@ -181,6 +189,44 @@ async def create_resource(resource:str,request:Request):
         return json_error(404,'Rota não encontrada')
     except storage.DuplicateExpenseError as exc:return JSONResponse({'ok':False,'code':'duplicate','error':str(exc)},status_code=409)
     except (ValueError,KeyError) as exc:return json_error(400,str(exc).strip("'"))
+@fastapi_app.post('/api/investments/{item_id}/buys')
+async def add_buy(item_id:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**investments.add_buy(item_id,await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
+@fastapi_app.post('/api/investments/{item_id}/incomes')
+async def add_provento(item_id:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**investments.add_investment_income(item_id,await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
+@fastapi_app.delete('/api/goals/{goal_id}')
+def delete_goal(goal_id:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:planning.delete_goal(goal_id,uid);return {'ok':True}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+
+@fastapi_app.get('/api/reports/monthly')
+def monthly_report(request:Request,month:str):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**planning.monthly_report(month,uid)}
+    except ValueError as exc:return json_error(400,str(exc))
+
+@fastapi_app.post('/api/debts/{item_id}/payment')
+async def debt_payment(item_id:int,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**storage.set_debt_payment(item_id,await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.post('/api/investments/cash')
 async def update_cash(request:Request):
     uid=protected(request)
@@ -290,6 +336,7 @@ def remove_expense(item_id:int,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
     try:storage.delete_expense(item_id,uid,request.query_params.get('scope','single'));return {'ok':True}
+    except ValueError as exc:return json_error(400,str(exc))
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
 
 @fastapi_app.delete('/api/budgets/{month}/{category}')

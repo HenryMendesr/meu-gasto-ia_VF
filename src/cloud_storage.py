@@ -12,9 +12,9 @@ import secrets
 from threading import Lock
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 try:
-    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update
+    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
 except ImportError:
-    from finance_rules import installment_plan, expense_finance, prepare_debt_update
+    from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
 
 import psycopg
 from psycopg.rows import dict_row
@@ -178,8 +178,12 @@ def update_expense(item_id:int,payload:dict,user_id:int)->dict:
     if category not in set(read_categories(user_id)) or payment not in PAYMENTS:raise ValueError('Categoria ou pagamento inválido')
     expense_date,_,finance=expense_finance({**payload,"installment":False},expense_date,payment)
     with connect() as db,db.cursor() as c:
-        c.execute('SELECT installment_group FROM expenses WHERE id=%s AND user_id=%s',(item_id,user_id));current=c.fetchone()
+        c.execute('SELECT installment_group,finance_details FROM expenses WHERE id=%s AND user_id=%s FOR UPDATE',(item_id,user_id));current=c.fetchone()
         if not current:raise KeyError('Gasto não encontrado')
+        if json.loads(current['finance_details']).get('paid'):raise ValueError('Desfaça a baixa antes de alterar uma parcela paga')
+        if payload.get('scope')=='all' and current['installment_group']:
+            c.execute('SELECT finance_details FROM expenses WHERE user_id=%s AND installment_group=%s FOR UPDATE',(user_id,current['installment_group']))
+            if any(json.loads(row['finance_details']).get('paid') for row in c.fetchall()):raise ValueError('Desfaça as baixas antes de alterar todas as parcelas')
         if payload.get('scope')=='all' and current['installment_group']:
             c.execute("UPDATE expenses SET amount=%s,original_total=%s*installment_count,place=%s,category=%s,payment=%s,description=%s || ' · Parcela ' || installment_number || '/' || installment_count WHERE user_id=%s AND installment_group=%s",(amount,amount,place,category,payment,description,user_id,current['installment_group']))
         else:c.execute('UPDATE expenses SET expense_date=%s,amount=%s,place=%s,category=%s,payment=%s,description=%s,finance_details=CASE WHEN installment_group IS NULL THEN %s ELSE finance_details END WHERE id=%s AND user_id=%s',(expense_date,amount,place,category,payment,description,json.dumps(finance),item_id,user_id))
@@ -196,6 +200,9 @@ def update_debt(item_id: int, payload: dict, user_id: int) -> dict:
         if not current or not current['installment_group'] or json.loads(current['finance_details']).get('financing_kind') not in {'loan', 'debt', 'asset'}:
             raise KeyError('Compromisso não encontrado')
         group = current['installment_group']
+        c.execute('SELECT finance_details FROM expenses WHERE user_id=%s AND installment_group=%s FOR UPDATE', (user_id, group))
+        if any(json.loads(row['finance_details']).get('paid') for row in c.fetchall()):
+            raise ValueError('Há parcelas pagas. Desfaça a baixa antes de alterar o contrato')
         c.execute('DELETE FROM expenses WHERE user_id=%s AND installment_group=%s', (user_id, group))
         ids = []
         for part in draft['parts']:
@@ -214,6 +221,10 @@ def delete_expense(item_id:int,user_id:int,scope:str='single')->None:
     with connect() as db,db.cursor() as c:
         c.execute('SELECT installment_group FROM expenses WHERE id=%s AND user_id=%s',(item_id,user_id));current=c.fetchone()
         if not current:raise KeyError('Gasto não encontrado')
+        if scope=='all' and current['installment_group']:
+            c.execute('SELECT finance_details FROM expenses WHERE user_id=%s AND installment_group=%s FOR UPDATE',(user_id,current['installment_group']))
+        else:c.execute('SELECT finance_details FROM expenses WHERE id=%s AND user_id=%s FOR UPDATE',(item_id,user_id))
+        if any(json.loads(row['finance_details']).get('paid') for row in c.fetchall()):raise ValueError('Desfaça a baixa das parcelas pagas antes de excluir')
         if scope=='all' and current['installment_group']:c.execute('DELETE FROM expenses WHERE user_id=%s AND installment_group=%s',(user_id,current['installment_group']))
         else:c.execute('DELETE FROM expenses WHERE id=%s AND user_id=%s',(item_id,user_id))
         if not c.rowcount:raise KeyError('Gasto não encontrado')
@@ -340,3 +351,15 @@ def mutate_investments(operation, user_id: int):
         c.execute('UPDATE app_state SET value=%s::jsonb WHERE key=%s', (json.dumps(data, ensure_ascii=False), key))
         db.commit()
     return result
+
+
+def set_debt_payment(item_id: int, payload: dict, user_id: int) -> dict:
+    with connect() as db, db.cursor() as c:
+        c.execute('SELECT finance_details FROM expenses WHERE id=%s AND user_id=%s FOR UPDATE', (item_id, user_id))
+        row = c.fetchone()
+        if not row:
+            raise KeyError('Parcela não encontrada')
+        finance = debt_payment_metadata(json.loads(row['finance_details']), payload)
+        c.execute('UPDATE expenses SET finance_details=%s WHERE id=%s AND user_id=%s', (json.dumps(finance), item_id, user_id))
+        db.commit()
+    return {'id': item_id, 'finance': finance}
