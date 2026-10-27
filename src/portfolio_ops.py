@@ -19,14 +19,16 @@ def buys(item):
     return [entry for entry in item['buys'] if not entry.get('reversed')] if 'buys' in item else [initial_buy(item)]
 
 
-def position(item, as_of=None):
+def position(item, as_of=None, include_ledger=False):
     events = [(buy['date'], buy.get('sequence', i), 'buy', buy) for i, buy in enumerate(buys(item))]
     events += [(sale['date'], sale.get('sequence', i + 1), 'sale', sale) for i, sale in enumerate(item.get('sales', [])) if not sale.get('reversed')]
     quantity, basis, realized = Decimal(0), Decimal(0), Decimal(0)
     results = {}
+    ledger = {}
     for day, _, kind, entry in sorted(events, key=lambda event: (event[0], event[1])):
         if as_of and day > as_of:
             continue
+        before_quantity, before_basis = quantity, basis
         count = Decimal(str(entry['quantity']))
         if kind == 'buy':
             quantity += count
@@ -41,9 +43,15 @@ def position(item, as_of=None):
             quantity -= count
             basis -= cost
             results[entry['id']] = {'profit_loss': float(gain), 'cost_basis': float(cost), 'net_total': float(net)}
+        if include_ledger:
+            ledger[entry['id']] = {'quantity_before':float(before_quantity),'quantity_after':float(quantity),
+                'average_before':float(before_basis/before_quantity) if before_quantity else 0,
+                'average_after':float(basis/quantity) if quantity else 0,
+                'basis_before':float(before_basis),'basis_after':float(basis),
+                'profit_loss':results.get(entry['id'],{}).get('profit_loss',0)}
     income = sum((cents(entry['amount']) for entry in item.get('incomes', []) if not entry.get('reversed') and (not as_of or entry['date'] <= as_of)), Decimal(0))
     return {'quantity': quantity, 'basis': basis, 'average': basis / quantity if quantity else Decimal(0),
-            'realized': realized, 'income': income, 'sales': results}
+            'realized': realized, 'income': income, 'sales': results, 'operations':ledger}
 
 
 def sequence(item):

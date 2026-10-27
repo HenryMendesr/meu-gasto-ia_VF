@@ -171,3 +171,10 @@ Em **Investir → Histórico de movimentações → Corrigir**, veja uma prévia
 Logo abaixo do cabeçalho de Investir, o resumo permite alternar entre Hoje e o último dia com operações registradas. Mostra aplicações/compras, vendas líquidas, resultado realizado, proventos, movimentação do caixa e taxas. Despesas pessoais aparecem separadas: dívidas seguem a data de pagamento e gastos comuns a data do lançamento. Operações estornadas ficam fora dos totais.
 
 A variação da posição considera quantidade anterior e final, cotação do dia e fechamento anterior, ajustada pelas compras, vendas e proventos; aportes não viram lucro. Cotações devem ter data do pregão identificada pelo provedor. Sem referências suficientes, o resumo identifica os ativos pendentes e não apresenta um total completo. Uma cotação consultada hoje pode ser de outro pregão. Renda fixa automática tem variação estimada pela taxa; valores manuais não são tratados como desempenho diário comprovado.
+
+
+### Posições ativas e histórico pesquisável
+
+A tabela principal de Investir mostra somente posições abertas de renda variável, além dos cadastros de renda fixa. A venda total retira o ativo dessa tabela sem apagar suas operações ou seu resultado. O histórico abaixo permite buscar nome, código ou instituição e filtrar posições ativas/encerradas. Mostra preço unitário, quantidade, posição e preço médio antes/depois de compras e vendas, além do resultado realizado por dia e proventos separados. A busca consulta todo o histórico; Carregar mais permite continuar além das primeiras 40 operações.
+
+Posições encerradas mantêm ações de comprar novamente ou receber proventos. Uma recompra reabre o ativo, preservando as vendas anteriores. Estornos são identificados e não entram nos resultados; estornar uma venda pode reabrir a posição. Renda fixa não é encerrada automaticamente só pelo vencimento, pois isso não comprova resgate.

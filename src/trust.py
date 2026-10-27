@@ -71,7 +71,7 @@ def insights(month, user_id=None):
     wallet = investments.portfolio(user_id)
     quotes = []
     for item in wallet['investments']:
-        if item['type'] not in investments.VARIABLE_TYPES:
+        if item['type'] not in investments.VARIABLE_TYPES or item.get('remaining_quantity',0)<=0:
             continue
         stamp = item.get('quote_updated_at')
         age = None

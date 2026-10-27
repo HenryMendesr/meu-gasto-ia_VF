@@ -428,13 +428,13 @@ def fetch_cdi_rate() -> dict:
 def calculated(item: dict) -> dict:
     result = dict(item)
     if item["type"] in VARIABLE_TYPES:
-        state = ops.position(item)
+        state = ops.position(item, include_ledger=True)
         remaining = state["quantity"]
         applied = float(state["basis"])
         price = item.get("current_price") if item.get("current_price") is not None else (float(state["average"]) if remaining else item["average_price"])
         current = float(ops.cents(remaining * Decimal(str(price))))
         realized = float(state["realized"])
-        result.update(remaining_quantity=float(remaining), average_price=float(state["average"]) if state["average"] > 0 else item["average_price"],
+        result.update(operation_positions=state["operations"],position_status="active" if remaining>0 else "closed",remaining_quantity=float(remaining), average_price=float(state["average"]) if state["average"] > 0 else item["average_price"],
                       realized_profit_loss=realized, income_received=float(state["income"]),
                       sale_proceeds=round(sum(sale.get("net_total", sale["total"]) for sale in item.get("sales", []) if not sale.get("reversed")), 2),
                       total_profit_loss=round(current - applied + realized + float(state["income"]), 2),
