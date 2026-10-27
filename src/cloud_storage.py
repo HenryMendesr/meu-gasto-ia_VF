@@ -241,7 +241,7 @@ def read_incomes(user_id:int)->dict:
 
 def set_income(payload:dict,user_id:int)->dict:
     month=str(payload.get('month',''));mode=payload.get('income_mode')
-    if mode is not None and mode not in {'auto','declared','imported'}:raise ValueError('Escolha a origem usada no cálculo da renda')
+    if mode is not None and mode not in {'auto','declared','imported','scheduled'}:raise ValueError('Escolha a origem usada no cálculo da renda')
     try:date.fromisoformat(f'{month}-01');cash=round(float(payload.get('cash',0)),2);voucher=round(float(payload.get('voucher',0)),2);payday=int(payload['payday']) if payload.get('payday') not in (None,'') else None;source=str(payload.get('source','')).strip()
     except (TypeError,ValueError) as exc:raise ValueError('Mês ou valores de renda inválidos') from exc
     if min(cash,voucher)<0 or max(cash,voucher)>10_000_000:raise ValueError('Os valores de renda precisam ser positivos')

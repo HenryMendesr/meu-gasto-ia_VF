@@ -31,3 +31,9 @@ O backup anterior à restauração é uma proteção adicional dentro do mesmo b
 ## Antes de operação comercial
 
 Configurar e verificar alertas externos de disponibilidade, retenção e restauração do banco, canal de atendimento, informações do controlador e documentos de privacidade/termos adequados à operação. Integração bancária/Open Finance, envio de e-mail e feed de bolsa em tempo real exigem contratação/configuração próprias e não estão conectados por esta alteração. Não publicar alegações de certificação, conformidade integral ou tração que não tenham sido verificadas.
+
+## Recebimentos programados e cartões
+
+A programação de salário usa o calendário de São Paulo e se processa nos acessos ao bootstrap/resumo/relatório e na consulta periódica da interface. Não existe cron contratado/configurado para executar com o app fechado; vencimentos acumulados são processados no próximo acesso. Cada recebimento usa uma chave mês/parcela persistida na transação da carteira. Alterar datas e valores não reescreve recebimentos vencidos; ajustes do valor efetivo ficam no histórico. Pausar não remove lançamentos anteriores. Valores teóricos não comprovam depósitos bancários e não alteram o caixa dos investimentos.
+
+Os cartões guardam somente nome de exibição e dia do vencimento, com cálculo do próximo vencimento. Não coletar PAN/CVV/senhas nesse campo. Lembretes não afirmam que uma fatura em aberto existe, não sabem o valor devido e não confirmam pagamento.

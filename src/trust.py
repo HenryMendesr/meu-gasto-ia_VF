@@ -40,13 +40,21 @@ def preferences(payload, user_id=None):
 def income_basis(month, incomes, entries, prefs=None):
     declared = incomes.get(month, {}).get('cash', 0)
     imported = round(sum(entry['amount'] for entry in entries if entry['date'].startswith(month)), 2)
+    try:from src.recurring import salary_basis
+    except ImportError:from recurring import salary_basis
+    salary=salary_basis(month,prefs or {})
     mode = (prefs or {}).get('income_modes', {}).get(month, 'auto')
+    if mode=='scheduled' or mode=='auto' and salary['active']:
+        return {'declared':declared,'imported':imported,'mode':mode,'source':'scheduled','used':salary['received']}
     source = 'declared' if mode == 'declared' or (mode == 'auto' and declared > 0) else 'imported'
     return {'declared': declared, 'imported': imported, 'mode': mode, 'source': source,
             'used': declared if source == 'declared' else imported}
 
 
 def insights(month, user_id=None):
+    try:from src.recurring import process_due
+    except ImportError:from recurring import process_due
+    process_due(user_id)
     try:
         first = datetime.strptime(month, '%Y-%m').date()
     except (TypeError, ValueError) as exc:

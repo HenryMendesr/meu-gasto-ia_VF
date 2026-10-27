@@ -126,9 +126,31 @@ def _validate(payload):
         if not isinstance(prefs.get(key,{}),dict):raise ValueError('Preferência inválida')
     for key,value in prefs.get('category_rules',{}).items():
         if not isinstance(value,str) or not 1<=len(value)<=40 or len(key)>100:raise ValueError('Regra de categoria inválida')
+    try:from src import recurring
+    except ImportError:import recurring
+    if 'salary_plan' in prefs:
+        plan=prefs['salary_plan']
+        if isinstance(plan,dict) and plan.get('enabled') is False and plan.get('payments'):
+            prefs['salary_plan']={**recurring.validate_plan({**plan,'enabled':True}),'enabled':False}
+        else:prefs['salary_plan']=recurring.validate_plan(plan)
+    receipts=prefs.get('salary_receipts',[])
+    if not isinstance(receipts,list) or len(receipts)>10000:raise ValueError('Recebimentos inválidos')
+    receipt_keys=set()
+    for entry in receipts:
+        if not isinstance(entry,dict) or not re.fullmatch(r'\d{4}-\d{2}:[12]',str(entry.get('key',''))) or entry['key'] in receipt_keys:raise ValueError('Recebimento duplicado ou inválido')
+        receipt_keys.add(entry['key']);entry['date']=day(entry.get('date'))
+        if entry.get('month')!=entry['date'][:7] or entry['key'][:7]!=entry['month']:raise ValueError('Data do recebimento inválida')
+        if entry.get('status') not in {'scheduled','confirmed','skipped'}:raise ValueError('Estado do recebimento inválido')
+        entry['amount']=amount(entry.get('amount'),.01);entry['source']=text(entry.get('source'),100,True)
+    cards=prefs.get('credit_cards',[])
+    if not isinstance(cards,list) or len(cards)>100:raise ValueError('Cartões inválidos')
+    card_ids=set()
+    for card in cards:
+        if not isinstance(card,dict) or not re.fullmatch('[a-f0-9]{32}',str(card.get('id',''))) or card['id'] in card_ids:raise ValueError('Cartão inválido')
+        card_ids.add(card['id']);card.update(recurring.validate_card(card))
     for month,mode in prefs.get('income_modes',{}).items():
         day(month+'-01')
-        if mode not in {'auto','declared','imported'}:raise ValueError('Base de renda inválida')
+        if mode not in {'auto','declared','imported','scheduled'}:raise ValueError('Base de renda inválida')
     for series in ('history','wealth_history'):
         for entry in portfolio.get(series,[]):
             entry['date']=day(entry.get('date'))

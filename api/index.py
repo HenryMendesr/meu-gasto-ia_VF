@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
-from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security
+from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring
 
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
@@ -289,8 +289,30 @@ def health(request:Request):
 def bootstrap(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
+    recurring.process_due(uid)
     user=storage.get_user(uid) if MULTI_USER else {'id':1,'name':'Você','email':''}
     return {'ok':True,'user':user,'expenses':storage.read_expenses(uid),'incomes':storage.read_incomes(uid),'income_entries':storage.read_income_entries(uid),'budgets':storage.read_budgets(uid),'categories':storage.read_categories(uid),'portfolio':investments.portfolio(uid)}
+@fastapi_app.get('/api/recurring')
+def recurring_status(request:Request,month:str):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**recurring.status(month,uid)}
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
+@fastapi_app.post('/api/recurring/{action}')
+async def recurring_action(action:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:
+        payload=await request.json()
+        if action=='salary':return {'ok':True,**recurring.save_plan(payload,uid)}
+        if action=='card':return {'ok':True,'card':recurring.save_card(payload,uid)}
+        if action=='card-delete':return {'ok':True,**recurring.delete_card(str(payload.get('id','')),uid)}
+        if action=='receipt':return {'ok':True,'receipt':recurring.receipt_action(str(payload.get('key','')),payload,uid)}
+        return json_error(404,'Ação não encontrada')
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError,AttributeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.get('/api/{resource}')
 def read_resource(resource:str,request:Request):
     uid=protected(request)

@@ -47,6 +47,9 @@ def delete_goal(goal_id, user_id=None):
 
 
 def monthly_report(month, user_id=None):
+    try:from src.recurring import process_due
+    except ImportError:from recurring import process_due
+    process_due(user_id)
     if not re.fullmatch(r'\d{4}-\d{2}', str(month)):
         raise ValueError('Escolha um mês válido')
     try:

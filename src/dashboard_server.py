@@ -16,9 +16,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
-    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security
+    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring
 except ImportError:  # execução direta: python src/dashboard_server.py
-    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security
+    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -148,6 +148,10 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
+        if path=="/api/recurring":
+            try:self.respond(200,{"ok":True,**recurring.status(parse_qs(urlparse(self.path).query).get("month",[""])[0])})
+            except ValueError as exc:self.respond(400,{"error":str(exc)})
+            return
         if path in {"/api/insights","/api/account/status","/api/account/export","/api/account/previous-backup","/api/support/status"}:
             try:
                 if path=="/api/insights":result=trust.insights(parse_qs(urlparse(self.path).query).get("month",[""])[0])
@@ -170,6 +174,7 @@ class Handler(SimpleHTTPRequestHandler):
             })
             return
         if path == "/api/bootstrap":
+            recurring.process_due()
             self.respond(200, {"ok": True, "expenses": read_expenses(), "incomes": read_incomes(), "income_entries": storage.read_income_entries(), "budgets": read_budgets(), "categories": storage.read_categories(), "portfolio": investments.portfolio()})
             return
         if path == "/api/expenses":
@@ -235,7 +240,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         operation_match=re.fullmatch(r"/api/investments/([a-f0-9]{32})/operations/((?:initial-)?[a-f0-9]{32})/(preview|confirm)",path)
-        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/')
+        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/') or path.startswith('/api/recurring/')
         sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
         buy_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/buys", path)
         income_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/incomes", path)
@@ -261,6 +266,10 @@ class Handler(SimpleHTTPRequestHandler):
             payload = json.loads(raw_body)
             if operation_match or extra_path:
                 if operation_match:result=trust.operation_change(operation_match.group(1),operation_match.group(2),payload,preview=operation_match.group(3)=='preview')
+                elif path=='/api/recurring/salary':result=recurring.save_plan(payload)
+                elif path=='/api/recurring/card':result={'card':recurring.save_card(payload)}
+                elif path=='/api/recurring/card-delete':result=recurring.delete_card(str(payload.get('id','')))
+                elif path=='/api/recurring/receipt':result={'receipt':recurring.receipt_action(str(payload.get('key','')),payload)}
                 elif path=='/api/preferences':result={'preferences':trust.preferences(payload)}
                 elif path=='/api/product/events':result=trust.usage_event(payload)
                 elif path=='/api/product/feedback':result=trust.feedback(payload)

@@ -250,7 +250,7 @@ def read_incomes(user_id: int | None = None) -> dict[str, dict[str, float]]:
 def set_income(payload: dict, user_id: int | None = None) -> dict:
     month = str(payload.get("month", ""))
     mode = payload.get("income_mode")
-    if mode is not None and mode not in {'auto','declared','imported'}:raise ValueError('Escolha a origem usada no cálculo da renda')
+    if mode is not None and mode not in {'auto','declared','imported','scheduled'}:raise ValueError('Escolha a origem usada no cálculo da renda')
     try:
         date.fromisoformat(f"{month}-01")
         cash, voucher = round(float(payload.get("cash", 0)), 2), round(float(payload.get("voucher", 0)), 2)
