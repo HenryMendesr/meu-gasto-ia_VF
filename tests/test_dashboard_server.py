@@ -160,7 +160,7 @@ class AppStorageTests(unittest.TestCase):
         self.assertGreaterEqual(len(fixed_history["points"]), 2)
         self.assertGreater(fixed_history["points"][-1]["value"], fixed_history["points"][0]["value"])
 
-    def test_stock_history_since_purchase_excludes_earlier_quotes_and_calculates_gain(self):
+    def test_stock_market_history_is_independent_of_purchase_and_gains_start_at_purchase(self):
         stock = investments.create_investment({"type": "Ações", "symbol": "PETR4", "quantity": 2, "average_price": 30, "purchase_date": "2025-01-02"})
         def history(symbol, period):
             self.assertEqual("all", period)
@@ -170,7 +170,8 @@ class AppStorageTests(unittest.TestCase):
                 {"date": "2025-01-03", "price": 33},
                 {"date": "2099-01-01", "price": 99}]}
         result = investments.investment_history(stock["id"], "all", market_fetcher=history)
-        self.assertEqual(["2025-01-02", "2025-01-03"], [point["date"] for point in result["points"]])
+        self.assertEqual(["2025-01-01", "2025-01-02", "2025-01-03"], [point["date"] for point in result["points"]])
+        self.assertEqual(["2025-01-02", "2025-01-03"], [point["date"] for point in result["gain_points"]])
         self.assertEqual(66, result["points"][-1]["value"])
         self.assertEqual(6, result["profit_loss"])
         self.assertEqual(10, result["historical_return_percent"])

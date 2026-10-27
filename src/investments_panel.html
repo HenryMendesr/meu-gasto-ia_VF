@@ -6,15 +6,15 @@
     </div>
     <section class="investment-summary">
       <div class="investment-primary"><small>Patrimônio investido</small><strong id="portfolioCurrent">R$ 0,00</strong><span>Valor total atualizado</span></div>
-      <div><small>Valor aplicado</small><strong id="portfolioApplied">R$ 0,00</strong><span>Total aportado</span></div>
-      <div><small>Resultado acumulado</small><strong id="portfolioProfit">R$ 0,00</strong><span>Lucro ou prejuízo</span></div>
+      <div><small>Valor aplicado</small><strong id="portfolioApplied">R$ 0,00</strong><span>Custo da posição aberta</span></div>
+      <div><small>Resultado acumulado</small><strong id="portfolioProfit">R$ 0,00</strong><span>Em aberto + realizado nas vendas</span><small id="portfolioRealized"></small></div>
       <div class="investment-monthly"><small>Renda fixa / mês</small><strong id="portfolioMonthly">R$ 0,00</strong><span>Estimativa bruta</span></div>
       <div><small>Rentabilidade</small><strong id="portfolioReturn">0,00%</strong><span>Desde as aplicações</span></div>
     </section>
     <div id="investmentCalculationNotice" class="investment-calculation-notice" hidden></div>
     <section class="investment-main">
       <section class="investment-visual"><span class="eyebrow">Composição</span><h3>Distribuição por categoria</h3><div id="investmentAllocation"></div></section>
-      <section class="investment-visual"><span class="eyebrow">Histórico</span><h3 id="portfolioHistoryTitle">Evolução da carteira</h3><svg id="investmentHistory" class="history-chart" viewBox="0 0 520 190" role="img" aria-label="Histórico da carteira"></svg></section>
+      <section class="investment-visual"><span class="eyebrow">Histórico</span><h3 id="portfolioHistoryTitle">Ganhos e perdas acumulados</h3><p class="quote-meta">Somente o resultado em reais, sem o capital aplicado. Inclui vendas registradas. Histórico salvo nas atualizações da carteira.</p><svg id="investmentHistory" class="history-chart" viewBox="0 0 520 190" role="img" aria-label="Histórico da carteira"></svg></section>
     </section>
     <section class="table-card investment-table"><div class="table-head"><div><span class="eyebrow">Posições</span><h3>Seus investimentos</h3></div><select id="investmentClassFilter" class="field"><option value="">Todos</option><option value="fixed">Renda fixa</option><option value="variable">Renda variável</option></select></div><div class="scroll"><table><thead><tr><th aria-label="Detalhes"></th><th>Investimento</th><th>Classe</th><th>Aplicado</th><th>Valor atual</th><th>Rendimento</th><th>Resultado</th><th>Rentabilidade</th><th>Ações</th></tr></thead><tbody id="investmentRows"></tbody></table><div id="investmentEmpty" class="investment-empty" hidden>Nenhum investimento cadastrado.</div></div></section>
     </section>
@@ -43,3 +43,5 @@
     <div class="image-box fixed-field"><strong>Importar dados de imagem</strong><div class="sub">Confira os dados extraídos antes de salvar.</div><input id="investmentImage" type="file" accept="image/png,image/jpeg,image/webp"><button id="extractInvestmentImage" class="secondary" type="button">Ler imagem</button><textarea id="ocrPreview" readonly hidden aria-label="Texto identificado"></textarea></div>
     <button class="save" type="submit">Salvar investimento</button><div id="investmentFormMessage" class="message" hidden></div>
   </form></section></div>
+
+<div id="saleModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="saleTitle" hidden><section class="modal-card"><div class="modal-head"><h2 id="saleTitle">Registrar venda</h2><button id="closeSale" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="saleForm" class="entry-grid"><input name="id" type="hidden"><input name="request_id" type="hidden"><label>Data da venda<input name="date" type="date" required></label><label>Quantidade vendida<input name="quantity" type="number" min="0.00000001" step="any" required></label><label>Como informar o valor<select name="mode"><option value="unit">Preço por ação / unidade</option><option value="total">Valor total da venda</option></select></label><label>Valor recebido (R$)<input name="value" type="number" min="0.00000001" step="any" required></label><p id="salePreview" class="wide"></p><p class="wide quote-meta">Registra uma venda que você já realizou. Não envia ordens à corretora. Pode vender parte ou toda a quantidade disponível.</p><div id="saleMessage" class="message error" hidden></div><button class="save" type="submit">Registrar venda realizada</button></form></section></div>

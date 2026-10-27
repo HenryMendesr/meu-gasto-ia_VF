@@ -6,3 +6,7 @@
 .interactive-asset-chart{position:relative;outline-offset:4px;touch-action:pan-y}.interactive-asset-chart .asset-chart{width:100%;height:auto;min-height:220px;max-height:360px}.interactive-asset-chart .line{stroke:#087f5b;stroke-width:2;filter:none}.chart-tooltip{position:absolute;top:4px;z-index:2;padding:10px 12px;background:#143d30;color:white;border-radius:8px;font-size:12px;pointer-events:none;box-shadow:0 4px 16px #0002;white-space:nowrap}.chart-tooltip[hidden]{display:none}
 
 .chart-tooltip{max-width:calc(100% - 16px);white-space:normal;left:8px!important;top:0}.interactive-asset-chart:focus-visible{outline:2px solid #087f5b}
+
+.asset-chart-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}.asset-chart-tabs [aria-pressed="true"]{background:#143d30;color:white}.asset-sales{margin-top:14px;font-size:12px}.asset-sales summary{cursor:pointer;font-weight:700}.asset-sales p{padding:8px 0;border-bottom:1px solid #dce7e3}.asset-detail-metrics{flex-wrap:wrap}.asset-detail-head{grid-template-columns:minmax(130px,1fr) auto auto}#salePreview{padding:12px;border-radius:10px;background:#edf6f1;font-size:13px;line-height:1.6}@media(max-width:700px){.asset-detail-head{grid-template-columns:1fr}.asset-detail-metrics{grid-column:auto}}
+
+@media(max-width:700px){.interactive-asset-chart .asset-chart{min-height:0;height:auto}.interactive-asset-chart .asset-chart text{font-size:23px}}

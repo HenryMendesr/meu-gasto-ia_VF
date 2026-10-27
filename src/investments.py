@@ -5,6 +5,7 @@ from __future__ import annotations
 from base64 import b64decode
 from binascii import Error as Base64Error
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 import json
 import math
@@ -145,6 +146,11 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
             raise ValueError("A data do saldo deve ficar entre a aplicação e hoje")
         if common["maturity_date"] and common["maturity_date"] < common["application_date"]:
             raise ValueError("O vencimento não pode ser anterior à aplicação")
+    if existing and existing.get("sales"):
+        for field in ("type", "symbol", "quantity", "average_price", "purchase_date"):
+            if common.get(field) != existing.get(field):
+                raise ValueError("Este ativo já tem vendas. Não altere quantidade, preço médio, data ou código da compra")
+        common["sales"] = existing["sales"]
     return common
 
 
@@ -196,8 +202,18 @@ def fetch_market_history(symbol: str, period: str = "1y") -> dict:
         result = data["chart"]["result"][0]
         timestamps = result["timestamp"]
         quote_data = result["indicators"]["quote"][0]["close"]
-        points = [{"date": datetime.fromtimestamp(stamp, timezone.utc).date().isoformat(), "price": round(float(price), 8)}
-                  for stamp, price in zip(timestamps, quote_data) if price is not None and math.isfinite(float(price)) and float(price) > 0]
+        points = []
+        quote_series = result["indicators"]["quote"][0]
+        for index, (stamp, price) in enumerate(zip(timestamps, quote_data)):
+            if price is None or not math.isfinite(float(price)) or float(price) <= 0:
+                continue
+            point = {"date": datetime.fromtimestamp(stamp, timezone.utc).date().isoformat(), "price": round(float(price), 8)}
+            for field in ("open", "high", "low", "volume"):
+                series = quote_series.get(field, [])
+                value = series[index] if index < len(series) else None
+                if value is not None and math.isfinite(float(value)) and float(value) >= 0:
+                    point[field] = round(float(value), 8)
+            points.append(point)
     except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise ValueError(f"Histórico de {symbol} não encontrado") from exc
     if not points:
@@ -278,7 +294,7 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
     if item["type"] in VARIABLE_TYPES:
         history = market_fetcher(item["symbol"], period)
         points = [{**point, "value": round(point["price"] * item["quantity"], 2)} for point in history["points"]
-                  if item["purchase_date"] <= point["date"] <= investment_today().isoformat()]
+                  if point["date"] <= investment_today().isoformat()]
         source = history["source"]
     else:
         points = fixed_income_history(item, period)
@@ -287,10 +303,29 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
     for point in points:
         point["profit_loss"] = round(point["value"] - applied, 2)
         point["return_percent"] = round((point["value"] / applied - 1) * 100, 4) if applied else 0
+    gain_points = []
+    for point in points:
+        if point["date"] < (item.get("purchase_date") or item.get("application_date")):
+            continue
+        sold = [sale for sale in item.get("sales", []) if sale["date"] <= point["date"]]
+        remaining = item.get("quantity", 0) - sum(sale["quantity"] for sale in sold)
+        gain = (sum(sale["profit_loss"] for sale in sold) + remaining * (point["price"] - item["average_price"])) if item["type"] in VARIABLE_TYPES else point["profit_loss"]
+        gain_points.append({"date": point["date"], "value": round(gain, 2)})
+    purchase = item.get("purchase_date") or item.get("application_date")
+    if period == "all" and purchase <= investment_today().isoformat() and (not gain_points or gain_points[0]["date"] > purchase):
+        gain_points.insert(0, {"date": purchase, "value": 0})
+    if item["type"] in VARIABLE_TYPES and calculated_item.get("remaining_quantity") == 0:
+        last_sale_date = max(sale["date"] for sale in item["sales"])
+        gain_points = [point for point in gain_points if point["date"] < last_sale_date]
+        gain_points.append({"date": last_sale_date, "value": calculated_item["realized_profit_loss"]})
+        if last_sale_date < investment_today().isoformat():
+            gain_points.append({"date": investment_today().isoformat(), "value": calculated_item["realized_profit_loss"]})
+    if len(gain_points) > 800:
+        gain_points = [gain_points[round(index * (len(gain_points) - 1) / 799)] for index in range(800)]
     # Keep both endpoints when reducing long daily histories for the browser.
     if len(points) > 800:
         points = [points[round(index * (len(points) - 1) / 799)] for index in range(800)]
-    return {"start_date": item.get("purchase_date") or item.get("application_date"),
+    return {"gain_points": gain_points, "sales": item.get("sales", []), "start_date": item.get("purchase_date") or item.get("application_date"),
             "profit_loss": points[-1]["profit_loss"] if points else None,
             "historical_return_percent": points[-1]["return_percent"] if points else None,
             "id": item_id, "label": item.get("symbol") or item.get("name"), "type": item["type"],
@@ -318,8 +353,13 @@ def fetch_cdi_rate() -> dict:
 def calculated(item: dict) -> dict:
     result = dict(item)
     if item["type"] in VARIABLE_TYPES:
-        applied = item["quantity"] * item["average_price"]
-        current = item["quantity"] * (item.get("current_price") or item["average_price"])
+        remaining = max(0, item["quantity"] - sum(sale["quantity"] for sale in item.get("sales", [])))
+        applied = remaining * item["average_price"]
+        current = remaining * (item.get("current_price") if item.get("current_price") is not None else item["average_price"])
+        realized = round(sum(sale["profit_loss"] for sale in item.get("sales", [])), 2)
+        result.update(remaining_quantity=round(remaining, 8), realized_profit_loss=realized,
+                      sale_proceeds=round(sum(sale["total"] for sale in item.get("sales", [])), 2),
+                      total_profit_loss=round(current - applied + realized, 2))
     else:
         applied = item["amount_invested"]
         current = fixed_income_value(item)
@@ -360,16 +400,19 @@ def portfolio(user_id: int | None = None) -> dict:
     items = [calculated(item) for item in store["investments"]]
     applied = round(sum(item["amount_applied"] for item in items), 2)
     current = round(sum(item["current_value"] for item in items), 2)
+    realized = round(sum(item.get("realized_profit_loss", 0) for item in items), 2)
+    total_gain = round(current - applied + realized, 2)
+    original_cost = sum(item["quantity"] * item["average_price"] if item["type"] in VARIABLE_TYPES else item["amount_applied"] for item in items)
     history = [point for point in store["history"] if point.get("date") != investment_today().isoformat()]
     if items:
-        history.append({"date": investment_today().isoformat(), "current_value": current, "amount_applied": applied})
+        history.append({"date": investment_today().isoformat(), "current_value": current, "amount_applied": applied, "profit_loss": total_gain})
     estimated = bool(items) and all(item["type"] not in VARIABLE_TYPES for item in items)
     if estimated:
         history = fixed_portfolio_history(items)
     return {"investments": items, "history": history[-730:], "history_source": "estimated" if estimated else "snapshots", "updated_at": store["updated_at"],
             "summary": {"amount_applied": applied, "current_value": current,
-                        "profit_loss": round(current - applied, 2),
-                        "return_percent": round(((current / applied) - 1) * 100, 4) if applied else 0,
+                        "profit_loss": total_gain, "unrealized_profit_loss": round(current - applied, 2), "realized_profit_loss": realized,
+                        "return_percent": round(total_gain / original_cost * 100, 4) if original_cost else 0,
                         "monthly_estimated_gain": round(sum(item.get("monthly_estimated_gain") or 0 for item in items), 2)}}
 
 
@@ -378,7 +421,8 @@ def record_snapshot(store: dict) -> None:
     current = round(sum(item["current_value"] for item in items), 2)
     applied = round(sum(item["amount_applied"] for item in items), 2)
     today = investment_today().isoformat()
-    snapshot = {"date": today, "current_value": current, "amount_applied": applied}
+    snapshot = {"date": today, "current_value": current, "amount_applied": applied,
+                "profit_loss": round(current - applied + sum(item.get("realized_profit_loss", 0) for item in items), 2)}
     if store["history"] and store["history"][-1].get("date") == today:
         store["history"][-1] = snapshot
     else:
@@ -409,8 +453,51 @@ def update_investment(item_id: str, payload: dict, user_id: int | None = None) -
     raise KeyError("Investimento não encontrado")
 
 
+def sell_investment(item_id: str, payload: dict, user_id: int | None = None) -> dict:
+    if not isinstance(payload, dict):
+        raise ValueError("Dados da venda inválidos")
+    store = load_store(user_id)
+    item = next((entry for entry in store["investments"] if entry["id"] == item_id), None)
+    if not item:
+        raise KeyError("Investimento não encontrado")
+    if item["type"] not in VARIABLE_TYPES:
+        raise ValueError("Vendas disponíveis apenas para renda variável")
+    request_id = str(payload.get("request_id", ""))
+    if request_id:
+        previous = next((sale for sale in item.get("sales", []) if sale.get("request_id") == request_id), None)
+        if previous:
+            return {"sale": previous, "investment": calculated(item)}
+    quantity = Decimal(str(number(payload.get("quantity"), "Quantidade vendida", minimum=0.00000001)))
+    remaining = Decimal(str(item["quantity"])) - sum((Decimal(str(sale["quantity"])) for sale in item.get("sales", [])), Decimal(0))
+    if quantity > remaining:
+        raise ValueError("Quantidade vendida maior que a posição disponível")
+    sale_date = iso_date(payload.get("date"), "Data da venda")
+    if not item["purchase_date"] <= sale_date <= investment_today().isoformat():
+        raise ValueError("A venda deve ocorrer entre a compra e hoje")
+    mode = payload.get("mode", "unit")
+    value = Decimal(str(number(payload.get("value"), "Valor da venda", minimum=0.00000001)))
+    if mode not in {"unit", "total"}:
+        raise ValueError("Informe preço por ação ou valor total")
+    total = (quantity * value if mode == "unit" else value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if total <= 0:
+        raise ValueError("Valor total da venda deve ser positivo")
+    unit = value if mode == "unit" else total / quantity
+    gain = (total - quantity * Decimal(str(item["average_price"]))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    sale = {"id": uuid4().hex, "request_id": request_id, "date": sale_date, "quantity": float(quantity), "unit_price": float(unit),
+            "total": float(total), "profit_loss": float(gain), "created_at": now_iso()}
+    item.setdefault("sales", []).append(sale)
+    item["sales"].sort(key=lambda entry: entry["date"])
+    item["updated_at"] = store["updated_at"] = now_iso()
+    record_snapshot(store)
+    save_store(store, user_id)
+    return {"sale": sale, "investment": calculated(item)}
+
+
 def delete_investment(item_id: str, user_id: int | None = None) -> None:
     store = load_store(user_id)
+    existing = next((item for item in store["investments"] if item["id"] == item_id), None)
+    if existing and existing.get("sales"):
+        raise ValueError("Ativo com vendas registradas: mantenha-o para preservar o resultado realizado")
     before = len(store["investments"])
     store["investments"] = [item for item in store["investments"] if item["id"] != item_id]
     if len(store["investments"]) == before:

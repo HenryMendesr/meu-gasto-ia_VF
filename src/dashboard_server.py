@@ -197,7 +197,8 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.require_auth():
             return
-        if path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
+        sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
+        if not sale_match and path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
             self.send_error(404)
             return
         try:
@@ -216,6 +217,11 @@ class Handler(SimpleHTTPRequestHandler):
                 self.respond(200, {"ok": True, **analysis, "count": len(items), "needs_review": sum(not item["category"] or item.get("needs_review") for item in items)})
                 return
             payload = json.loads(raw_body)
+            if sale_match:
+                result = investments.sell_investment(sale_match.group(1), payload)
+                rebuild_dashboard()
+                self.respond(201, {"ok": True, **result})
+                return
             if path == "/api/statements/import":
                 items=payload.get("items",[])
                 if not isinstance(items,list) or not items or len(items)>statement_import.MAX_ITEMS:raise ValueError("Selecione de 1 a 500 lançamentos")

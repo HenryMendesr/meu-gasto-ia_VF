@@ -237,6 +237,15 @@ async def import_statement(request:Request):
         try:storage.set_income({'month':suggestion.get('month'),'cash':suggestion.get('amount'),'voucher':current.get('voucher',0),'payday':suggestion.get('day'),'source':suggestion.get('source','')},uid)
         except ValueError as exc:errors.append({'line':0,'error':str(exc)})
     return {'ok':not errors,'imported':imported,'income_imported':income_imported,'skipped':skipped,'income_updated':bool(suggestion) and not any(error['line']==0 for error in errors),'errors':errors}
+@fastapi_app.post('/api/investments/{item_id}/sales')
+async def sell_investment(item_id:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    if not re.fullmatch(r'[a-f0-9]{32}',item_id):return json_error(404,'Investimento não encontrado')
+    try:return {'ok':True,**investments.sell_investment(item_id,await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.put('/api/investments/{item_id}')
 async def update_investment(item_id:str,request:Request):
     uid=protected(request)
@@ -250,6 +259,7 @@ def remove_investment(item_id:str,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
     try:investments.delete_investment(item_id,uid);return {'ok':True}
+    except ValueError as exc:return json_error(400,str(exc))
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
 
 @fastapi_app.put('/api/expenses/{item_id}')
