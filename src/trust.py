@@ -45,10 +45,13 @@ def income_basis(month, incomes, entries, prefs=None):
     salary=salary_basis(month,prefs or {})
     mode = (prefs or {}).get('income_modes', {}).get(month, 'auto')
     if mode=='scheduled' or mode=='auto' and salary['active']:
-        return {'declared':declared,'imported':imported,'mode':mode,'source':'scheduled','used':salary['received']}
+        return {'declared':declared,'imported':imported,'mode':mode,'source':'scheduled','used':salary['confirmed'],'expected':salary['expected'],'pending':salary['pending']}
     source = 'declared' if mode == 'declared' or (mode == 'auto' and declared > 0) else 'imported'
-    return {'declared': declared, 'imported': imported, 'mode': mode, 'source': source,
-            'used': declared if source == 'declared' else imported}
+    value=declared if source=='declared' else imported
+    imported_confirmed=round(sum(entry['amount'] for entry in entries if entry['date'].startswith(month) and entry['date']<=investments.investment_today().isoformat()),2)
+    confirmed=source=='imported' or (prefs or {}).get('income_confirmed',{}).get(month,False)
+    return {'declared':declared,'imported':imported,'mode':mode,'source':source,'used':imported_confirmed if source=='imported' else value if confirmed else 0,
+            'expected':value,'pending':round(value-imported_confirmed,2) if source=='imported' else 0 if confirmed else value}
 
 
 def insights(month, user_id=None):
@@ -66,6 +69,9 @@ def insights(month, user_id=None):
     imported = storage.read_income_entries(user_id)
     store = investments.load_store(user_id)
     basis = income_basis(month, incomes, imported, store.get('preferences'))
+    try:from src import cards
+    except ImportError:import cards
+    rows=cards.planned_expenses(rows,store.get('preferences',{}))
     selected = [row for row in rows if row['date'].startswith(month)]
     cash = [row for row in selected if row['payment'] != 'Voucher']
     voucher = [row for row in selected if row['payment'] == 'Voucher']
@@ -76,6 +82,10 @@ def insights(month, user_id=None):
     upcoming.sort(key=lambda row: row['date'])
     spent = round(sum(row['amount'] for row in cash), 2)
     reserved = round(sum(row['amount'] for row in pending), 2)
+    card_payments=[entry for entry in store.get('preferences',{}).get('card_payments',[]) if not entry.get('reversed')]
+    paid_due=sum(entry['amount'] for entry in card_payments if entry['invoice_key'].endswith(':'+month))
+    paid_month=sum(entry['amount'] for entry in card_payments if entry['date'].startswith(month))
+    projected=round(spent-paid_due+paid_month,2)
     wallet = investments.portfolio(user_id)
     quotes = []
     for item in wallet['investments']:
@@ -92,7 +102,9 @@ def insights(month, user_id=None):
                        'updated_at': stamp, 'manual': manual, 'stale': age is None or age > 24*3600,
                        'price': item['current_price'] if item.get('current_price') is not None else item['average_price']})
     return {'month': month, 'income': basis, 'cash_expenses': spent, 'pending_debts': reserved,
-            'balance': round(basis['used'] - spent, 2),
+            'balance': round(basis['expected'] - projected, 2),'projected_expenses':projected,'confirmed_income':basis['used'],'expected_income':basis['expected'],
+            'confirmed_balance':round(basis['used']-actual_cash(rows,store.get('preferences',{}),month),2),
+            'actual_expenses':actual_cash(rows,store.get('preferences',{}),month),
             'voucher_income': incomes.get(month, {}).get('voucher', 0),
             'voucher_expenses': round(sum(row['amount'] for row in voucher), 2),
             'rows': [{'id': row['id'], 'date': row['date'], 'label': row['where'], 'amount': row['amount'],
@@ -259,3 +271,16 @@ def usage_event(payload, user_id=None):
         for old in sorted(metrics)[:-90]:metrics.pop(old, None)
         return {'recorded': True}
     return investments.mutate_store(save, user_id)
+
+
+def actual_cash(rows,prefs,month):
+    try:from src import cards
+    except ImportError:import cards
+    today=investments.investment_today().isoformat();total=0
+    for row in rows:
+        finance=row.get('finance',{})
+        if finance.get('card_purchase_id') or row['payment']=='Voucher':continue
+        debt=finance.get('financing_kind') in {'loan','debt','asset'}
+        effective=finance.get('paid_date',row['date']) if debt else row['date']
+        if effective.startswith(month) and effective<=today and (not debt or finance.get('paid')):total+=row['amount']
+    return round(total+sum(entry['amount'] for entry in cards.payment_expenses(prefs) if entry['date'].startswith(month)),2)

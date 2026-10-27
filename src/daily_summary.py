@@ -11,6 +11,10 @@ except ImportError:
 def summaries(store, expenses, today):
     try:from src import investments
     except ImportError:import investments
+    try:from src import cards
+    except ImportError:import cards
+    prefs=store.get('preferences',{})
+    expenses=[entry for entry in cards.planned_expenses(expenses,prefs) if not entry.get('finance',{}).get('card_purchase_id')]+cards.payment_expenses(prefs)
     operations=[]
     for item in store['investments']:
         common={'asset_id':item.get('id',item.get('name','')),'label':item.get('symbol') or item.get('name'),'type':item['type']}

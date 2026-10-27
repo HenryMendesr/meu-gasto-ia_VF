@@ -107,6 +107,9 @@ def receipt_action(key,payload,user_id=None):
             if entry.get('status')=='skipped':raise ValueError('Restaure o recebimento antes de confirmar')
             entry['amount']=float(ops.cents(investments.number(payload.get('amount'),'Valor recebido',minimum=.01)))
             if entry['amount']>10000000:raise ValueError('Revise o valor recebido')
+            received_date=investments.iso_date(payload.get('received_date') or investments.investment_today().isoformat(),'Data do recebimento')
+            if received_date>investments.investment_today().isoformat():raise ValueError('Confirme apenas recebimentos já ocorridos')
+            entry['received_date']=received_date
             entry['status']='confirmed'
         else:entry['status']='skipped' if action=='skip' else 'scheduled'
         investments.audit_change(store,'salary_receipt',entry['source'],before,entry,'Ajuste do recebimento de '+entry['date'])
@@ -118,7 +121,13 @@ def salary_basis(month,prefs):
     receipts=[entry for entry in prefs.get('salary_receipts',[]) if entry['month']==month]
     plan=prefs.get('salary_plan',{})
     active=bool(receipts) or bool(plan.get('enabled') and month>=plan['start_month'])
-    return {'active':active,'received':round(sum(entry['amount'] for entry in receipts if entry.get('status')!='skipped'),2)}
+    confirmed_entries=[entry for entry in prefs.get('salary_receipts',[]) if entry.get('status')=='confirmed' and entry.get('received_date',entry['date'])[:7]==month]
+    confirmed=round(sum(entry['amount'] for entry in confirmed_entries),2)
+    expected=round(confirmed+sum(entry['amount'] for entry in receipts if entry.get('status') not in {'skipped','confirmed'}),2)
+    keys={entry['key'] for entry in receipts}
+    if plan.get('enabled') and month>=plan['start_month']:
+        expected=round(expected+sum(payment['amount'] for payment in plan['payments'] if month+':'+payment['slot'] not in keys),2)
+    return {'active':active or bool(confirmed_entries),'received':confirmed,'confirmed':confirmed,'expected':expected,'pending':round(expected-confirmed,2)}
 
 
 def validate_card(payload):
@@ -129,7 +138,19 @@ def validate_card(payload):
         if str(day)!=str(payload.get('due_day')) or not 1<=day<=31:raise ValueError()
     except (TypeError,ValueError) as exc:raise ValueError('Informe um dia de vencimento de 1 a 31') from exc
     if not 1<=len(name)<=80:raise ValueError('Informe o nome do cartão (até 80 caracteres)')
-    return {'name':name,'due_day':day}
+    closing=payload.get('closing_day')
+    if closing not in (None,''):
+        try:
+            closing_number=int(closing)
+            if str(closing_number)!=str(closing) or not 1<=closing_number<=31:raise ValueError()
+        except (ValueError,TypeError) as exc:raise ValueError('Informe o fechamento de 1 a 31') from exc
+    else:closing_number=None
+    limit=payload.get('limit')
+    if limit not in (None,''):
+        limit=investments.number(limit,'Limite do cartão',minimum=0)
+        if limit>10000000:raise ValueError('Revise o limite do cartão')
+    else:limit=None
+    return {'name':name,'due_day':day,'closing_day':closing_number,'limit':limit}
 
 
 def save_card(payload,user_id=None):
@@ -151,6 +172,7 @@ def delete_card(item_id,user_id=None):
     def apply(store):
         prefs=store.setdefault('preferences',{});cards=prefs.get('credit_cards',[])
         if not any(entry['id']==item_id for entry in cards):raise KeyError('Cartão não encontrado')
+        if any(entry['card_id']==item_id for entry in prefs.get('card_purchases',[])):raise ValueError('Este cartão tem compras no histórico. Preserve o cadastro ou remova as compras sem pagamento primeiro')
         prefs['credit_cards']=[entry for entry in cards if entry['id']!=item_id]
         return {'deleted':True}
     return investments.mutate_store(apply,user_id)

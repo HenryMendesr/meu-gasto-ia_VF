@@ -119,6 +119,8 @@ def analyze(items:list[dict],existing_expenses:list[dict]|None=None,income_entri
     for entry in items:
         text=plain(entry['where']);entry['duplicate']=(entry['date'],entry['amount'],text) in (existing_income if entry['kind']=='income' else existing)
         if entry['duplicate']:entry['flags'].append('possível duplicidade');entry['needs_review']=True
+        if entry.get('kind')=='expense' and any(term in text for term in ('pagamento fatura','pagamento de fatura','pgto fatura','pagto fatura','pagamento cartao','pagamento de cartao')):
+            entry['selected']=False;entry['needs_review']=True;entry['flags'].append('pagamento de fatura: confira se já foi registrado em Cartões para não duplicar')
         if any(term in text for term in TRANSFER_OWN_TERMS):entry.update(kind='transfer',category='Transferência própria',confidence=.96,selected=False,needs_review=True);entry['flags'].append('transferência própria')
         peers=groups.get(merchant_key(entry['where']),[]);months={peer['date'][:7] for peer in peers};amounts=[peer['amount'] for peer in peers]
         if len(months)>=2 and max(amounts)-min(amounts)<=max(1,median(amounts)*.08):

@@ -63,6 +63,11 @@ def monthly_report(month, user_id=None):
     incomes = storage.read_incomes(user_id)
     imported = storage.read_income_entries(user_id)
     store = investments.load_store(user_id)
+    try:from src import cards
+    except ImportError:import cards
+    prefs=store.get('preferences',{})
+    expenses=cards.planned_expenses(expenses,prefs)
+    expenses=[entry for entry in expenses if not entry.get('finance',{}).get('card_purchase_id')]+cards.payment_expenses(prefs)
     operations = []
     for item in store['investments']:
         label = item.get('symbol') or item.get('name')
@@ -87,6 +92,7 @@ def monthly_report(month, user_id=None):
         return entry['finance'].get('paid_date', entry['date']) if is_debt(entry) else entry['date']
     def actual_entries(period):
         return [entry for entry in expenses if effective_date(entry).startswith(period)
+                and effective_date(entry)<=investments.investment_today().isoformat()
                 and (not is_debt(entry) or entry.get('finance', {}).get('paid') is True)]
     def income_for(period):
         try:from src.trust import income_basis
@@ -109,12 +115,18 @@ def monthly_report(month, user_id=None):
                      'expenses': round(sum(entry['amount'] for entry in actual_entries(period) if entry['payment'] != 'Voucher'), 2),
                      'invested': round(-sum(entry['amount'] for entry in operations if entry['kind'] == 'Aporte' and entry['date'].startswith(period)), 2)})
     wealth = [point for point in store.get('wealth_history', []) if flow[0]['month'] <= point['date'][:7] <= month]
-    transactions = [{'date': effective_date(entry), 'kind': 'Parcela paga' if is_debt(entry) else 'Gasto',
+    transactions = [{'date': effective_date(entry), 'kind': 'Fatura paga' if entry.get('finance',{}).get('card_payment') else 'Parcela paga' if is_debt(entry) else 'Gasto',
                      'label': entry['where'], 'amount': -entry['amount'], 'account': 'Voucher' if entry['payment'] == 'Voucher' else 'Dia a dia'} for entry in actual]
     transactions += [{'date': entry['date'], 'kind': 'Entrada importada', 'label': entry['source'],
-                      'amount': entry['amount'], 'account': 'Dia a dia'} for entry in imported if entry['date'].startswith(month)]
+                      'amount': entry['amount'], 'account': 'Dia a dia'} for entry in imported if entry['date'].startswith(month) and entry['date']<=investments.investment_today().isoformat() and source=='imported']
     transactions += [{**entry, 'account': 'Investimentos'} for entry in selected]
-    return {'month': month, 'income': income, 'income_source': source, 'imported_income': imported_total,
+    try:from src.trust import income_basis
+    except ImportError:from trust import income_basis
+    basis=income_basis(month,incomes,imported,prefs)
+    transactions += [{'date':entry.get('received_date',entry['date']),'kind':'Salário confirmado','label':entry['source'],'amount':entry['amount'],'account':'Dia a dia'} for entry in prefs.get('salary_receipts',[]) if entry.get('received_date',entry['date'])[:7]==month and entry.get('status')=='confirmed' and source=='scheduled']
+    if source=='declared' and income:
+        transactions.append({'date':month+'-01','kind':'Renda informada confirmada','label':incomes.get(month,{}).get('source') or 'Renda','amount':income,'account':'Dia a dia'})
+    return {'expected_income':basis['expected'],'pending_income':basis['pending'],'month': month, 'income': income, 'income_source': source, 'imported_income': imported_total,
             'cash_expenses': cash_expenses, 'voucher_expenses': voucher, 'available': round(income - cash_expenses, 2),
             'invested': round(-sum(entry['amount'] for entry in selected if entry['kind'] == 'Aporte'), 2),
             'sales': round(sum(entry['amount'] for entry in selected if entry['kind'] == 'Venda'), 2),

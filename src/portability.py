@@ -139,6 +139,7 @@ def _validate(payload):
     for entry in receipts:
         if not isinstance(entry,dict) or not re.fullmatch(r'\d{4}-\d{2}:[12]',str(entry.get('key',''))) or entry['key'] in receipt_keys:raise ValueError('Recebimento duplicado ou inválido')
         receipt_keys.add(entry['key']);entry['date']=day(entry.get('date'))
+        if entry.get('received_date') is not None:entry['received_date']=day(entry['received_date'])
         if entry.get('month')!=entry['date'][:7] or entry['key'][:7]!=entry['month']:raise ValueError('Data do recebimento inválida')
         if entry.get('status') not in {'scheduled','confirmed','skipped'}:raise ValueError('Estado do recebimento inválido')
         entry['amount']=amount(entry.get('amount'),.01);entry['source']=text(entry.get('source'),100,True)
@@ -148,6 +149,15 @@ def _validate(payload):
     for card in cards:
         if not isinstance(card,dict) or not re.fullmatch('[a-f0-9]{32}',str(card.get('id',''))) or card['id'] in card_ids:raise ValueError('Cartão inválido')
         card_ids.add(card['id']);card.update(recurring.validate_card(card))
+    try:from src import cards as card_rules
+    except ImportError:import cards as card_rules
+    card_rules.validate_state(prefs)
+    from collections import Counter
+    available_links=Counter(card_rules.expense_fingerprint({'date':row['expense_date'],'amount':row['amount'],'where':row['place'],'category':row['category'],'payment':row['payment'],'description':row['description']}) for row in data['expenses'])
+    needed_links=Counter(item['linked_fingerprint'] for item in prefs.get('card_purchases',[]) if item.get('linked_fingerprint'))
+    if any(count>available_links[key] for key,count in needed_links.items()):raise ValueError('Compra vinculada sem gasto original correspondente no backup')
+    if any(item['category'] not in categories for item in prefs.get('card_purchases',[])):raise ValueError('Categoria de compra inválida')
+    if not isinstance(prefs.get('income_confirmed',{}),dict) or any(not isinstance(value,bool) for value in prefs.get('income_confirmed',{}).values()):raise ValueError('Confirmações de renda inválidas')
     for month,mode in prefs.get('income_modes',{}).items():
         day(month+'-01')
         if mode not in {'auto','declared','imported','scheduled'}:raise ValueError('Base de renda inválida')

@@ -241,6 +241,7 @@ def read_incomes(user_id:int)->dict:
 
 def set_income(payload:dict,user_id:int)->dict:
     month=str(payload.get('month',''));mode=payload.get('income_mode')
+    if 'confirmed' in payload and not isinstance(payload['confirmed'],bool):raise ValueError('Confirmação de renda inválida')
     if mode is not None and mode not in {'auto','declared','imported','scheduled'}:raise ValueError('Escolha a origem usada no cálculo da renda')
     try:date.fromisoformat(f'{month}-01');cash=round(float(payload.get('cash',0)),2);voucher=round(float(payload.get('voucher',0)),2);payday=int(payload['payday']) if payload.get('payday') not in (None,'') else None;source=str(payload.get('source','')).strip()
     except (TypeError,ValueError) as exc:raise ValueError('Mês ou valores de renda inválidos') from exc
@@ -248,12 +249,13 @@ def set_income(payload:dict,user_id:int)->dict:
     if payday is not None and not 1<=payday<=31 or len(source)>100:raise ValueError('Revise o dia ou a origem da renda')
     initialize()
     with connect() as db,db.cursor() as c:
-        if mode is not None:
-            key=f'investments:{user_id}'
-            c.execute('INSERT INTO app_state(key,value) VALUES(%s,%s::jsonb) ON CONFLICT(key) DO NOTHING',(key,json.dumps(EMPTY_INVESTMENTS)))
-            c.execute('SELECT value FROM app_state WHERE key=%s FOR UPDATE',(key,));data=c.fetchone()['value']
-            data.setdefault('preferences',{}).setdefault('income_modes',{})[month]=mode
-            c.execute('UPDATE app_state SET value=%s::jsonb WHERE key=%s',(json.dumps(data,ensure_ascii=False),key))
+        key=f'investments:{user_id}'
+        c.execute('INSERT INTO app_state(key,value) VALUES(%s,%s::jsonb) ON CONFLICT(key) DO NOTHING',(key,json.dumps(EMPTY_INVESTMENTS)))
+        c.execute('SELECT value FROM app_state WHERE key=%s FOR UPDATE',(key,));data=c.fetchone()['value']
+        if mode is not None:data.setdefault('preferences',{}).setdefault('income_modes',{})[month]=mode
+        flags=data.setdefault('preferences',{}).setdefault('income_confirmed',{})
+        flags[month]=payload.get('confirmed',flags.get(month,True))
+        c.execute('UPDATE app_state SET value=%s::jsonb WHERE key=%s',(json.dumps(data,ensure_ascii=False),key))
         c.execute('INSERT INTO incomes(user_id,month,cash,voucher,payday,source) VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(user_id,month) DO UPDATE SET cash=EXCLUDED.cash,voucher=EXCLUDED.voucher,payday=EXCLUDED.payday,source=EXCLUDED.source,updated_at=NOW()',(user_id,month,cash,voucher,payday,source));db.commit()
     return {'month':month,'cash':cash,'voucher':voucher,'payday':payday,'source':source}
 

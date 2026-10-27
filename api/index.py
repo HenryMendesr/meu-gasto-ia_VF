@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
-from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring
+from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards
 
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
@@ -291,7 +291,8 @@ def bootstrap(request:Request):
     if isinstance(uid,JSONResponse):return uid
     recurring.process_due(uid)
     user=storage.get_user(uid) if MULTI_USER else {'id':1,'name':'Você','email':''}
-    return {'ok':True,'user':user,'expenses':storage.read_expenses(uid),'incomes':storage.read_incomes(uid),'income_entries':storage.read_income_entries(uid),'budgets':storage.read_budgets(uid),'categories':storage.read_categories(uid),'portfolio':investments.portfolio(uid)}
+    portfolio=investments.portfolio(uid)
+    return {'ok':True,'user':user,'expenses':cards.planned_expenses(storage.read_expenses(uid),portfolio.get('preferences',{})),'incomes':storage.read_incomes(uid),'income_entries':storage.read_income_entries(uid),'budgets':storage.read_budgets(uid),'categories':storage.read_categories(uid),'portfolio':portfolio}
 @fastapi_app.get('/api/recurring')
 def recurring_status(request:Request,month:str):
     uid=protected(request)
@@ -309,6 +310,27 @@ async def recurring_action(action:str,request:Request):
         if action=='card':return {'ok':True,'card':recurring.save_card(payload,uid)}
         if action=='card-delete':return {'ok':True,**recurring.delete_card(str(payload.get('id','')),uid)}
         if action=='receipt':return {'ok':True,'receipt':recurring.receipt_action(str(payload.get('key','')),payload,uid)}
+        return json_error(404,'Ação não encontrada')
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError,AttributeError) as exc:return json_error(400,str(exc))
+
+@fastapi_app.get('/api/cards')
+def card_status(request:Request,month:str):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**cards.status(month,uid)}
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
+@fastapi_app.post('/api/cards/{action}')
+async def card_action(action:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:
+        payload=await request.json()
+        if action=='purchase':return {'ok':True,'purchase':cards.purchase(payload,uid)}
+        if action=='purchase-delete':return {'ok':True,**cards.delete_purchase(str(payload.get('id','')),uid)}
+        if action=='pay':return {'ok':True,'payment':cards.pay(payload,uid)}
+        if action=='payment-reverse':return {'ok':True,'payment':cards.reverse_payment(str(payload.get('id','')),uid)}
         return json_error(404,'Ação não encontrada')
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
     except (ValueError,TypeError,AttributeError) as exc:return json_error(400,str(exc))
@@ -473,7 +495,9 @@ async def update_debt(item_id:int,request:Request):
 async def update_expense(item_id:int,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    try:return {'ok':True,**storage.update_expense(item_id,await request.json(),uid)}
+    try:
+        cards.ensure_original_editable(item_id,uid)
+        return {'ok':True,**storage.update_expense(item_id,await request.json(),uid)}
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
     except ValueError as exc:return json_error(400,str(exc))
 
@@ -481,7 +505,9 @@ async def update_expense(item_id:int,request:Request):
 def remove_expense(item_id:int,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    try:storage.delete_expense(item_id,uid,request.query_params.get('scope','single'));return {'ok':True}
+    try:
+        cards.ensure_original_editable(item_id,uid)
+        storage.delete_expense(item_id,uid,request.query_params.get('scope','single'));return {'ok':True}
     except ValueError as exc:return json_error(400,str(exc))
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
 
@@ -496,13 +522,17 @@ def remove_budget(month:str,category:str,request:Request):
 def remove_category(category:str,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    try:storage.delete_category(category,uid);return {'ok':True}
+    try:
+        cards.ensure_category_editable(category,uid)
+        storage.delete_category(category,uid);return {'ok':True}
     except ValueError as exc:return json_error(400,str(exc))
 
 @fastapi_app.put('/api/categories/{category}')
 async def rename_category(category:str,request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    try:return {'ok':True,'category':storage.rename_category(category,(await request.json()).get('name',''),uid)}
+    try:
+        cards.ensure_category_editable(category,uid)
+        return {'ok':True,'category':storage.rename_category(category,(await request.json()).get('name',''),uid)}
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
     except ValueError as exc:return json_error(400,str(exc))

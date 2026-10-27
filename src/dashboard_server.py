@@ -16,9 +16,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
-    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring
+    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards
 except ImportError:  # execução direta: python src/dashboard_server.py
-    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring
+    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -148,6 +148,10 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
+        if path=="/api/cards":
+            try:self.respond(200,{"ok":True,**cards.status(parse_qs(urlparse(self.path).query).get("month",[""])[0])})
+            except ValueError as exc:self.respond(400,{"error":str(exc)})
+            return
         if path=="/api/recurring":
             try:self.respond(200,{"ok":True,**recurring.status(parse_qs(urlparse(self.path).query).get("month",[""])[0])})
             except ValueError as exc:self.respond(400,{"error":str(exc)})
@@ -175,7 +179,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if path == "/api/bootstrap":
             recurring.process_due()
-            self.respond(200, {"ok": True, "expenses": read_expenses(), "incomes": read_incomes(), "income_entries": storage.read_income_entries(), "budgets": read_budgets(), "categories": storage.read_categories(), "portfolio": investments.portfolio()})
+            self.respond(200, {"ok": True, "expenses": cards.planned_expenses(read_expenses(),investments.load_store().get("preferences",{})), "incomes": read_incomes(), "income_entries": storage.read_income_entries(), "budgets": read_budgets(), "categories": storage.read_categories(), "portfolio": investments.portfolio()})
             return
         if path == "/api/expenses":
             self.respond(200, {"ok": True, "expenses": read_expenses()})
@@ -240,7 +244,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         operation_match=re.fullmatch(r"/api/investments/([a-f0-9]{32})/operations/((?:initial-)?[a-f0-9]{32})/(preview|confirm)",path)
-        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/') or path.startswith('/api/recurring/')
+        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/') or path.startswith('/api/recurring/') or path.startswith('/api/cards/')
         sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
         buy_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/buys", path)
         income_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/incomes", path)
@@ -266,6 +270,10 @@ class Handler(SimpleHTTPRequestHandler):
             payload = json.loads(raw_body)
             if operation_match or extra_path:
                 if operation_match:result=trust.operation_change(operation_match.group(1),operation_match.group(2),payload,preview=operation_match.group(3)=='preview')
+                elif path=='/api/cards/purchase':result={'purchase':cards.purchase(payload)}
+                elif path=='/api/cards/purchase-delete':result=cards.delete_purchase(str(payload.get('id','')))
+                elif path=='/api/cards/pay':result={'payment':cards.pay(payload)}
+                elif path=='/api/cards/payment-reverse':result={'payment':cards.reverse_payment(str(payload.get('id','')))}
                 elif path=='/api/recurring/salary':result=recurring.save_plan(payload)
                 elif path=='/api/recurring/card':result={'card':recurring.save_card(payload)}
                 elif path=='/api/recurring/card-delete':result=recurring.delete_card(str(payload.get('id','')))
@@ -371,6 +379,8 @@ class Handler(SimpleHTTPRequestHandler):
                 rebuild_dashboard()
                 self.respond(200, {"ok": True, **item})
                 return
+            if category_match:cards.ensure_category_editable(unquote(category_match.group(1)))
+            if expense_match:cards.ensure_original_editable(int(expense_match.group(1)))
             item = investments.update_investment(investment_match.group(1), payload) if investment_match else storage.update_expense(int(expense_match.group(1)), payload) if expense_match else storage.rename_category(unquote(category_match.group(1)), payload.get("name", ""))
             rebuild_dashboard()
             self.respond(200, {"ok": True, "investment": item} if investment_match else {"ok": True, **item} if expense_match else {"ok": True, "category": item})
@@ -402,9 +412,13 @@ class Handler(SimpleHTTPRequestHandler):
             return
         try:
             if investment_match: investments.delete_investment(investment_match.group(1))
-            elif expense_match: storage.delete_expense(int(expense_match.group(1)),scope=parse_qs(urlparse(self.path).query).get("scope",["single"])[0])
+            elif expense_match:
+                cards.ensure_original_editable(int(expense_match.group(1)))
+                storage.delete_expense(int(expense_match.group(1)),scope=parse_qs(urlparse(self.path).query).get("scope",["single"])[0])
             elif budget_match: storage.delete_budget(budget_match.group(1), unquote(budget_match.group(2)))
-            else: storage.delete_category(unquote(category_match.group(1)))
+            else:
+                cards.ensure_category_editable(unquote(category_match.group(1)))
+                storage.delete_category(unquote(category_match.group(1)))
             rebuild_dashboard()
             self.respond(200, {"ok": True})
         except KeyError as exc:

@@ -250,6 +250,7 @@ def read_incomes(user_id: int | None = None) -> dict[str, dict[str, float]]:
 def set_income(payload: dict, user_id: int | None = None) -> dict:
     month = str(payload.get("month", ""))
     mode = payload.get("income_mode")
+    if "confirmed" in payload and not isinstance(payload["confirmed"],bool):raise ValueError("Confirmação de renda inválida")
     if mode is not None and mode not in {'auto','declared','imported','scheduled'}:raise ValueError('Escolha a origem usada no cálculo da renda')
     try:
         date.fromisoformat(f"{month}-01")
@@ -267,11 +268,12 @@ def set_income(payload: dict, user_id: int | None = None) -> dict:
         with connect() as db:
             db.execute("INSERT INTO incomes(month,cash,voucher,payday,source) VALUES(?,?,?,?,?) ON CONFLICT(month) DO UPDATE SET cash=excluded.cash,voucher=excluded.voucher,payday=excluded.payday,source=excluded.source,updated_at=CURRENT_TIMESTAMP",
                        (month, cash, voucher, payday, source))
-            if mode is not None:
-                row=db.execute("SELECT value FROM app_state WHERE key='investments'").fetchone()
-                data=json.loads(row['value']) if row else {'version':1,'investments':[],'history':[]}
-                data.setdefault('preferences',{}).setdefault('income_modes',{})[month]=mode
-                db.execute("INSERT INTO app_state(key,value) VALUES('investments',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(json.dumps(data,ensure_ascii=False),))
+            row=db.execute("SELECT value FROM app_state WHERE key='investments'").fetchone()
+            data=json.loads(row['value']) if row else {'version':1,'investments':[],'history':[]}
+            if mode is not None:data.setdefault('preferences',{}).setdefault('income_modes',{})[month]=mode
+            flags=data.setdefault('preferences',{}).setdefault('income_confirmed',{})
+            flags[month]=payload.get('confirmed',flags.get(month,True))
+            db.execute("INSERT INTO app_state(key,value) VALUES('investments',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(json.dumps(data,ensure_ascii=False),))
     return {"month": month, "cash": cash, "voucher": voucher, "payday": payday, "source": source, "backup": backup.name}
 
 
