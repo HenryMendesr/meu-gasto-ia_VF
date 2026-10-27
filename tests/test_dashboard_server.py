@@ -13,6 +13,7 @@ class AppStorageTests(unittest.TestCase):
         self.patches = [patch.object(storage, "DATABASE", self.root / "meu_gasto.db"), patch.object(storage, "BACKUPS", self.root / "backups"), patch.object(auth, "AUTH_FILE", self.root / "auth.json")]
         for item in self.patches: item.start()
         storage.initialize()
+        investments.set_cash_balance({"amount": 100000})
 
     def tearDown(self):
         for item in reversed(self.patches): item.stop()

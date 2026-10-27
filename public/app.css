@@ -2495,3 +2495,18 @@ body.offline-page>main.card img {
   .investment-cash .secondary {font-size:11px;padding:10px;}
   .cash-heading p {font-size:10px;}
 }
+
+.investment-cash-preview {
+  padding:14px 16px;
+  border:1px solid #365040;
+  border-radius:10px;
+  background:#18291e;
+  color:#b9e2c8;
+  font-size:12px;
+  line-height:1.7;
+}
+.investment-cash-preview.insufficient {
+  border-color:#683e46;
+  background:#2b191d;
+  color:#ffafb4;
+}

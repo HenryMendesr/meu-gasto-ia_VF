@@ -21,6 +21,7 @@ class InvestmentCashTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_cash_persists_separately_from_assets_and_does_not_change_returns(self):
+        investments.set_cash_balance({'amount':3000})
         stock=investments.create_investment({'type':'Ações','symbol':'PETR4','quantity':100,
                                            'average_price':30,'current_price':34,'purchase_date':'2026-01-01'})
         before=investments.portfolio()
@@ -54,7 +55,9 @@ class InvestmentCashTests(unittest.TestCase):
     def test_cash_is_scoped_to_current_users_store(self):
         stores={42:investments.empty_store(),99:investments.empty_store()}
         def save(data,user_id):stores[user_id]=copy.deepcopy(data)
-        with patch.object(investments.storage,'load_investments',side_effect=lambda user_id:copy.deepcopy(stores[user_id])),patch.object(investments.storage,'save_investments',side_effect=save):
+        def mutate(operation,user_id):
+            data=copy.deepcopy(stores[user_id]);result=operation(data);save(data,user_id);return result
+        with patch.object(investments.storage,'mutate_investments',side_effect=mutate), patch.object(investments.storage,'load_investments',side_effect=lambda user_id:copy.deepcopy(stores[user_id])),patch.object(investments.storage,'save_investments',side_effect=save):
             investments.set_cash_balance({'amount':500},42)
             self.assertEqual(500,investments.portfolio(42)['summary']['cash_balance'])
             self.assertEqual(0,investments.portfolio(99)['summary']['cash_balance'])

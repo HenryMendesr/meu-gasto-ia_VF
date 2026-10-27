@@ -17,6 +17,7 @@ class InvestmentSalesTests(unittest.TestCase):
                         patch.object(investments, 'investment_today', return_value=date(2026, 10, 27))]
         for mock in self.patches:
             mock.start()
+        investments.set_cash_balance({"amount": 10000})
         self.stock = investments.create_investment({'type': 'Ações', 'symbol': 'PETR4', 'quantity': 100,
                                                     'average_price': 30, 'current_price': 34,
                                                     'purchase_date': '2026-01-01'})

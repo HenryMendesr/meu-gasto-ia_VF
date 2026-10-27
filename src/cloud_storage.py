@@ -325,3 +325,18 @@ def load_investments(user_id:int)->dict:
 def save_investments(data:dict,user_id:int)->None:
     initialize();key=f'investments:{user_id}'
     with connect() as db,db.cursor() as c:c.execute('INSERT INTO app_state(key,value) VALUES(%s,%s::jsonb) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value',(key,json.dumps(data,ensure_ascii=False)));db.commit()
+
+
+def mutate_investments(operation, user_id: int):
+    """Lock this user's portfolio while updating assets and available cash."""
+    initialize()
+    key = f'investments:{user_id}'
+    with connect() as db, db.cursor() as c:
+        c.execute('INSERT INTO app_state(key,value) VALUES(%s,%s::jsonb) ON CONFLICT(key) DO NOTHING',
+                  (key, json.dumps(EMPTY_INVESTMENTS)))
+        c.execute('SELECT value FROM app_state WHERE key=%s FOR UPDATE', (key,))
+        data = c.fetchone()['value']
+        result = operation(data)
+        c.execute('UPDATE app_state SET value=%s::jsonb WHERE key=%s', (json.dumps(data, ensure_ascii=False), key))
+        db.commit()
+    return result

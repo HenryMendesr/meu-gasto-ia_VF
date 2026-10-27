@@ -386,3 +386,18 @@ def save_investments(data: dict, user_id: int | None = None) -> None:
         with connect() as db:
             db.execute("INSERT INTO app_state(key,value) VALUES('investments',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                        (json.dumps(data, ensure_ascii=False),))
+
+
+def mutate_investments(operation, user_id: int | None = None):
+    """Apply a portfolio change and its cash movement in one transaction."""
+    initialize()
+    with LOCK:
+        create_backup()
+        with connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT value FROM app_state WHERE key='investments'").fetchone()
+            data = json.loads(row["value"]) if row else {"version": 1, "updated_at": None, "investments": [], "history": []}
+            result = operation(data)
+            db.execute("INSERT INTO app_state(key,value) VALUES('investments',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                       (json.dumps(data, ensure_ascii=False),))
+    return result

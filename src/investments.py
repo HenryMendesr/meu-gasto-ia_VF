@@ -55,6 +55,28 @@ def save_store(data: dict, user_id: int | None = None) -> None:
     storage.save_investments(data, user_id)
 
 
+def mutate_store(operation: Callable, user_id: int | None = None):
+    def apply(data):
+        data.setdefault("cash_balance", 0)
+        data.setdefault("history", [])
+        return operation(data)
+    return storage.mutate_investments(apply, user_id)
+
+
+def cash_cost(item: dict) -> Decimal:
+    value = (Decimal(str(item["quantity"])) * Decimal(str(item["average_price"]))
+             if item["type"] in VARIABLE_TYPES else Decimal(str(item["amount_invested"])))
+    return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def adjust_cash(store: dict, debit: Decimal) -> None:
+    available = Decimal(str(store.get("cash_balance", 0)))
+    if debit > available:
+        raise ValueError("Saldo insuficiente no caixa. Ajuste o caixa antes de salvar o investimento")
+    store["cash_balance"] = float((available - debit).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    store["cash_updated_at"] = now_iso()
+
+
 def number(value, field: str, *, required: bool = True, minimum: float = 0) -> float | None:
     if value in (None, "") and not required:
         return None
@@ -124,6 +146,7 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
             "rate_source": str(payload.get("rate_source") or (existing or {}).get("rate_source") or "Manual"),
             "rate_updated_at": payload.get("rate_updated_at", (existing or {}).get("rate_updated_at")),
         })
+        common["amount_invested"] = float(Decimal(str(common["amount_invested"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
         period = str(payload.get("rate_period", (existing or {}).get("rate_period", "year")))
         if period not in {"year", "month"}:
             raise ValueError("Escolha taxa ao mês ou ao ano")
@@ -355,8 +378,9 @@ def calculated(item: dict) -> dict:
     result = dict(item)
     if item["type"] in VARIABLE_TYPES:
         remaining = max(0, item["quantity"] - sum(sale["quantity"] for sale in item.get("sales", [])))
-        applied = remaining * item["average_price"]
-        current = remaining * (item.get("current_price") if item.get("current_price") is not None else item["average_price"])
+        applied = float((Decimal(str(remaining)) * Decimal(str(item["average_price"]))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+        price = item.get("current_price") if item.get("current_price") is not None else item["average_price"]
+        current = float((Decimal(str(remaining)) * Decimal(str(price))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
         realized = round(sum(sale["profit_loss"] for sale in item.get("sales", [])), 2)
         result.update(remaining_quantity=round(remaining, 8), realized_profit_loss=realized,
                       sale_proceeds=round(sum(sale["total"] for sale in item.get("sales", [])), 2),
@@ -403,7 +427,7 @@ def portfolio(user_id: int | None = None) -> dict:
     current = round(sum(item["current_value"] for item in items), 2)
     realized = round(sum(item.get("realized_profit_loss", 0) for item in items), 2)
     total_gain = round(current - applied + realized, 2)
-    original_cost = sum(item["quantity"] * item["average_price"] if item["type"] in VARIABLE_TYPES else item["amount_applied"] for item in items)
+    original_cost = sum(float(cash_cost(item)) for item in items)
     history = [point for point in store["history"] if point.get("date") != investment_today().isoformat()]
     if items:
         history.append({"date": investment_today().isoformat(), "current_value": current, "amount_applied": applied, "profit_loss": total_gain})
@@ -424,10 +448,10 @@ def set_cash_balance(payload: dict, user_id: int | None = None) -> dict:
         raise ValueError("Informe o saldo do caixa")
     value = number(payload.get("amount"), "Saldo do caixa", minimum=0)
     amount = float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-    store = load_store(user_id)
-    store["cash_balance"] = amount
-    store["cash_updated_at"] = now_iso()
-    save_store(store, user_id)
+    def update(store):
+        store["cash_balance"] = amount
+        store["cash_updated_at"] = now_iso()
+    mutate_store(update, user_id)
     return portfolio(user_id)
 
 
@@ -446,100 +470,114 @@ def record_snapshot(store: dict) -> None:
 
 
 def create_investment(payload: dict, user_id: int | None = None) -> dict:
-    store = load_store(user_id)
     item = normalize_payload(payload)
-    store["investments"].append(item)
-    store["updated_at"] = now_iso()
-    record_snapshot(store)
-    save_store(store, user_id)
-    return calculated(item)
+    def create(store):
+        cost = cash_cost(item)
+        adjust_cash(store, cost)
+        item["cash_funded_amount"] = float(cost)
+        store["investments"].append(item)
+        store["updated_at"] = now_iso()
+        record_snapshot(store)
+        return calculated(item)
+    return mutate_store(create, user_id)
 
 
 def update_investment(item_id: str, payload: dict, user_id: int | None = None) -> dict:
-    store = load_store(user_id)
-    for index, existing in enumerate(store["investments"]):
-        if existing["id"] == item_id:
-            item = normalize_payload(payload, existing)
-            store["investments"][index] = item
-            store["updated_at"] = now_iso()
-            record_snapshot(store)
-            save_store(store, user_id)
-            return calculated(item)
-    raise KeyError("Investimento não encontrado")
+    def update(store):
+        for index, existing in enumerate(store["investments"]):
+            if existing["id"] == item_id:
+                item = normalize_payload(payload, existing)
+                if "cash_funded_amount" in existing:
+                    cost = cash_cost(item)
+                    adjust_cash(store, cost - Decimal(str(existing["cash_funded_amount"])))
+                    item["cash_funded_amount"] = float(cost)
+                store["investments"][index] = item
+                store["updated_at"] = now_iso()
+                record_snapshot(store)
+                return calculated(item)
+        raise KeyError("Investimento não encontrado")
+    return mutate_store(update, user_id)
 
 
 def sell_investment(item_id: str, payload: dict, user_id: int | None = None) -> dict:
     if not isinstance(payload, dict):
         raise ValueError("Dados da venda inválidos")
-    store = load_store(user_id)
-    item = next((entry for entry in store["investments"] if entry["id"] == item_id), None)
-    if not item:
-        raise KeyError("Investimento não encontrado")
-    if item["type"] not in VARIABLE_TYPES:
-        raise ValueError("Vendas disponíveis apenas para renda variável")
-    request_id = str(payload.get("request_id", ""))
-    if request_id:
-        previous = next((sale for sale in item.get("sales", []) if sale.get("request_id") == request_id), None)
-        if previous:
-            return {"sale": previous, "investment": calculated(item)}
-    quantity = Decimal(str(number(payload.get("quantity"), "Quantidade vendida", minimum=0.00000001)))
-    remaining = Decimal(str(item["quantity"])) - sum((Decimal(str(sale["quantity"])) for sale in item.get("sales", [])), Decimal(0))
-    if quantity > remaining:
-        raise ValueError("Quantidade vendida maior que a posição disponível")
-    sale_date = iso_date(payload.get("date"), "Data da venda")
-    if not item["purchase_date"] <= sale_date <= investment_today().isoformat():
-        raise ValueError("A venda deve ocorrer entre a compra e hoje")
-    mode = payload.get("mode", "unit")
-    value = Decimal(str(number(payload.get("value"), "Valor da venda", minimum=0.00000001)))
-    if mode not in {"unit", "total"}:
-        raise ValueError("Informe preço por ação ou valor total")
-    total = (quantity * value if mode == "unit" else value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    if total <= 0:
-        raise ValueError("Valor total da venda deve ser positivo")
-    unit = value if mode == "unit" else total / quantity
-    gain = (total - quantity * Decimal(str(item["average_price"]))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    sale = {"id": uuid4().hex, "request_id": request_id, "date": sale_date, "quantity": float(quantity), "unit_price": float(unit),
-            "total": float(total), "profit_loss": float(gain), "created_at": now_iso()}
-    item.setdefault("sales", []).append(sale)
-    item["sales"].sort(key=lambda entry: entry["date"])
-    item["updated_at"] = store["updated_at"] = now_iso()
-    record_snapshot(store)
-    save_store(store, user_id)
-    return {"sale": sale, "investment": calculated(item)}
+    def sell(store):
+        item = next((entry for entry in store["investments"] if entry["id"] == item_id), None)
+        if not item:
+            raise KeyError("Investimento não encontrado")
+        if item["type"] not in VARIABLE_TYPES:
+            raise ValueError("Vendas disponíveis apenas para renda variável")
+        request_id = str(payload.get("request_id", ""))
+        if request_id:
+            previous = next((sale for sale in item.get("sales", []) if sale.get("request_id") == request_id), None)
+            if previous:
+                return {"sale": previous, "investment": calculated(item)}
+        quantity = Decimal(str(number(payload.get("quantity"), "Quantidade vendida", minimum=0.00000001)))
+        remaining = Decimal(str(item["quantity"])) - sum((Decimal(str(sale["quantity"])) for sale in item.get("sales", [])), Decimal(0))
+        if quantity > remaining:
+            raise ValueError("Quantidade vendida maior que a posição disponível")
+        sale_date = iso_date(payload.get("date"), "Data da venda")
+        if not item["purchase_date"] <= sale_date <= investment_today().isoformat():
+            raise ValueError("A venda deve ocorrer entre a compra e hoje")
+        mode = payload.get("mode", "unit")
+        value = Decimal(str(number(payload.get("value"), "Valor da venda", minimum=0.00000001)))
+        if mode not in {"unit", "total"}:
+            raise ValueError("Informe preço por ação ou valor total")
+        total = (quantity * value if mode == "unit" else value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        if total <= 0:
+            raise ValueError("Valor total da venda deve ser positivo")
+        unit = value if mode == "unit" else total / quantity
+        gain = (total - quantity * Decimal(str(item["average_price"]))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        sale = {"id": uuid4().hex, "request_id": request_id, "date": sale_date, "quantity": float(quantity), "unit_price": float(unit),
+                "total": float(total), "profit_loss": float(gain), "created_at": now_iso()}
+        item.setdefault("sales", []).append(sale)
+        item["sales"].sort(key=lambda entry: entry["date"])
+        item["updated_at"] = store["updated_at"] = now_iso()
+        record_snapshot(store)
+        return {"sale": sale, "investment": calculated(item)}
+    return mutate_store(sell, user_id)
 
 
 def delete_investment(item_id: str, user_id: int | None = None) -> None:
-    store = load_store(user_id)
-    existing = next((item for item in store["investments"] if item["id"] == item_id), None)
-    if existing and existing.get("sales"):
-        raise ValueError("Ativo com vendas registradas: mantenha-o para preservar o resultado realizado")
-    before = len(store["investments"])
-    store["investments"] = [item for item in store["investments"] if item["id"] != item_id]
-    if len(store["investments"]) == before:
-        raise KeyError("Investimento não encontrado")
-    store["updated_at"] = now_iso()
-    record_snapshot(store)
-    save_store(store, user_id)
+    def delete(store):
+        existing = next((item for item in store["investments"] if item["id"] == item_id), None)
+        if not existing:
+            raise KeyError("Investimento não encontrado")
+        if existing.get("sales"):
+            raise ValueError("Ativo com vendas registradas: mantenha-o para preservar o resultado realizado")
+        if "cash_funded_amount" in existing:
+            adjust_cash(store, -Decimal(str(existing["cash_funded_amount"])))
+        store["investments"] = [item for item in store["investments"] if item["id"] != item_id]
+        store["updated_at"] = now_iso()
+        record_snapshot(store)
+    mutate_store(delete, user_id)
 
 
 def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Callable = fetch_cdi_rate, user_id: int | None = None) -> dict:
     store = load_store(user_id)
     errors = []
     cdi = None
+    updates = {}
+    identities = {item["id"]: (item["type"], item.get("symbol"), item.get("profitability_type")) for item in store["investments"]}
     for item in store["investments"]:
         try:
             if item["type"] in VARIABLE_TYPES:
                 info = quote_fetcher(item["symbol"])
-                item.update({"current_price": info["price"], "daily_change_percent": info["daily_change_percent"],
-                             "quote_source": info["source"], "quote_updated_at": info["updated_at"]})
+                updates[item["id"]] = {"current_price": info["price"], "daily_change_percent": info["daily_change_percent"],
+                                       "quote_source": info["source"], "quote_updated_at": info["updated_at"]}
             elif item.get("profitability_type") == "CDI":
                 cdi = cdi or cdi_fetcher()
-                item.update({"cdi_rate": cdi["rate"], "rate_source": cdi["source"], "rate_updated_at": cdi["updated_at"]})
+                updates[item["id"]] = {"cdi_rate": cdi["rate"], "rate_source": cdi["source"], "rate_updated_at": cdi["updated_at"]}
         except ValueError as exc:
             errors.append({"id": item["id"], "name": item.get("symbol") or item.get("name"), "error": str(exc)})
-    store["updated_at"] = now_iso()
-    record_snapshot(store)
-    save_store(store, user_id)
+    def merge(current):
+        for item in current["investments"]:
+            if identities.get(item["id"]) == (item["type"], item.get("symbol"), item.get("profitability_type")):
+                item.update(updates.get(item["id"], {}))
+        current["updated_at"] = now_iso()
+        record_snapshot(current)
+    mutate_store(merge, user_id)
     result = portfolio(user_id)
     result["errors"] = errors
     return result
