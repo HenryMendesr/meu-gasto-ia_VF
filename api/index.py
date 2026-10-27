@@ -181,6 +181,13 @@ async def create_resource(resource:str,request:Request):
         return json_error(404,'Rota não encontrada')
     except storage.DuplicateExpenseError as exc:return JSONResponse({'ok':False,'code':'duplicate','error':str(exc)},status_code=409)
     except (ValueError,KeyError) as exc:return json_error(400,str(exc).strip("'"))
+@fastapi_app.post('/api/investments/cash')
+async def update_cash(request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**investments.set_cash_balance(await request.json(),uid)}
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.post('/api/investments/refresh')
 def refresh(request:Request):
     uid=protected(request)

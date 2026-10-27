@@ -2448,3 +2448,50 @@ body.offline-page>main.card img {
   overflow:hidden;
   white-space:nowrap;
 }
+
+/* Cash is available capital, separate from invested assets and performance. */
+.investment-cash {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  gap:26px;
+  align-items:center;
+  margin-bottom:20px;
+  padding:22px 24px;
+  border:1px solid #354d3e;
+  border-radius:var(--radius);
+  background:linear-gradient(110deg,#19291f,#101714);
+}
+.cash-heading {
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.cash-icon {
+  display:grid;
+  place-items:center;
+  flex:0 0 42px;
+  width:42px;
+  height:42px;
+  border:1px solid #3b5544;
+  border-radius:12px;
+  color:var(--green);
+  background:#20392a;
+}
+.cash-icon svg {width:22px;height:22px;}
+.cash-heading h3 {margin:5px 0;font-size:15px;font-weight:550;}
+.cash-heading p {margin:0;font-size:11px;color:var(--muted);}
+.cash-amount {text-align:right;}
+.cash-amount strong {display:block;font-size:30px;font-weight:550;letter-spacing:-.045em;color:#b5efcd;}
+.cash-amount small {display:block;font-size:10px;color:var(--muted);margin-top:4px;}
+@media(max-width:1100px) {
+  .investment-cash {grid-template-columns:1fr auto;gap:18px;}
+  .cash-heading {grid-column:1/-1;}
+  .cash-amount {text-align:left;}
+}
+@media(max-width:600px) {
+  .investment-cash {padding:20px;gap:20px 12px;}
+  .cash-heading {align-items:flex-start;}
+  .cash-amount strong {font-size:28px;}
+  .investment-cash .secondary {font-size:11px;padding:10px;}
+  .cash-heading p {font-size:10px;}
+}

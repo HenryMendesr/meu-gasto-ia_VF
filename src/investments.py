@@ -47,6 +47,7 @@ def load_store(user_id: int | None = None) -> dict:
         raise ValueError("O arquivo de investimentos está inválido")
     data.setdefault("history", [])
     data.setdefault("updated_at", None)
+    data.setdefault("cash_balance", 0)
     return data
 
 
@@ -410,10 +411,24 @@ def portfolio(user_id: int | None = None) -> dict:
     if estimated:
         history = fixed_portfolio_history(items)
     return {"investments": items, "history": history[-730:], "history_source": "estimated" if estimated else "snapshots", "updated_at": store["updated_at"],
-            "summary": {"amount_applied": applied, "current_value": current,
+            "cash_updated_at": store.get("cash_updated_at"),
+            "summary": {"cash_balance": store.get("cash_balance", 0), "total_with_cash": round(current + store.get("cash_balance", 0), 2),
+                        "amount_applied": applied, "current_value": current,
                         "profit_loss": total_gain, "unrealized_profit_loss": round(current - applied, 2), "realized_profit_loss": realized,
                         "return_percent": round(total_gain / original_cost * 100, 4) if original_cost else 0,
                         "monthly_estimated_gain": round(sum(item.get("monthly_estimated_gain") or 0 for item in items), 2)}}
+
+
+def set_cash_balance(payload: dict, user_id: int | None = None) -> dict:
+    if not isinstance(payload, dict):
+        raise ValueError("Informe o saldo do caixa")
+    value = number(payload.get("amount"), "Saldo do caixa", minimum=0)
+    amount = float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    store = load_store(user_id)
+    store["cash_balance"] = amount
+    store["cash_updated_at"] = now_iso()
+    save_store(store, user_id)
+    return portfolio(user_id)
 
 
 def record_snapshot(store: dict) -> None:

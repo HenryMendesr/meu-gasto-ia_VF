@@ -198,7 +198,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
-        if not sale_match and path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
+        if not sale_match and path not in {"/api/expenses", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/cash", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
             self.send_error(404)
             return
         try:
@@ -259,6 +259,11 @@ class Handler(SimpleHTTPRequestHandler):
                 item = investments.create_investment(payload)
                 rebuild_dashboard()
                 self.respond(201, {"ok": True, "investment": item})
+                return
+            if path == "/api/investments/cash":
+                result = investments.set_cash_balance(payload)
+                rebuild_dashboard()
+                self.respond(200, {"ok": True, **result})
                 return
             if path == "/api/investments/refresh":
                 result = investments.refresh_investments()
