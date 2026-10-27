@@ -12,6 +12,16 @@ except ImportError:
     import portfolio_ops as ops
 
 
+GOAL_MODES={'manual','portfolio_value','portfolio_cost'}
+
+
+def goal_progress(goal, items):
+    mode=goal.get('tracking_mode','manual')
+    field={'portfolio_value':'current_value','portfolio_cost':'amount_applied'}.get(mode)
+    current=round(sum(item[field] for item in items),2) if field else goal.get('current_amount',0)
+    return {**goal,'tracking_mode':mode,'current_amount':current}
+
+
 def save_goal(payload, user_id=None):
     if not isinstance(payload, dict):
         raise ValueError('Dados da meta inválidos')
@@ -19,7 +29,9 @@ def save_goal(payload, user_id=None):
     if not 2 <= len(name) <= 80:
         raise ValueError('Informe um nome de 2 a 80 caracteres')
     target = float(ops.cents(investments.number(payload.get('target_amount'), 'Valor da meta', minimum=.01)))
-    current = float(ops.cents(investments.number(payload.get('current_amount', 0), 'Valor já reservado', minimum=0)))
+    mode=str(payload.get('tracking_mode','manual'))
+    if mode not in GOAL_MODES:raise ValueError('Escolha acompanhamento manual, valor atual investido ou valor aplicado')
+    current = float(ops.cents(investments.number(payload.get('current_amount', 0), 'Valor já reservado', minimum=0))) if mode=='manual' else 0
     deadline = investments.iso_date(payload.get('target_date'), 'Prazo da meta')
     goal_id = str(payload.get('id') or '')
     def save(store):
@@ -28,12 +40,12 @@ def save_goal(payload, user_id=None):
         if goal_id and not existing:
             raise KeyError('Meta não encontrada')
         goal = {'id': goal_id or uuid4().hex, 'name': name, 'target_amount': target,
-                'current_amount': current, 'target_date': deadline, 'updated_at': investments.now_iso()}
+                'current_amount': current, 'tracking_mode':mode,'target_date': deadline, 'updated_at': investments.now_iso()}
         if existing:
             goals[goals.index(existing)] = goal
         else:
             goals.append(goal)
-        return goal
+        return goal_progress(goal,[investments.calculated(item) for item in store['investments']])
     return investments.mutate_store(save, user_id)
 
 

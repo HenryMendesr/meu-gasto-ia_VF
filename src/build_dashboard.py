@@ -61,7 +61,7 @@ template = r'''<!doctype html>
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <title>Minha Carteira</title>
   <style>/* Component layouts are assembled below. */</style>
-  <link rel="stylesheet" href="/app.css?v=25">
+  <link rel="stylesheet" href="/app.css?v=26">
 </head>
 <body><a class="skip-link" href="#mainContent">Ir para o conteúdo</a><div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div><div id="offlineNotice" class="offline-notice" hidden>Você está sem conexão. Consultas e alterações ficam disponíveis quando o servidor voltar.</div><main id="mainContent" class="shell">
   <header class="top"><div class="brand"><img class="mark" src="/icons/icon-192.png" alt=""><div><span class="brand-kicker">FINANÇAS PESSOAIS</span><h1>Minha Carteira</h1></div></div><div class="top-context"><span id="welcomeMessage">Resumo financeiro</span><strong id="todayLabel"></strong></div><div class="top-actions"><button id="openAccount" class="account-button" type="button">Minha conta</button><span class="online-chip"><i></i> Conectando</span><div id="userBadge" class="user-badge" hidden></div><button id="installApp" class="install-button" type="button" hidden>Instalar app</button><form class="logout" method="post" action="/logout"><button type="submit" aria-label="Sair da conta">Sair <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 5H5v14h4M10 12h11M17 8l4 4-4 4"/></svg></button></form></div></header>

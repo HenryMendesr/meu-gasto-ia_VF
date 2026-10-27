@@ -492,8 +492,11 @@ def portfolio(user_id: int | None = None) -> dict:
     try:from src.daily_summary import summaries
     except ImportError:from daily_summary import summaries
     daily=summaries(store, storage.read_expenses(user_id), investment_today().isoformat())
+    try:from src.planning import goal_progress
+    except ImportError:from planning import goal_progress
+    goals=[goal_progress(goal,items) for goal in store.get('goals',[])]
     return {"daily_summary":daily,"investments": items, "history": history[-730:], "history_source": "estimated" if estimated else "snapshots", "updated_at": store["updated_at"],
-            "cash_updated_at": store.get("cash_updated_at"), "goals": store.get("goals", []), "preferences": store.get("preferences", {}), "audit_log": store.get("audit_log", [])[-50:],
+            "cash_updated_at": store.get("cash_updated_at"), "goals": goals, "preferences": store.get("preferences", {}), "audit_log": store.get("audit_log", [])[-50:],
             "summary": {"cash_balance": store.get("cash_balance", 0), "total_with_cash": round(current + store.get("cash_balance", 0), 2),
                         "amount_applied": applied, "current_value": current,
                         "profit_loss": total_gain, "income_received": income, "unrealized_profit_loss": round(current - applied, 2), "realized_profit_loss": realized,

@@ -212,6 +212,8 @@ def _validate(payload):
         if not re.fullmatch('[a-f0-9]{32}',str(goal.get('id',''))):raise ValueError('Meta inválida')
         goal['name']=text(goal.get('name'),80,True);goal['target_amount']=amount(goal.get('target_amount'),.01)
         goal['current_amount']=amount(goal.get('current_amount',0));goal['target_date']=day(goal.get('target_date'))
+        if goal.get('tracking_mode','manual') not in {'manual','portfolio_value','portfolio_cost'}:raise ValueError('Acompanhamento da meta inválido')
+        if goal.get('tracking_mode','manual')!='manual':goal['current_amount']=0
     # A restored backup never silently enables optional product metrics.
     portfolio.setdefault('preferences',{})['analytics_consent']=False
     portfolio.pop('usage_metrics',None)
