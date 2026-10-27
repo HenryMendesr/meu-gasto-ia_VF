@@ -133,4 +133,4 @@ Arquivos principais:
 - `public/manifest.webmanifest`: instalação da PWA.
 - `public/service-worker.js`: cache seguro e atualização.
 
-Os gráficos individuais abrem em **Desde o início**, limitados à data da compra/aplicação. A linha tracejada indica o valor aplicado; o resultado em reais e percentual usa o último fechamento disponível. Na renda variável, o histórico é reconstruído com a quantidade e o preço médio cadastrados, sem dividendos, taxas ou histórico de compras e vendas. Cotações históricas dependem da disponibilidade do Yahoo Finance.
+Os gráficos individuais abrem em **Desde o início**, limitados à data da compra/aplicação. Na renda variável, o gráfico mostra o preço de uma unidade e a linha tracejada indica seu preço médio. Passe o mouse, toque ou use as setas do teclado para consultar a data e a cotação de cada ponto. Na renda fixa, o gráfico mostra o saldo e o valor aplicado. Na renda variável, o histórico é reconstruído com a quantidade e o preço médio cadastrados, sem dividendos, taxas ou histórico de compras e vendas. Cotações históricas dependem da disponibilidade do Yahoo Finance.

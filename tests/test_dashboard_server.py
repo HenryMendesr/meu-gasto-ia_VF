@@ -177,6 +177,11 @@ class AppStorageTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             investments.investment_history(stock["id"], "invalid", market_fetcher=history)
 
+    def test_investment_rejects_accidentally_truncated_year(self):
+        with self.assertRaises(ValueError):
+            investments.iso_date("0026-10-27", "Data da compra")
+        self.assertEqual("2026-10-27", investments.iso_date("2026-10-27", "Data da compra"))
+
     def test_fixed_history_all_starts_at_application(self):
         item = {"application_date": "2010-01-01", "amount_invested": 1000,
                 "profitability_type": "Prefixado", "contracted_rate": 10}

@@ -69,7 +69,10 @@ def iso_date(value, field: str, *, required: bool = True) -> str | None:
     if value in (None, "") and not required:
         return None
     try:
-        return date.fromisoformat(str(value)).isoformat()
+        parsed = date.fromisoformat(str(value))
+        if parsed.year < 1900:
+            raise ValueError("Ano deve ter quatro dígitos e ser a partir de 1900")
+        return parsed.isoformat()
     except ValueError as exc:
         raise ValueError(f"{field} inválida") from exc
 
@@ -194,7 +197,7 @@ def fetch_market_history(symbol: str, period: str = "1y") -> dict:
         timestamps = result["timestamp"]
         quote_data = result["indicators"]["quote"][0]["close"]
         points = [{"date": datetime.fromtimestamp(stamp, timezone.utc).date().isoformat(), "price": round(float(price), 8)}
-                  for stamp, price in zip(timestamps, quote_data) if price is not None]
+                  for stamp, price in zip(timestamps, quote_data) if price is not None and math.isfinite(float(price)) and float(price) > 0]
     except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise ValueError(f"Histórico de {symbol} não encontrado") from exc
     if not points:
@@ -270,6 +273,7 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
         raise KeyError("Investimento não encontrado")
     if period not in {"1m", "3m", "6m", "1y", "5y", "all"}:
         raise ValueError("Período inválido")
+    iso_date(item.get("purchase_date") or item.get("application_date"), "Data da aplicação: edite o investimento e confira o ano")
     calculated_item = calculated(item)
     if item["type"] in VARIABLE_TYPES:
         history = market_fetcher(item["symbol"], period)
