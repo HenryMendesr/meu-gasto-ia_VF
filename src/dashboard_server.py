@@ -16,9 +16,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
-    from src import auth, investments, runtime_storage as storage, statement_import, planning
+    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security
 except ImportError:  # execução direta: python src/dashboard_server.py
-    import auth, investments, runtime_storage as storage, statement_import, planning
+    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,7 +87,7 @@ class Handler(SimpleHTTPRequestHandler):
             values = {"__TITLE__": "Primeiro acesso", "__SUBTITLE__": "Proteja seus dados com uma senha", "__ACTION__": "/setup", "__FIELDS__": fields, "__BUTTON__": "Criar acesso", "__FOOTER__": ""}
         else:
             fields = '<label>Senha<input name="password" type="password" autocomplete="current-password" required autofocus></label>'
-            values = {"__TITLE__": "Entrar", "__SUBTITLE__": "Acesse seu controle financeiro", "__ACTION__": "/login", "__FIELDS__": fields, "__BUTTON__": "Entrar", "__FOOTER__": ""}
+            values = {"__TITLE__": "Entrar", "__SUBTITLE__": "Acesse seu controle financeiro", "__ACTION__": "/login", "__FIELDS__": fields, "__BUTTON__": "Entrar", "__FOOTER__": '<a href="/recover">Recuperar acesso com código</a>'}
         values["__ERROR__"] = f'<div class="error">{escape(error)}</div>' if error else ""
         for key, value in values.items():
             template = template.replace(key, value)
@@ -98,6 +98,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+    def recovery_page(self, error=""):
+        template=(TEMPLATES / "auth.html").read_text(encoding="utf-8")
+        values={"__TITLE__":"Recuperar acesso","__SUBTITLE__":"Use um dos códigos que você guardou fora do app", "__ACTION__":"/recover", "__FIELDS__":'<label>Código de recuperação<input name="code" autocomplete="off" required></label><label>Nova senha<input name="password" type="password" minlength="10" maxlength="200" autocomplete="new-password" required></label><label>Confirme a senha<input name="confirmation" type="password" minlength="10" maxlength="200" autocomplete="new-password" required></label>', "__BUTTON__":"Alterar senha", "__FOOTER__":'<a href="/login">Voltar para entrar</a>', "__ERROR__":f'<div class="error">{escape(error)}</div>' if error else ''}
+        for key,value in values.items():template=template.replace(key,value)
+        body=template.encode();self.send_response(200);self.send_header("Content-Type","text/html; charset=utf-8");self.send_header("Content-Length",str(len(body)));self.send_header("Cache-Control","no-store");self.end_headers();self.wfile.write(body)
 
     def require_auth(self) -> bool:
         if self.authenticated():
@@ -114,9 +120,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
-        if path in {"/manifest.webmanifest", "/service-worker.js", "/offline.html"} or path.startswith("/icons/"):
+        if path in {"/manifest.webmanifest", "/service-worker.js", "/offline.html"} or path.startswith("/icons/") or path == "/app.css":
             super().do_GET()
             return
+        if path == "/recover":
+            self.recovery_page();return
         if path == "/setup":
             if auth.configured():
                 self.redirect("/login")
@@ -139,6 +147,18 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(body)
+            return
+        if path in {"/api/insights","/api/account/status","/api/account/export","/api/account/previous-backup","/api/support/status"}:
+            try:
+                if path=="/api/insights":result=trust.insights(parse_qs(urlparse(self.path).query).get("month",[""])[0])
+                elif path=="/api/account/status":result=account_service.status()
+                elif path=="/api/account/export":result=storage.export_financial_data()
+                elif path=="/api/account/previous-backup":
+                    result=storage.previous_financial_backup()
+                    if not result:self.respond(404,{"error":"Nenhuma cópia anterior disponível"});return
+                else:result=account_service.diagnostic()
+                self.respond(200,result)
+            except ValueError as exc:self.respond(400,{"error":str(exc)})
             return
         if path == "/api/health":
             self.respond(200, {
@@ -180,6 +200,14 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        if path == "/recover":
+            if not self.valid_request_origin():self.send_error(403);return
+            values=parse_qs(self.rfile.read(min(int(self.headers.get("Content-Length","0")),4096)).decode())
+            try:
+                if values.get("password",[""])[0]!=values.get("confirmation",[""])[0]:raise ValueError("As senhas não coincidem")
+                account_security.recover('',values.get("code",[""])[0],values.get("password",[""])[0]);self.redirect("/login",clear=True)
+            except ValueError as exc:self.recovery_page(str(exc))
+            return
         if path in {"/setup", "/login"}:
             if not self.valid_request_origin():
                 self.send_error(403)
@@ -206,16 +234,18 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if not self.require_auth():
             return
+        operation_match=re.fullmatch(r"/api/investments/([a-f0-9]{32})/operations/((?:initial-)?[a-f0-9]{32})/(preview|confirm)",path)
+        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/')
         sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
         buy_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/buys", path)
         income_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/incomes", path)
         payment_match = re.fullmatch(r"/api/debts/(\d+)/payment", path)
-        if not (sale_match or buy_match or income_match or payment_match) and path not in {"/api/expenses", "/api/goals", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/cash", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
+        if not (sale_match or buy_match or income_match or payment_match or operation_match or extra_path) and path not in {"/api/expenses", "/api/goals", "/api/incomes", "/api/budgets", "/api/categories", "/api/investments", "/api/investments/cash", "/api/investments/refresh", "/api/investments/extract-image", "/api/statements/preview", "/api/statements/import"}:
             self.send_error(404)
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            maximum = statement_import.MAX_FILE_SIZE+200_000 if path == "/api/statements/preview" else 12_000_000 if path == "/api/investments/extract-image" else 2_000_000 if path == "/api/statements/import" else 65_536
+            maximum = 3_100_000 if path.startswith("/api/account/") else statement_import.MAX_FILE_SIZE+200_000 if path == "/api/statements/preview" else 12_000_000 if path == "/api/investments/extract-image" else 2_000_000 if path == "/api/statements/import" else 65_536
             if length <= 0 or length > maximum:
                 raise ValueError("Requisição inválida")
             raw_body = self.rfile.read(length)
@@ -225,10 +255,26 @@ class Handler(SimpleHTTPRequestHandler):
                 file_part = next((part for part in message.iter_parts() if part.get_filename()), None)
                 if not file_part: raise ValueError("Escolha um arquivo")
                 items = statement_import.parse_statement(file_part.get_filename() or "", file_part.get_payload(decode=True) or b"")
-                analysis = statement_import.analyze(items, read_expenses(), storage.read_income_entries())
+                analysis = statement_import.analyze(items, read_expenses(), storage.read_income_entries(), investments.load_store().get("preferences",{}).get("category_rules",{}))
                 self.respond(200, {"ok": True, **analysis, "count": len(items), "needs_review": sum(not item["category"] or item.get("needs_review") for item in items)})
                 return
             payload = json.loads(raw_body)
+            if operation_match or extra_path:
+                if operation_match:result=trust.operation_change(operation_match.group(1),operation_match.group(2),payload,preview=operation_match.group(3)=='preview')
+                elif path=='/api/preferences':result={'preferences':trust.preferences(payload)}
+                elif path=='/api/product/events':result=trust.usage_event(payload)
+                elif path=='/api/product/feedback':result=trust.feedback(payload)
+                elif path=='/api/investments/reconcile':result=trust.reconcile_cash(payload)
+                elif path=='/api/account/restore-preview':result=account_service.preview_restore(payload)
+                elif path=='/api/account/restore':result=account_service.restore(payload)
+                elif path=='/api/account/delete':
+                    result=account_service.delete(payload)
+                elif path=='/api/account/recovery-codes':result={'codes':account_security.generate_codes(payload.get('password'))}
+                elif path=='/api/account/password':
+                    account_security.change_password(payload.get('current_password'),payload.get('new_password'))
+                    self.send_response(200);self.set_session_cookie(auth.create_session());self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(b'{"ok":true}');return
+                else:self.send_error(404);return
+                self.respond(200,{'ok':True,**result});return
             if path == "/api/goals":
                 result = planning.save_goal(payload)
                 self.respond(200, {"ok": True, "goal": result})
@@ -244,23 +290,8 @@ class Handler(SimpleHTTPRequestHandler):
                 self.respond(201, {"ok": True, **result})
                 return
             if path == "/api/statements/import":
-                items=payload.get("items",[])
-                if not isinstance(items,list) or not items or len(items)>statement_import.MAX_ITEMS:raise ValueError("Selecione de 1 a 500 lançamentos")
-                imported=income_imported=skipped=0;errors=[]
-                for position,item in enumerate(items,1):
-                    if not isinstance(item,dict) or item.get("selected") is False or item.get("kind")=="transfer":continue
-                    if not str(item.get("category","")).strip():errors.append({"line":position,"error":"Escolha uma categoria"});continue
-                    entry={"date":item.get("date"),"amount":item.get("amount"),"where":item.get("where"),"category":item.get("category"),"payment":item.get("payment","Crédito"),"description":item.get("description","")}
-                    try:
-                        if item.get("kind")=="income":storage.add_income_entry(entry);income_imported+=1
-                        else:add_expense(entry);imported+=1
-                    except DuplicateExpenseError:skipped+=1
-                    except ValueError as exc:errors.append({"line":position,"error":str(exc)})
-                suggestion=payload.get("income_suggestion") if payload.get("confirm_income_suggestion") is True else None
-                if isinstance(suggestion,dict):
-                    current=read_incomes().get(str(suggestion.get("month","")),{})
-                    set_income({"month":suggestion.get("month"),"cash":suggestion.get("amount"),"voucher":current.get("voucher",0),"payday":suggestion.get("day"),"source":suggestion.get("source","")})
-                rebuild_dashboard();self.respond(200,{"ok":not errors,"imported":imported,"income_imported":income_imported,"skipped":skipped,"income_updated":bool(suggestion),"errors":errors});return
+                result=statement_import.commit_items(payload)
+                rebuild_dashboard();self.respond(200,result);return
             if path == "/api/incomes":
                 result = set_income(payload)
                 rebuild_dashboard()

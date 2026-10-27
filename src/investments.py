@@ -56,6 +56,12 @@ def save_store(data: dict, user_id: int | None = None) -> None:
     storage.save_investments(data, user_id)
 
 
+def audit_change(store, kind, subject, before, after, reason):
+    try:from src.trust import audit
+    except ImportError:from trust import audit
+    return audit(store,kind,subject,before,after,reason)
+
+
 def mutate_store(operation: Callable, user_id: int | None = None):
     def apply(data):
         data.setdefault("cash_balance", 0)
@@ -70,8 +76,8 @@ def mutate_store(operation: Callable, user_id: int | None = None):
 
 
 def cash_cost(item: dict) -> Decimal:
-    if item.get("buys"):
-        return sum((ops.cents(buy["total"]) for buy in item["buys"]), Decimal(0))
+    if "buys" in item:
+        return sum((ops.cents(buy["total"]) for buy in ops.buys(item)), Decimal(0))
     value = (Decimal(str(item["quantity"])) * Decimal(str(item["average_price"]))
              if item["type"] in VARIABLE_TYPES else Decimal(str(item["amount_invested"])))
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -178,12 +184,12 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
             raise ValueError("A data do saldo deve ficar entre a aplicação e hoje")
         if common["maturity_date"] and common["maturity_date"] < common["application_date"]:
             raise ValueError("O vencimento não pode ser anterior à aplicação")
-    if existing and (existing.get("sales") or len(existing.get("buys", [])) > 1 or existing.get("incomes")):
+    if existing and (existing.get("sales") or len(existing.get("buys", [])) > 1 or existing.get("incomes") or existing.get("operation_corrected")):
         for field in ("type", "symbol", "quantity", "average_price", "purchase_date"):
             if common.get(field) != existing.get(field):
                 raise ValueError("Este ativo tem operações registradas. Use Novo aporte para comprar mais; os dados da compra original ficam preservados")
     if existing:
-        for field in ("buys", "sales", "incomes"):
+        for field in ("buys", "sales", "incomes", "operation_corrected"):
             if field in existing:
                 common[field] = existing[field]
     return common
@@ -354,15 +360,15 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
     if item["type"] in VARIABLE_TYPES:
         known = {point["date"]: point["value"] for point in gain_points}
         for income in item.get("incomes", []):
-            if income["date"] <= investment_today().isoformat():
+            if not income.get("reversed") and income["date"] <= investment_today().isoformat():
                 reference = next((point["price"] for point in reversed(points) if point["date"] <= income["date"]), None)
                 state = ops.position(item, income["date"])
                 if reference is not None:
                     known[income["date"]] = float(ops.cents(state["quantity"] * Decimal(str(reference)) - state["basis"] + state["realized"] + state["income"]))
                 elif not state["quantity"]:
                     known[income["date"]] = float(state["realized"] + state["income"])
-        if calculated_item.get("remaining_quantity") == 0:
-            closed = max(sale["date"] for sale in item["sales"])
+        if calculated_item.get("remaining_quantity") == 0 and any(not sale.get("reversed") for sale in item.get("sales", [])):
+            closed = max(sale["date"] for sale in item["sales"] if not sale.get("reversed"))
             for day in (closed, investment_today().isoformat()):
                 state = ops.position(item, day)
                 known[day] = float(state["realized"] + state["income"])
@@ -411,7 +417,7 @@ def calculated(item: dict) -> dict:
         realized = float(state["realized"])
         result.update(remaining_quantity=float(remaining), average_price=float(state["average"]) if state["average"] > 0 else item["average_price"],
                       realized_profit_loss=realized, income_received=float(state["income"]),
-                      sale_proceeds=round(sum(sale.get("net_total", sale["total"]) for sale in item.get("sales", [])), 2),
+                      sale_proceeds=round(sum(sale.get("net_total", sale["total"]) for sale in item.get("sales", []) if not sale.get("reversed")), 2),
                       total_profit_loss=round(current - applied + realized + float(state["income"]), 2),
                       total_return_percent=round((current - applied + realized + float(state["income"])) / float(cash_cost(item)) * 100, 4) if cash_cost(item) else 0)
     else:
@@ -465,7 +471,7 @@ def portfolio(user_id: int | None = None) -> dict:
     if estimated:
         history = fixed_portfolio_history(items)
     return {"investments": items, "history": history[-730:], "history_source": "estimated" if estimated else "snapshots", "updated_at": store["updated_at"],
-            "cash_updated_at": store.get("cash_updated_at"), "goals": store.get("goals", []),
+            "cash_updated_at": store.get("cash_updated_at"), "goals": store.get("goals", []), "preferences": store.get("preferences", {}), "audit_log": store.get("audit_log", [])[-50:],
             "summary": {"cash_balance": store.get("cash_balance", 0), "total_with_cash": round(current + store.get("cash_balance", 0), 2),
                         "amount_applied": applied, "current_value": current,
                         "profit_loss": total_gain, "income_received": income, "unrealized_profit_loss": round(current - applied, 2), "realized_profit_loss": realized,
@@ -479,8 +485,10 @@ def set_cash_balance(payload: dict, user_id: int | None = None) -> dict:
     value = number(payload.get("amount"), "Saldo do caixa", minimum=0)
     amount = float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
     def update(store):
+        before=store['cash_balance']
         store["cash_balance"] = amount
         store["cash_updated_at"] = now_iso()
+        if before!=amount:audit_change(store,'cash_adjustment','Caixa',{'cash':before},{'cash':amount},'Saldo total informado pelo usuário')
     mutate_store(update, user_id)
     return portfolio(user_id)
 
@@ -506,9 +514,10 @@ def create_investment(payload: dict, user_id: int | None = None) -> dict:
         adjust_cash(store, cost)
         item["cash_funded_amount"] = float(cost)
         if item["type"] in VARIABLE_TYPES:
-            item["buys"] = [ops.initial_buy(item)]
+            item["buys"] = [{**ops.initial_buy(item), "cash_debited": True}]
             ops.sync(item)
         store["investments"].append(item)
+        audit_change(store,'investment_created',item.get('symbol') or item.get('name'),{}, {'cost':float(cost),'cash':store['cash_balance']},'Cadastro de investimento')
         store["updated_at"] = now_iso()
         record_snapshot(store)
         return calculated(item)
@@ -520,13 +529,14 @@ def update_investment(item_id: str, payload: dict, user_id: int | None = None) -
         for index, existing in enumerate(store["investments"]):
             if existing["id"] == item_id:
                 item = normalize_payload(payload, existing)
-                if item["type"] in VARIABLE_TYPES and not existing.get("sales") and len(existing.get("buys", [])) <= 1 and not existing.get("incomes"):
-                    item["buys"] = [ops.initial_buy(item)]
+                if item["type"] in VARIABLE_TYPES and not existing.get("sales") and len(existing.get("buys", [])) <= 1 and not existing.get("incomes") and not existing.get("operation_corrected"):
+                    item["buys"] = [{**ops.initial_buy(item), "cash_debited": "cash_funded_amount" in existing}]
                     ops.sync(item)
                 if "cash_funded_amount" in existing:
-                    cost = cash_cost(item)
+                    cost = sum((ops.cents(buy["total"]) for buy in ops.buys(item) if buy.get("cash_debited",True)), Decimal(0)) if item.get("operation_corrected") and item["type"] in VARIABLE_TYPES else cash_cost(item)
                     adjust_cash(store, cost - Decimal(str(existing["cash_funded_amount"])))
                     item["cash_funded_amount"] = float(cost)
+                audit_change(store,'investment_updated',item.get('symbol') or item.get('name'),{'cost':float(cash_cost(existing))},{'cost':float(cash_cost(item))},'Correção do cadastro')
                 store["investments"][index] = item
                 store["updated_at"] = now_iso()
                 record_snapshot(store)
@@ -567,7 +577,7 @@ def sell_investment(item_id: str, payload: dict, user_id: int | None = None) -> 
         fees = ops.cents(number(payload.get("fees") or 0, "Taxas da venda", minimum=0))
         if fees >= total:
             raise ValueError("As taxas devem ser menores que o total da venda")
-        last_day = max(entry["date"] for entry in ops.buys(item) + item.get("sales", []))
+        last_day = ops.latest_date(item)
         if sale_date < last_day:
             raise ValueError("Registre a venda em ordem cronológica, após a última operação")
         unit = value if mode == "unit" else total / quantity
@@ -597,7 +607,7 @@ def add_buy(item_id: str, payload: dict, user_id: int | None = None) -> dict:
         if existing:
             return {"buy": existing, "investment": calculated(item)}
         day = iso_date(payload.get("date"), "Data da compra")
-        last = max(entry["date"] for entry in ops.buys(item) + item.get("sales", []))
+        last = ops.latest_date(item)
         if not last <= day <= investment_today().isoformat():
             raise ValueError("Registre os aportes em ordem cronológica, até a data de hoje")
         quantity = number(payload.get("quantity"), "Quantidade", minimum=0.00000001)
@@ -609,7 +619,7 @@ def add_buy(item_id: str, payload: dict, user_id: int | None = None) -> dict:
         adjust_cash(store, total)
         item.setdefault("buys", [ops.initial_buy(item)])
         entry = {"id": uuid4().hex, "request_id": request_id, "date": day, "quantity": quantity,
-                 "unit_price": price, "fees": float(fees), "total": float(total), "sequence": ops.sequence(item)}
+                 "unit_price": price, "fees": float(fees), "total": float(total), "sequence": ops.sequence(item), "cash_debited": True}
         item["buys"].append(entry)
         item["cash_funded_amount"] = float(ops.cents(item.get("cash_funded_amount", 0)) + total)
         ops.sync(item)
@@ -641,6 +651,7 @@ def add_investment_income(item_id: str, payload: dict, user_id: int | None = Non
             raise ValueError("Escolha o tipo do provento")
         amount = ops.cents(number(payload.get("amount"), "Valor líquido recebido", minimum=0.01))
         entry = {"id": uuid4().hex, "request_id": request_id, "date": day, "kind": kind, "amount": float(amount)}
+        entry['cash_credited'] = True
         item.setdefault("incomes", []).append(entry)
         item.setdefault("buys", [ops.initial_buy(item)])
         ops.sync(item)

@@ -8,9 +8,9 @@ from pathlib import Path
 import sqlite3
 from threading import Lock
 try:
-    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
+    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
 except ImportError:
-    from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
+    from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -210,10 +210,9 @@ def update_debt(item_id: int, payload: dict, user_id: int | None = None) -> dict
             if not current or not current["installment_group"] or json.loads(current["finance_details"]).get("financing_kind") not in {"loan", "debt", "asset"}:
                 raise KeyError("Compromisso não encontrado")
             group = current["installment_group"]
-            records = db.execute("SELECT finance_details FROM expenses WHERE installment_group=?", (group,)).fetchall()
-            if any(json.loads(record["finance_details"]).get("paid") for record in records):
-                raise ValueError("Há parcelas pagas. Desfaça a baixa antes de alterar o contrato")
-            db.execute("DELETE FROM expenses WHERE installment_group=?", (group,))
+            records = db.execute("SELECT * FROM expenses WHERE installment_group=? ORDER BY expense_date,installment_number", (group,)).fetchall()
+            paid, pending = debt_revision(draft, records)
+            db.executemany("DELETE FROM expenses WHERE id=?", ((row["id"],) for row in pending))
             ids = []
             for part in draft["parts"]:
                 finance = {**draft["finance"], "principal_part": part["amortization"],
@@ -223,7 +222,7 @@ def update_debt(item_id: int, payload: dict, user_id: int | None = None) -> dict
                                     (part["date"], part["amount"], draft["place"], draft["category"], draft["payment"], description,
                                      group, part["number"], part["count"], part["original_total"], json.dumps(finance)))
                 ids.append(cursor.lastrowid)
-    return {"id": ids[0], "ids": ids, "installment_group": group, "backup": backup.name}
+    return {"id": ids[0], "ids": ids, "installment_group": group, "backup": backup.name, "paid_preserved": len(paid)}
 
 
 def delete_expense(item_id: int, user_id: int | None = None, scope: str = "single") -> None:
@@ -250,6 +249,8 @@ def read_incomes(user_id: int | None = None) -> dict[str, dict[str, float]]:
 
 def set_income(payload: dict, user_id: int | None = None) -> dict:
     month = str(payload.get("month", ""))
+    mode = payload.get("income_mode")
+    if mode is not None and mode not in {'auto','declared','imported'}:raise ValueError('Escolha a origem usada no cálculo da renda')
     try:
         date.fromisoformat(f"{month}-01")
         cash, voucher = round(float(payload.get("cash", 0)), 2), round(float(payload.get("voucher", 0)), 2)
@@ -266,6 +267,11 @@ def set_income(payload: dict, user_id: int | None = None) -> dict:
         with connect() as db:
             db.execute("INSERT INTO incomes(month,cash,voucher,payday,source) VALUES(?,?,?,?,?) ON CONFLICT(month) DO UPDATE SET cash=excluded.cash,voucher=excluded.voucher,payday=excluded.payday,source=excluded.source,updated_at=CURRENT_TIMESTAMP",
                        (month, cash, voucher, payday, source))
+            if mode is not None:
+                row=db.execute("SELECT value FROM app_state WHERE key='investments'").fetchone()
+                data=json.loads(row['value']) if row else {'version':1,'investments':[],'history':[]}
+                data.setdefault('preferences',{}).setdefault('income_modes',{})[month]=mode
+                db.execute("INSERT INTO app_state(key,value) VALUES('investments',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(json.dumps(data,ensure_ascii=False),))
     return {"month": month, "cash": cash, "voucher": voucher, "payday": payday, "source": source, "backup": backup.name}
 
 
@@ -426,3 +432,55 @@ def set_debt_payment(item_id: int, payload: dict, user_id: int | None = None) ->
             finance = debt_payment_metadata(json.loads(row["finance_details"]), payload)
             db.execute("UPDATE expenses SET finance_details=? WHERE id=?", (json.dumps(finance), item_id))
     return {"id": item_id, "finance": finance}
+
+
+def export_financial_data(user_id: int | None = None) -> dict:
+    try:from src import portability
+    except ImportError:import portability
+    initialize()
+    with connect() as db:
+        db.execute('BEGIN')
+        tables={name:[dict(row) for row in db.execute('SELECT '+','.join(columns)+' FROM '+name).fetchall()] for name,columns in portability.TABLES.items()}
+        row=db.execute("SELECT value FROM app_state WHERE key='investments'").fetchone()
+        portfolio=json.loads(row['value']) if row else {'version':1,'investments':[],'history':[]}
+    return portability.package(tables,portfolio)
+
+
+def restore_financial_data(payload: dict, user_id: int | None = None) -> dict:
+    try:from src import portability
+    except ImportError:import portability
+    data=portability.validate(payload)
+    with LOCK:
+        create_backup()
+        with connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            tables={name:[dict(row) for row in db.execute('SELECT '+','.join(columns)+' FROM '+name).fetchall()] for name,columns in portability.TABLES.items()}
+            row=db.execute("SELECT value FROM app_state WHERE key='investments'").fetchone()
+            old=portability.package(tables,json.loads(row['value']) if row else {'investments':[],'history':[]})
+            db.execute("INSERT INTO app_state(key,value) VALUES('safety_backup',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(json.dumps(old,ensure_ascii=False),))
+            for name in portability.TABLES:db.execute('DELETE FROM '+name)
+            for name,columns in portability.TABLES.items():
+                for row in data[name]:
+                    values=[json.dumps(row[key],ensure_ascii=False) if key=='finance_details' else row[key] for key in columns]
+                    db.execute('INSERT INTO '+name+'('+','.join(columns)+') VALUES('+','.join('?' for _ in columns)+')',values)
+            db.execute("INSERT INTO app_state(key,value) VALUES('investments',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(json.dumps(data['portfolio'],ensure_ascii=False),))
+    return portability.counts(data)
+
+
+def previous_financial_backup(user_id: int | None = None):
+    initialize()
+    with connect() as db:row=db.execute("SELECT value FROM app_state WHERE key='safety_backup'").fetchone()
+    return json.loads(row['value']) if row else None
+
+
+def delete_financial_account(user_id: int | None = None):
+    with LOCK:
+        with connect() as db:
+            for table in ('expenses','incomes','income_entries','budgets','budget_categories','app_state'):db.execute('DELETE FROM '+table)
+    for path in BACKUPS.glob('*.db'):path.unlink(missing_ok=True)
+
+
+def backup_metadata(user_id=None):
+    initialize()
+    with connect() as db:row=db.execute("SELECT json_extract(value,'$.exported_at') AS date FROM app_state WHERE key='safety_backup'").fetchone()
+    return {'available':bool(row),'date':row['date'] if row else None}

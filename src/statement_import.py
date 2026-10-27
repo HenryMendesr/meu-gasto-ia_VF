@@ -110,7 +110,7 @@ def merchant_key(description:str)->str:
     return ' '.join(text.split())[:60]
 
 
-def analyze(items:list[dict],existing_expenses:list[dict]|None=None,income_entries:list[dict]|None=None)->dict:
+def analyze(items:list[dict],existing_expenses:list[dict]|None=None,income_entries:list[dict]|None=None, rules:dict|None=None)->dict:
     existing_expenses=existing_expenses or [];income_entries=income_entries or []
     existing={(entry['date'],round(float(entry['amount']),2),plain(entry.get('where',''))) for entry in existing_expenses}
     existing_income={(entry['date'],round(float(entry['amount']),2),plain(entry.get('source',''))) for entry in income_entries}
@@ -125,6 +125,9 @@ def analyze(items:list[dict],existing_expenses:list[dict]|None=None,income_entri
             entry['recurring']=True;entry['flags'].append('recorrente')
             if entry['kind']=='expense' and not entry['category']:entry['category']='Assinaturas';entry['confidence']=max(entry['confidence'],.78)
         else:entry['recurring']=False
+        saved=(rules or {}).get(entry['kind']+':'+merchant_key(entry['where'])[:80])
+        if saved and entry['kind'] in {'expense','income'}:
+            entry['category']=str(saved);entry['confidence']=1;entry['flags'].append('categoria escolhida anteriormente')
     # Pares de mesmo valor e data próxima são candidatos a transferência entre contas próprias.
     for index,left in enumerate(items):
         for right in items[index+1:]:
@@ -223,3 +226,44 @@ def parse_statement(filename:str,raw:bytes)->list[dict]:
     result=parsers[suffix](raw)[:MAX_ITEMS]
     if not result:raise ValueError('Nenhum lançamento foi identificado no arquivo')
     return result
+
+
+def commit_items(payload, user_id=None):
+    try:from src import runtime_storage as storage, investments
+    except ImportError:
+        import runtime_storage as storage
+        import investments
+    if not isinstance(payload,dict):raise ValueError('Dados do extrato inválidos')
+    items=payload.get('items',[])
+    if not isinstance(items,list) or not items or len(items)>MAX_ITEMS:raise ValueError('Selecione de 1 a 500 lançamentos')
+    imported=income_imported=skipped=transfers=0;errors=[];processed=[];learned={}
+    for index,entry in enumerate(items):
+        if not isinstance(entry,dict) or entry.get('selected') is False:continue
+        if entry.get('kind')=='transfer':transfers+=1;processed.append(index);continue
+        if entry.get('kind') not in {'income','expense'}:errors.append({'line':index+1,'error':'Escolha entrada, saída ou transferência'});continue
+        if not str(entry.get('category','')).strip():errors.append({'line':index+1,'error':'Escolha uma categoria'});continue
+        data={'date':entry.get('date'),'amount':entry.get('amount'),'where':entry.get('where'),
+              'category':entry.get('category'),'payment':entry.get('payment','Crédito'),'description':entry.get('description','')}
+        try:
+            if entry['kind']=='income':storage.add_income_entry(data,user_id);income_imported+=1
+            else:storage.add_expense(data,user_id);imported+=1
+            if payload.get('remember_categories',True) is True:
+                learned[entry['kind']+':'+merchant_key(str(entry.get('where','')))[:80]]=entry['category']
+            processed.append(index)
+        except storage.DuplicateExpenseError:skipped+=1;processed.append(index)
+        except (ValueError,TypeError,KeyError) as exc:errors.append({'line':index+1,'error':str(exc)})
+    suggestion=payload.get('income_suggestion') if payload.get('confirm_income_suggestion') is True else None
+    updated=False
+    if isinstance(suggestion,dict):
+        current=storage.read_incomes(user_id).get(str(suggestion.get('month','')), {})
+        try:
+            storage.set_income({'month':suggestion.get('month'),'cash':suggestion.get('amount'),'voucher':current.get('voucher',0),'payday':suggestion.get('day'),'source':suggestion.get('source','')},user_id);updated=True
+        except (ValueError,TypeError) as exc:errors.append({'line':0,'error':str(exc)})
+    def remember(store):
+        prefs=store.setdefault('preferences',{})
+        rules=prefs.setdefault('category_rules',{});rules.update(learned)
+        for key in list(rules)[:-500]:rules.pop(key,None)
+        prefs['last_import']={'date':investments.now_iso(),'expenses':imported,'incomes':income_imported,'duplicates':skipped,'errors':len(errors)}
+    investments.mutate_store(remember,user_id)
+    return {'ok':not errors,'imported':imported,'income_imported':income_imported,'skipped':skipped,
+            'transfers':transfers,'processed':processed,'income_updated':updated,'errors':errors}

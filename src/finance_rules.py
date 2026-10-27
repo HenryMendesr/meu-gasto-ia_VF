@@ -77,7 +77,16 @@ def prepare_debt_update(payload, categories, payments):
         raise ValueError("Revise o credor e a descrição do compromisso")
     if category not in categories or payment not in payments:
         raise ValueError("Categoria ou pagamento inválido")
-    _, parts, finance = expense_finance({**payload, "debt_entry": True, "installment": True}, contract_date, payment)
+    calculation=dict(payload)
+    asset_original=None
+    if payload.get('remaining_balance') is True and payload.get('financing_kind')=='asset':
+        asset_value=money(payload.get('asset_value'),'Valor do bem')
+        down=Decimal(str(payload.get('down_payment') or 0)).quantize(CENT,rounding=ROUND_HALF_UP)
+        if not down.is_finite() or not 0<=down<asset_value:raise ValueError('Revise o valor do bem e a entrada')
+        asset_original=(float(asset_value),float(down))
+        calculation['asset_value']=float(money(payload['amount'])+down)
+    _, parts, finance = expense_finance({**calculation, "debt_entry": True, "installment": True}, contract_date, payment)
+    if asset_original:finance.update(asset_value=asset_original[0],down_payment=asset_original[1],remaining_balance=True)
     return {"place": place, "category": category, "payment": payment, "description": description,
             "parts": parts, "finance": finance}
 
@@ -219,3 +228,27 @@ def debt_payment_metadata(finance, payload):
     else:
         updated.pop('paid_date', None)
     return updated
+
+
+def debt_revision(draft, records):
+    """Keep settled rows immutable and number the replacement open installments."""
+    import json
+    from datetime import datetime, timezone
+    paid = [row for row in records if json.loads(row['finance_details']).get('paid')]
+    pending = [row for row in records if not json.loads(row['finance_details']).get('paid')]
+    if not pending:
+        raise ValueError('Este contrato está quitado. Para novos valores, crie outro compromisso')
+    occupied = {int(row['installment_number']) for row in paid if row['installment_number']}
+    total_count = max([len(paid) + len(draft['parts']), *occupied])
+    number = 1
+    for part in draft['parts']:
+        while number in occupied:number += 1
+        part['number'] = number;part['count'] = total_count;number += 1
+    before = {'count': len(pending), 'total': round(sum(float(row['amount']) for row in pending), 2),
+              'first_date': str(pending[0]['expense_date']), 'last_date': str(pending[-1]['expense_date'])}
+    after = {'count': len(draft['parts']), 'total': round(sum(part['amount'] for part in draft['parts']), 2),
+             'first_date': draft['parts'][0]['date'], 'last_date': draft['parts'][-1]['date']}
+    old = json.loads(pending[0]['finance_details']).get('revision_history', [])
+    draft['finance']['revision_history'] = (old + [{'date': datetime.now(timezone.utc).isoformat(),
+                'before': before, 'after': after, 'paid_preserved': len(paid)}])[-10:]
+    return paid, pending

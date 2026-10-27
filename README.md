@@ -81,7 +81,7 @@ As parcelas pertencem a um grupo, aparecem nos meses futuros e podem ser editada
 
 A aba **Dívidas** cadastra empréstimos (pessoal, consignado e com garantia), dívidas (cartão, cheque especial, contas em atraso e renegociações) e financiamento de imóveis, veículos ou outros bens. Os campos incluem credor, saldo a pagar, juros mensais, prazo de 1 a 600 parcelas, primeiro vencimento, data do contrato, categoria e forma de pagamento. No financiamento, o valor do bem menos a entrada já paga define o principal; a entrada não gera um novo gasto. Price usa parcelas fixas e SAC usa amortização constante com parcelas decrescentes.
 
-Ao salvar, o app gera os gastos de cada parcela nos meses de vencimento, preserva a separação entre principal e juros e atualiza os gráficos. A aba mostra a curva do saldo devedor projetado, barras mensais de principal e juros, resumo dos valores, filtro por contrato e tabela com todos os vencimentos. Os dados antigos de empréstimos e financiamentos também aparecem na aba. Os gráficos são projeções pelo calendário e não comprovam pagamentos. Excluir um compromisso sem parcelas pagas remove todas as suas parcelas. Contratos com baixas registradas precisam ter os pagamentos desfeitos antes de edição ou exclusão, para preservar o histórico.
+Ao salvar, o app gera os gastos de cada parcela nos meses de vencimento, preserva a separação entre principal e juros e atualiza os gráficos. A aba mostra a curva do saldo devedor projetado, barras mensais de principal e juros, resumo dos valores, filtro por contrato e tabela com todos os vencimentos. Os dados antigos de empréstimos e financiamentos também aparecem na aba. Os gráficos são projeções pelo calendário e não comprovam pagamentos. Excluir um compromisso sem parcelas pagas remove todas as suas parcelas. A edição preserva as parcelas pagas e recalcula somente as pendentes. Contratos quitados não podem ser reescritos. Para excluir todo o contrato, é necessário desfazer as baixas registradas.
 
 ## Agendamento de Pix e transferência
 
@@ -155,3 +155,12 @@ Em **Dívidas → Calendário e pagamentos**, marque cada parcela como paga e in
 Em **Planejar → Nova meta**, informe nome, valor desejado, total já reservado e prazo. O aplicativo mostra progresso, valor restante e sugestão mensal aproximada. O progresso é manual e não retira dinheiro de outras contas ou investimentos.
 
 Em **Visão geral → Relatório mensal**, acompanhe renda, saídas, aportes, vendas líquidas, proventos e dívidas, compare seis meses e exporte um CSV. Quando há renda mensal cadastrada, ela tem prioridade sobre o total importado para não duplicar salário; confira o valor informado caso existam outras entradas. Sem renda cadastrada, usam-se as entradas importadas. Voucher e caixa de investimentos são mostrados separadamente. O patrimônio histórico usa os registros salvos nas atualizações do app; ele não é reconstruído retroativamente quando não há dados, e aportes não são apresentados como rendimento.
+
+
+### Transparência, correções e conta
+
+O resumo mostra **saldo planejado**, com explicação dos lançamentos e parcelas pendentes; ele não é um saldo bancário. A renda do mês pode usar o valor informado, as entradas importadas ou seleção automática, sem somar as duas bases. A mesma escolha vale no relatório. Vencimentos pendentes aparecem no resumo e as cotações mostram fonte/data, com indicação de valores manuais ou atualização antiga.
+
+Em **Investir → Histórico de movimentações → Corrigir**, veja uma prévia do efeito no caixa, quantidade, preço médio e resultado antes de corrigir, estornar ou restaurar. A operação e o motivo ficam preservados; mudanças concorrentes exigem nova prévia. Compras anteriores ao controle automático não geram débito retroativo. **Conferir saldo** registra diferenças do caixa e seu motivo.
+
+**Minha conta** reúne senha, códigos de recuperação de uso único, exportação JSON, restauração com prévia e cópia anterior, exclusão da conta, diagnóstico e feedback. Contagens de uso são opcionais e desligadas por padrão. Códigos devem ser guardados antes de perder o acesso; não há envio de recuperação por e-mail nesta versão. Consulte [piloto e operação](docs/PILOT.md) para limites, validação com clientes e dependências externas.

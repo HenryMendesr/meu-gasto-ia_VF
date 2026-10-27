@@ -12,9 +12,9 @@ import secrets
 from threading import Lock
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 try:
-    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
+    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
 except ImportError:
-    from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata
+    from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
 
 import psycopg
 from psycopg.rows import dict_row
@@ -63,6 +63,8 @@ def initialize():
         with connect() as db,db.cursor() as c:
             c.execute("""
             CREATE TABLE IF NOT EXISTS users(id BIGSERIAL PRIMARY KEY,name VARCHAR(80) NOT NULL,email VARCHAR(254) NOT NULL,password_salt VARCHAR(64) NOT NULL,password_hash VARCHAR(128) NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_hashes JSONB NOT NULL DEFAULT '[]';
             CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_uidx ON users((lower(email)));
             CREATE TABLE IF NOT EXISTS expenses(id BIGSERIAL PRIMARY KEY,expense_date DATE NOT NULL,amount NUMERIC(14,2) NOT NULL CHECK(amount>0),place VARCHAR(100) NOT NULL,category VARCHAR(40) NOT NULL,payment VARCHAR(40) NOT NULL,description VARCHAR(200) NOT NULL DEFAULT '',created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
             CREATE TABLE IF NOT EXISTS incomes(month VARCHAR(7) PRIMARY KEY,cash NUMERIC(14,2) NOT NULL DEFAULT 0,voucher NUMERIC(14,2) NOT NULL DEFAULT 0,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
@@ -126,7 +128,7 @@ def authenticate_user(email:str,password:str)->dict|None:
     initialize()
     if len(password)>200:return None
     with connect() as db,db.cursor() as c:
-        c.execute('SELECT id,name,email,password_salt,password_hash FROM users WHERE lower(email)=lower(%s)',(email.strip(),));user=c.fetchone()
+        c.execute('SELECT id,name,email,password_salt,password_hash,session_version FROM users WHERE lower(email)=lower(%s)',(email.strip(),));user=c.fetchone()
     import base64
     if not user:
         # Mantém custo semelhante para e-mails existentes e inexistentes.
@@ -134,7 +136,7 @@ def authenticate_user(email:str,password:str)->dict|None:
         return None
     salt=base64.urlsafe_b64decode(user['password_salt']+'='*(-len(user['password_salt'])%4))
     if not hmac.compare_digest(_password_digest(password,salt),user['password_hash']):return None
-    return {'id':user['id'],'name':user['name'],'email':user['email']}
+    return {'id':user['id'],'name':user['name'],'email':user['email'],'session_version':user['session_version']}
 
 
 def get_user(user_id:int)->dict|None:
@@ -200,10 +202,10 @@ def update_debt(item_id: int, payload: dict, user_id: int) -> dict:
         if not current or not current['installment_group'] or json.loads(current['finance_details']).get('financing_kind') not in {'loan', 'debt', 'asset'}:
             raise KeyError('Compromisso não encontrado')
         group = current['installment_group']
-        c.execute('SELECT finance_details FROM expenses WHERE user_id=%s AND installment_group=%s FOR UPDATE', (user_id, group))
-        if any(json.loads(row['finance_details']).get('paid') for row in c.fetchall()):
-            raise ValueError('Há parcelas pagas. Desfaça a baixa antes de alterar o contrato')
-        c.execute('DELETE FROM expenses WHERE user_id=%s AND installment_group=%s', (user_id, group))
+        c.execute('SELECT * FROM expenses WHERE user_id=%s AND installment_group=%s ORDER BY expense_date,installment_number FOR UPDATE', (user_id, group))
+        paid, pending = debt_revision(draft, c.fetchall())
+        for row in pending:
+            c.execute('DELETE FROM expenses WHERE id=%s AND user_id=%s', (row['id'], user_id))
         ids = []
         for part in draft['parts']:
             finance = {**draft['finance'], 'principal_part': part['amortization'],
@@ -214,7 +216,7 @@ def update_debt(item_id: int, payload: dict, user_id: int) -> dict:
                        group, part['number'], part['count'], part['original_total'], json.dumps(finance)))
             ids.append(c.fetchone()['id'])
         db.commit()
-    return {'id': ids[0], 'ids': ids, 'installment_group': group}
+    return {'id': ids[0], 'ids': ids, 'installment_group': group, 'paid_preserved': len(paid)}
 
 
 def delete_expense(item_id:int,user_id:int,scope:str='single')->None:
@@ -238,13 +240,21 @@ def read_incomes(user_id:int)->dict:
 
 
 def set_income(payload:dict,user_id:int)->dict:
-    month=str(payload.get('month',''))
+    month=str(payload.get('month',''));mode=payload.get('income_mode')
+    if mode is not None and mode not in {'auto','declared','imported'}:raise ValueError('Escolha a origem usada no cálculo da renda')
     try:date.fromisoformat(f'{month}-01');cash=round(float(payload.get('cash',0)),2);voucher=round(float(payload.get('voucher',0)),2);payday=int(payload['payday']) if payload.get('payday') not in (None,'') else None;source=str(payload.get('source','')).strip()
     except (TypeError,ValueError) as exc:raise ValueError('Mês ou valores de renda inválidos') from exc
     if min(cash,voucher)<0 or max(cash,voucher)>10_000_000:raise ValueError('Os valores de renda precisam ser positivos')
     if payday is not None and not 1<=payday<=31 or len(source)>100:raise ValueError('Revise o dia ou a origem da renda')
     initialize()
-    with connect() as db,db.cursor() as c:c.execute('INSERT INTO incomes(user_id,month,cash,voucher,payday,source) VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(user_id,month) DO UPDATE SET cash=EXCLUDED.cash,voucher=EXCLUDED.voucher,payday=EXCLUDED.payday,source=EXCLUDED.source,updated_at=NOW()',(user_id,month,cash,voucher,payday,source));db.commit()
+    with connect() as db,db.cursor() as c:
+        if mode is not None:
+            key=f'investments:{user_id}'
+            c.execute('INSERT INTO app_state(key,value) VALUES(%s,%s::jsonb) ON CONFLICT(key) DO NOTHING',(key,json.dumps(EMPTY_INVESTMENTS)))
+            c.execute('SELECT value FROM app_state WHERE key=%s FOR UPDATE',(key,));data=c.fetchone()['value']
+            data.setdefault('preferences',{}).setdefault('income_modes',{})[month]=mode
+            c.execute('UPDATE app_state SET value=%s::jsonb WHERE key=%s',(json.dumps(data,ensure_ascii=False),key))
+        c.execute('INSERT INTO incomes(user_id,month,cash,voucher,payday,source) VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(user_id,month) DO UPDATE SET cash=EXCLUDED.cash,voucher=EXCLUDED.voucher,payday=EXCLUDED.payday,source=EXCLUDED.source,updated_at=NOW()',(user_id,month,cash,voucher,payday,source));db.commit()
     return {'month':month,'cash':cash,'voucher':voucher,'payday':payday,'source':source}
 
 
@@ -363,3 +373,120 @@ def set_debt_payment(item_id: int, payload: dict, user_id: int) -> dict:
         c.execute('UPDATE expenses SET finance_details=%s WHERE id=%s AND user_id=%s', (json.dumps(finance), item_id, user_id))
         db.commit()
     return {'id': item_id, 'finance': finance}
+
+
+def export_financial_data(user_id: int) -> dict:
+    from src import portability
+    initialize()
+    with connect() as db,db.cursor() as c:
+        c.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ')
+        tables={}
+        for name,columns in portability.TABLES.items():
+            c.execute('SELECT '+','.join(columns)+' FROM '+name+' WHERE user_id=%s',(user_id,))
+            tables[name]=[dict(row) for row in c.fetchall()]
+        c.execute('SELECT value FROM app_state WHERE key=%s',(f'investments:{user_id}',));row=c.fetchone()
+        portfolio=row['value'] if row else dict(EMPTY_INVESTMENTS)
+    return portability.package(tables,portfolio)
+
+
+def restore_financial_data(payload: dict, user_id: int) -> dict:
+    from src import portability
+    data=portability.validate(payload)
+    initialize()
+    key=f'investments:{user_id}'
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT id FROM users WHERE id=%s FOR UPDATE',(user_id,))
+        if not c.fetchone():raise KeyError('Conta não encontrada')
+        tables={}
+        for name,columns in portability.TABLES.items():
+            c.execute('SELECT '+','.join(columns)+' FROM '+name+' WHERE user_id=%s FOR UPDATE',(user_id,))
+            tables[name]=[dict(row) for row in c.fetchall()]
+        c.execute('SELECT value FROM app_state WHERE key=%s FOR UPDATE',(key,));row=c.fetchone()
+        old=portability.package(tables,row['value'] if row else dict(EMPTY_INVESTMENTS))
+        c.execute('INSERT INTO app_state(key,value) VALUES(%s,%s::jsonb) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value',(f'safety_backup:{user_id}',json.dumps(old,ensure_ascii=False)))
+        for name in portability.TABLES:c.execute('DELETE FROM '+name+' WHERE user_id=%s',(user_id,))
+        for name,columns in portability.TABLES.items():
+            for row in data[name]:
+                values=[json.dumps(row[column],ensure_ascii=False) if column=='finance_details' else row[column] for column in columns]
+                c.execute('INSERT INTO '+name+'(user_id,'+','.join(columns)+') VALUES('+','.join('%s' for _ in range(len(columns)+1))+')',(user_id,*values))
+        c.execute('INSERT INTO app_state(key,value) VALUES(%s,%s::jsonb) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value',(key,json.dumps(data['portfolio'],ensure_ascii=False)))
+        db.commit()
+    return portability.counts(data)
+
+
+def previous_financial_backup(user_id: int):
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT value FROM app_state WHERE key=%s',(f'safety_backup:{user_id}',));row=c.fetchone()
+    return row['value'] if row else None
+
+
+def delete_financial_account(user_id: int):
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT id FROM users WHERE id=%s FOR UPDATE',(user_id,))
+        if not c.fetchone():raise KeyError('Conta não encontrada')
+        for table in ('expenses','incomes','income_entries','budgets','budget_categories'):c.execute('DELETE FROM '+table+' WHERE user_id=%s',(user_id,))
+        c.execute('DELETE FROM app_state WHERE key IN (%s,%s)',(f'investments:{user_id}',f'safety_backup:{user_id}'))
+        c.execute('DELETE FROM users WHERE id=%s',(user_id,));db.commit()
+
+
+def _matches_password(row, password):
+    import base64
+    if not row or not isinstance(password,str) or len(password)>200:return False
+    salt=base64.urlsafe_b64decode(row['password_salt']+'='*(-len(row['password_salt'])%4))
+    return hmac.compare_digest(_password_digest(password,salt),row['password_hash'])
+
+
+def session_version(user_id):
+    initialize()
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT session_version FROM users WHERE id=%s',(user_id,));row=c.fetchone()
+    return row['session_version'] if row else None
+
+
+def verify_account_password(user_id, password):
+    initialize()
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT password_salt,password_hash FROM users WHERE id=%s',(user_id,));row=c.fetchone()
+    return _matches_password(row,password)
+
+
+def change_account_password(user_id, old, new):
+    initialize()
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT password_salt,password_hash FROM users WHERE id=%s FOR UPDATE',(user_id,));row=c.fetchone()
+        if not _matches_password(row,old):raise ValueError('Senha atual incorreta')
+        salt=secrets.token_bytes(16)
+        c.execute('UPDATE users SET password_salt=%s,password_hash=%s,session_version=session_version+1 WHERE id=%s RETURNING session_version',(_encoded(salt),_password_digest(new,salt),user_id))
+        version=c.fetchone()['session_version'];db.commit()
+    return version
+
+
+def set_recovery_codes(user_id, password, hashes):
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT password_salt,password_hash FROM users WHERE id=%s FOR UPDATE',(user_id,));row=c.fetchone()
+        if not _matches_password(row,password):raise ValueError('Senha atual incorreta')
+        c.execute('UPDATE users SET recovery_hashes=%s::jsonb WHERE id=%s',(json.dumps(hashes),user_id));db.commit()
+
+
+def recover_account(email, code_hash, new_password):
+    initialize()
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT id,recovery_hashes FROM users WHERE lower(email)=lower(%s) FOR UPDATE',(str(email).strip(),));row=c.fetchone()
+        hashes=list(row['recovery_hashes']) if row else []
+        found=next((value for value in hashes if hmac.compare_digest(value,code_hash)),None)
+        if not found:raise ValueError('Não foi possível recuperar o acesso com estes dados')
+        hashes.remove(found);salt=secrets.token_bytes(16)
+        c.execute('UPDATE users SET password_salt=%s,password_hash=%s,recovery_hashes=%s::jsonb,session_version=session_version+1 WHERE id=%s',(_encoded(salt),_password_digest(new_password,salt),json.dumps(hashes),row['id']));db.commit()
+    return True
+
+
+def account_security_status(user_id):
+    with connect() as db,db.cursor() as c:
+        c.execute('SELECT recovery_hashes FROM users WHERE id=%s',(user_id,));row=c.fetchone()
+    return {'password_management':True,'recovery_codes_remaining':len(row['recovery_hashes']) if row else 0}
+
+
+def backup_metadata(user_id):
+    with connect() as db,db.cursor() as c:
+        c.execute("SELECT value->>'exported_at' AS date FROM app_state WHERE key=%s",(f'safety_backup:{user_id}',));row=c.fetchone()
+    return {'available':bool(row),'date':row['date'] if row else None}

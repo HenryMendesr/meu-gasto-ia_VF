@@ -99,6 +99,7 @@ class DebtEditingTests(unittest.TestCase):
     def test_postgres_write_scopes_all_queries_to_user_and_uses_one_transaction(self):
         db, cursor = MagicMock(), MagicMock()
         db.__enter__.return_value=db;cursor.__enter__.return_value=cursor;db.cursor.return_value=cursor
+        cursor.fetchall.return_value=[{'id':123,'amount':97.49,'expense_date':'2026-11-30','installment_number':1,'finance_details':json.dumps({'financing_kind':'loan'})}]
         cursor.fetchone.side_effect=[{'installment_group':'contract','finance_details':json.dumps({'financing_kind':'loan'})}]+[{'id':i} for i in range(1,4)]
         with patch.object(cloud_storage,'connect',return_value=db), patch.object(cloud_storage,'read_categories',return_value=['Contas']):
             result=cloud_storage.update_debt(123,debt(installment_count=3),42)
@@ -106,7 +107,7 @@ class DebtEditingTests(unittest.TestCase):
         self.assertIn('user_id=%s FOR UPDATE',calls[0].args[0])
         self.assertEqual((123,42),calls[0].args[1])
         self.assertEqual((42,'contract'),calls[1].args[1])
-        for call in calls[2:]: self.assertEqual(42,call.args[1][0])
+        for call in calls[2:]: self.assertEqual(42,call.args[1][-1] if 'DELETE' in call.args[0] else call.args[1][0])
         db.commit.assert_called_once()
         self.assertEqual([1,2,3],result['ids'])
 

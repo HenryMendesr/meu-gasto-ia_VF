@@ -87,11 +87,13 @@ def verify_password(password: str) -> bool:
     return hmac.compare_digest(_encode(digest), data["password_hash"])
 
 
-def create_session(user_id: int | str = 1, now: int | None = None) -> str:
+def create_session(user_id: int | str = 1, now: int | None = None, session_version: int | None = None) -> str:
     secret = os.environ.get("SESSION_SECRET")
     data = _read() if not secret else None
+    if session_version is None:
+        session_version = _read().get('session_version',0) if not os.environ.get('DATABASE_URL') and AUTH_FILE.exists() else 0
     payload = json.dumps(
-        {"sub": str(user_id), "exp": (now or int(time.time())) + SESSION_SECONDS, "nonce": secrets.token_hex(8)},
+        {"v": session_version, "sub": str(user_id), "exp": (now or int(time.time())) + SESSION_SECONDS, "nonce": secrets.token_hex(8)},
         separators=(",", ":"),
     ).encode("utf-8")
     encoded = _encode(payload)
@@ -113,6 +115,8 @@ def session_user(token: str | None, now: int | None = None) -> int | None:
         payload = json.loads(_decode(encoded))
         if int(payload["exp"]) < (now or int(time.time())):
             return None
+        if not os.environ.get('DATABASE_URL') and AUTH_FILE.exists() and payload.get('v',0) != _read().get('session_version',0):
+            return None
         return int(payload["sub"])
     except (ValueError, KeyError, TypeError, json.JSONDecodeError):
         return None
@@ -120,3 +124,8 @@ def session_user(token: str | None, now: int | None = None) -> int | None:
 
 def verify_session(token: str | None, now: int | None = None) -> bool:
     return session_user(token, now) is not None
+
+
+def token_version(token):
+    try:return int(json.loads(_decode(token.split('.',1)[0])).get('v',0))
+    except (ValueError,TypeError,KeyError,AttributeError):return -1

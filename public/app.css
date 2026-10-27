@@ -2649,3 +2649,80 @@ body.offline-page>main.card img {
  .debt-payment-card small {font-size:10px;color:var(--muted);}
  .debt-payment-card>.payment-status {align-self:center;justify-self:start;font-size:9px;}
 }
+
+/* Confidence and account controls */
+.account-button{border:1px solid var(--border,#29312f);background:#171d1b;color:#dce6e0;border-radius:10px;padding:9px 13px;font:inherit;font-size:12px;white-space:nowrap}
+.trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.trust-card{padding:26px;min-width:0}
+.trust-card h3,.trust-due h3,.onboarding h3{margin:8px 0 12px;font-size:20px}
+.trust-card p,.trust-dialog p{font-size:13px;line-height:1.75;color:#a2b0a8}
+.trust-card form,.trust-dialog form{display:grid;gap:14px;margin-top:20px}
+.trust-card label,.trust-dialog label{display:grid;gap:8px;font-size:12px;color:#b8c7bd}
+.trust-card input,.trust-card textarea,.trust-card select,.trust-dialog input,.trust-dialog select{width:100%;min-width:0;padding:12px;border:1px solid #303b34;border-radius:10px;background:#101613;color:#e4eee7;font:inherit}
+.trust-card textarea{min-height:90px;resize:vertical}
+.trust-card button,.trust-dialog button:not(#closeTrustDialog),.trust-link{padding:11px 15px;border:1px solid #34443a;border-radius:9px;color:#dcebe1;background:#1d2a23;font:inherit;font-size:12px;cursor:pointer}
+.trust-link{display:inline-block;text-decoration:none;margin:5px 5px 5px 0}
+.trust-card .trust-check{display:flex;align-items:flex-start;gap:10px}
+.trust-check input{width:18px;height:18px;flex:none}
+.trust-card pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;color:#a4e3bc}
+.trust-list article{padding:14px 0;border-bottom:1px solid #27342b}
+.trust-list strong,.trust-list small{display:block}
+.trust-list strong{font-size:13px}
+.trust-list small{font-size:11px;color:#8ea196;margin-top:5px}
+.trust-list p{margin:7px 0}
+.danger-zone{margin-top:22px}
+.danger-zone summary{cursor:pointer;color:#e4a4a4}
+.danger-zone button{color:#ffc6c6;border-color:#6c3d3d;background:#332020}
+.trust-dialog{width:min(620px,calc(100vw - 28px));max-height:85dvh;overflow:auto;padding:26px;border:1px solid #35443a;border-radius:18px;background:#111914;color:#edf4ee;box-shadow:0 24px 100px #0009}
+.trust-dialog::backdrop{background:#000b;backdrop-filter:blur(5px)}
+.trust-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.trust-dialog-head h3{margin:0;font-size:20px}
+.trust-dialog-head button{background:none;border:0;color:#b7c9bc;font-size:28px;cursor:pointer}
+.trust-calculation{display:grid;gap:12px;padding:18px 0;margin:10px 0;border-block:1px solid #2c3931}
+.trust-calculation span{display:flex;justify-content:space-between;gap:14px;font-size:13px}
+.trust-table{overflow-x:auto}
+.trust-table td,.trust-table th{padding:10px;text-align:left;font-size:12px}
+.onboarding{padding:24px;margin-bottom:24px}
+.onboarding-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}
+.onboarding-steps button{text-align:left;background:#171f1a;border:1px solid #2d3b32;border-radius:12px;padding:16px;color:#e4eee6;cursor:pointer}
+.onboarding-steps strong,.onboarding-steps small{display:block}
+.onboarding-steps strong{font-size:13px;margin:12px 0 6px}
+.onboarding-steps small{color:#92a499;font-size:11px;line-height:1.6}
+.step-number{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:50%;border:1px solid #46574b;color:#b6c8bb;font-size:12px}
+.step-number.done{background:#234332;color:#a0e3ba;border-color:#37654a}
+.trust-due{padding:24px;display:grid;grid-template-columns:1fr 2fr;gap:22px;margin:24px 0}
+.trust-due p{font-size:12px}
+.trust-upcoming{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.trust-upcoming button{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#19221c;border:1px solid #2c3a30;border-radius:10px;padding:13px;color:#deebe1;text-align:left;cursor:pointer}
+.trust-upcoming strong,.trust-upcoming small{display:block;font-size:12px}
+.trust-upcoming small{color:#9db0a3;font-size:11px;margin-top:5px}
+.trust-upcoming b{white-space:nowrap;font-size:12px}
+.quote-trust{display:flex;flex-wrap:wrap;gap:5px 16px;max-height:100px;overflow:auto;font-size:11px;color:#95a99a;line-height:1.8}
+.activity-row:has([data-correct-operation]){grid-template-columns:36px 1fr auto auto}
+.activity-reversed>strong,.activity-reversed>div{opacity:.55}
+.activity-reversed>strong{text-decoration:line-through}
+.available-balance #explainBalance{margin-top:10px;display:block;color:#acccba}
+.correction-values{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#incomeBasisNote{font-size:12px;line-height:1.6}
+#incomeMode{padding:12px;color:#e0eae3;background:#171f1b;border:1px solid #344139;border-radius:9px}
+.trust-card button:disabled,.trust-dialog button:disabled{opacity:.5;cursor:wait}
+
+@media(max-width:850px){.trust-grid{grid-template-columns:1fr}
+.onboarding-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+.trust-due{grid-template-columns:1fr}
+.account-button{padding:8px;font-size:11px}
+.top-actions{gap:6px}
+.trust-upcoming{grid-template-columns:1fr}
+.trust-card{padding:20px}
+.activity-row:has([data-correct-operation]){grid-template-columns:28px 1fr auto}
+.activity-row [data-correct-operation]{grid-column:2/4;justify-self:start}
+.trust-dialog{padding:20px}
+.correction-values{grid-template-columns:1fr}
+.onboarding .detail-heading{align-items:flex-start;gap:8px}
+.onboarding h3{font-size:17px}
+.onboarding{padding:18px}
+.top-context{display:none}
+}
+
+
+#accountPanel>.section-heading>button{background:#1d2a23;color:#dcebe1;border:1px solid #34443a;border-radius:10px;padding:11px 15px;font:inherit;font-size:12px;cursor:pointer}

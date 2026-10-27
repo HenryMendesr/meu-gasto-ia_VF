@@ -68,9 +68,11 @@ def monthly_report(month, user_id=None):
                 operations.append({'date': buy['date'], 'kind': 'Aporte', 'label': label,
                                    'amount': -buy['total'], 'realized': 0, 'fees': buy.get('fees', 0)})
             for sale in item.get('sales', []):
+                if sale.get('reversed'):continue
                 operations.append({'date': sale['date'], 'kind': 'Venda', 'label': label,
                                    'amount': sale.get('net_total', sale['total']), 'realized': sale['profit_loss'], 'fees': sale.get('fees', 0)})
             for income in item.get('incomes', []):
+                if income.get('reversed'):continue
                 operations.append({'date': income['date'], 'kind': 'Provento', 'label': label,
                                    'amount': income['amount'], 'realized': income['amount'], 'fees': 0})
         else:
@@ -84,9 +86,10 @@ def monthly_report(month, user_id=None):
         return [entry for entry in expenses if effective_date(entry).startswith(period)
                 and (not is_debt(entry) or entry.get('finance', {}).get('paid') is True)]
     def income_for(period):
-        declared = incomes.get(period, {}).get('cash', 0)
-        total_imported = round(sum(entry['amount'] for entry in imported if entry['date'].startswith(period)), 2)
-        return (declared if declared > 0 else total_imported), total_imported, 'declared' if declared > 0 else 'imported'
+        try:from src.trust import income_basis
+        except ImportError:from trust import income_basis
+        basis=income_basis(period,incomes,imported,store.get('preferences'))
+        return basis['used'],basis['imported'],basis['source']
     actual = actual_entries(month)
     cash_expenses = round(sum(entry['amount'] for entry in actual if entry['payment'] != 'Voucher'), 2)
     voucher = round(sum(entry['amount'] for entry in actual if entry['payment'] == 'Voucher'), 2)
