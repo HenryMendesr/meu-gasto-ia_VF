@@ -1,12 +1,13 @@
 const debtForm=document.querySelector('#debtForm'),debtFilter=document.querySelector('#debtChartFilter');
+let editingDebtId=null;
 const debtTypes={loan:['Pessoal','Consignado','Com garantia','Outro empréstimo'],debt:['Cartão de crédito','Cheque especial','Conta em atraso','Acordo / renegociação','Outra dívida'],asset:['Imóvel','Veículo','Outro bem']};
 const debtKindNames={loan:'Empréstimo',debt:'Dívida',asset:'Financiamento'};
 function localDateValue(){const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`}
 function debtDate(first,index){const value=new Date(first+'T12:00:00'),day=value.getDate();value.setDate(1);value.setMonth(value.getMonth()+index);value.setDate(Math.min(day,new Date(value.getFullYear(),value.getMonth()+1,0).getDate()));return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`}
 function debtRound(value){return Math.round((value+Number.EPSILON)*100)/100}
-function debtPlan(principal,count,rate,system){
+function debtPlan(principal,count,rate,system,regular=null){
  if(!(principal>0)||principal>10000000||!Number.isInteger(count)||count<1||count>600||!Number.isFinite(rate)||rate<0||rate>1||!['price','sac'].includes(system))return null;
- const fixed=debtRound(rate?principal*rate/(1-Math.pow(1+rate,-count)):principal/count),capital=debtRound(principal/count);
+ const fixed=regular??debtRound(rate?principal*rate/(1-Math.pow(1+rate,-count)):principal/count),capital=debtRound(principal/count);
  let balance=principal;const parts=[];
  for(let i=0;i<count;i++){
   const interest=debtRound(balance*rate),amount=i===count-1?debtRound(balance+interest):system==='sac'?debtRound(capital+interest):fixed;
@@ -16,28 +17,49 @@ function debtPlan(principal,count,rate,system){
  }
  return parts;
 }
-function updateDebtForm(event){
- const e=debtForm.elements,kind=e.financing_kind.value,asset=kind==='asset';
+function inferDebtRate(principal,payment,count){
+ if(!(principal>0)||!(payment>0)||!Number.isInteger(count)||count<1||count>600)return null;
+ if(Math.abs(payment-principal/count)<=.005)return 0;
+ if(payment*count<principal)return null;
+ const installment=rate=>principal*rate/(1-Math.pow(1+rate,-count));
+ if(payment>installment(1)+.005)return null;
+ let low=0,high=1;for(let i=0;i<70;i++){const mid=(low+high)/2;if(installment(mid)<payment)low=mid;else high=mid}
+ return (low+high)/2;
+}
+function updateDebtForm(){
+ const e=debtForm.elements,kind=e.financing_kind.value,asset=kind==='asset',automatic=e.calculation_mode.value==='payment';
  const types=debtTypes[kind],oldType=e.debt_type.value;
  if([...e.debt_type.options].map(x=>x.value).join('|')!==types.join('|')){e.debt_type.replaceChildren(...types.map(x=>new Option(x,x)));if(types.includes(oldType))e.debt_type.value=oldType}
  document.querySelector('#debtTypeLabel').textContent=asset?'Tipo de bem':kind==='debt'?'Origem da dívida':'Tipo de empréstimo';
  document.querySelector('#debtCreditorLabel').textContent=kind==='debt'?'Credor / empresa':'Banco / credor';
- document.querySelector('#debtAmountLabel').textContent=asset?'Valor financiado, sem juros (R$)':kind==='debt'?'Saldo atual a negociar (R$)':'Valor emprestado / saldo atual (R$)';
+ document.querySelector('#debtAmountLabel').textContent=asset?'Valor financiado, sem juros (R$)':'Saldo atual sem juros (R$)';
  document.querySelectorAll('.debt-asset').forEach(label=>{label.hidden=!asset;const input=label.querySelector('input');input.disabled=!asset;input.required=asset&&input.name!=='down_payment'});
- e.amount.readOnly=asset;e.amortization_system.disabled=!asset;if(!asset)e.amortization_system.value='price';
+ e.amount.readOnly=asset;e.amortization_system.disabled=!asset||automatic;if(!asset||automatic)e.amortization_system.value='price';
  if(asset){const principal=moneyValue(e.asset_value.value)-moneyValue(e.down_payment.value);e.amount.value=principal>0?moneyText(principal):''}
- const selectedCategory=e.category.value;
- e.category.replaceChildren(...ALL_CATEGORIES.map(x=>new Option(x,x)));if(ALL_CATEGORIES.includes(selectedCategory))e.category.value=selectedCategory;else e.category.value=asset?'Moradia':'Contas';
- const parts=debtPlan(moneyValue(e.amount.value),Number(e.installment_count.value),Number(e.interest_rate.value.replace(',','.'))/100,e.amortization_system.value),preview=document.querySelector('#debtPreview');
- e.amount.setCustomValidity(parts?'':'Informe um saldo positivo, taxa de 0 a 100% ao mês e de 1 a 600 parcelas que reduzam a dívida.');
- if(!parts){preview.textContent='Preencha o saldo, a taxa mensal e o prazo para ver a simulação.';return null}
- const total=parts.reduce((s,p)=>s+p.amount,0),first=parts[0].amount,last=parts.at(-1).amount;
- preview.innerHTML=`<strong>${parts.length} parcela(s) · ${e.amortization_system.value==='sac'?'De '+brl(first)+' até '+brl(last):'Primeira de '+brl(first)}</strong><span>Principal: ${brl(moneyValue(e.amount.value))} · Juros: ${brl(total-moneyValue(e.amount.value))}</span><span>Total a pagar: <b>${brl(total)}</b></span>${e.first_charge_date.value?`<small>De ${date(e.first_charge_date.value)} a ${date(debtDate(e.first_charge_date.value,parts.length-1))}. As parcelas vão para esses meses automaticamente.</small>`:''}`;
+ const selectedCategory=e.category.value;e.category.replaceChildren(...ALL_CATEGORIES.map(x=>new Option(x,x)));if(ALL_CATEGORIES.includes(selectedCategory))e.category.value=selectedCategory;else e.category.value=asset?'Moradia':'Contas';
+ document.querySelector('#debtPaymentField').hidden=!automatic;e.installment_amount.disabled=!automatic;e.installment_amount.required=automatic;
+ e.interest_rate.readOnly=automatic;e.interest_rate.required=!automatic;document.querySelector('#debtRateLabel').textContent=automatic?'Juros estimados ao mês (%)':'Juros ao mês (%)';
+ const principal=moneyValue(e.amount.value),count=Number(e.installment_count.value),regular=automatic?moneyValue(e.installment_amount.value):null,rate=automatic?inferDebtRate(principal,regular,count):Number(e.interest_rate.value.replace(',','.'))/100;
+ if(automatic)e.interest_rate.value=rate==null?'':(rate*100).toFixed(8).replace(/0+$/,'').replace(/\.$/,'');
+ const parts=rate==null?null:debtPlan(principal,count,rate,e.amortization_system.value,regular),preview=document.querySelector('#debtPreview');
+ const error=automatic?'Revise o saldo sem juros, o valor da parcela e o prazo. As parcelas devem cobrir o saldo, com juros estimados entre 0 e 100% ao mês.':'Informe um saldo positivo, taxa de 0 a 100% ao mês e de 1 a 600 parcelas que reduzam a dívida.';
+ e.amount.setCustomValidity(parts?'':error);e.installment_amount.setCustomValidity(automatic&&!parts?error:'');
+ document.querySelector('#debtCalculationHelp').textContent=automatic?'Informe o saldo sem juros e quanto paga por mês, durante quantos meses. A taxa é estimada para parcelas fixas (Price), com pagamentos mensais. Não é o CET e não separa tarifas, seguros ou impostos incluídos na parcela. A última parcela pode ajustar alguns centavos.':'Valores com centavos automáticos: 12345 → 123,45. Use a taxa mensal do contrato. Price mantém as parcelas; SAC reduz as parcelas com o tempo. A entrada já paga não gera outro gasto.';
+ if(!parts){preview.textContent=automatic?'Preencha saldo sem juros, valor da parcela e quantidade de meses para estimar os juros.':'Preencha o saldo, a taxa mensal e o prazo para ver a simulação.';return null}
+ const total=parts.reduce((sum,p)=>sum+p.amount,0),first=parts[0].amount,last=parts.at(-1).amount;
+ preview.innerHTML=`<strong>${parts.length} parcela(s) · ${e.amortization_system.value==='sac'?'De '+brl(first)+' até '+brl(last):'Primeira de '+brl(first)}</strong>${automatic?`<span>Juros estimados: <b>${(rate*100).toLocaleString('pt-BR',{maximumFractionDigits:6})}% ao mês</b></span>`:''}<span>Principal: ${brl(principal)} · Juros: ${brl(total-principal)}</span><span>Total a pagar: <b>${brl(total)}</b></span>${e.first_charge_date.value?`<small>De ${date(e.first_charge_date.value)} a ${date(debtDate(e.first_charge_date.value,parts.length-1))}. As parcelas vão para esses meses automaticamente.</small>`:''}`;
  return parts;
 }
 debtForm.querySelectorAll('[data-money]').forEach(input=>input.addEventListener('input',()=>maskMoney(input)));
 debtForm.addEventListener('input',updateDebtForm);debtForm.addEventListener('change',updateDebtForm);
-function resetDebtForm(){document.querySelector('#debtFormMessage').hidden=true;debtForm.reset();debtForm.elements.date.value=localDateValue();debtForm.elements.first_charge_date.value=debtDate(localDateValue(),1);updateDebtForm()}
+function resetDebtForm(){editingDebtId=null;document.querySelector('#debtFormMessage').hidden=true;debtForm.reset();debtForm.elements.date.value=localDateValue();debtForm.elements.first_charge_date.value=debtDate(localDateValue(),1);document.querySelector('#debtFormTitle').textContent='Novo compromisso';debtForm.querySelector('[type="submit"]').textContent='Salvar e gerar parcelas';document.querySelector('#cancelDebtEdit').hidden=true;document.querySelector('#debtEditNotice').hidden=true;updateDebtForm()}
+function editDebt(groupId){
+ const group=debtGroups().find(g=>g.id===groupId);if(!group)return;resetDebtForm();const f=group.first.finance,e=debtForm.elements;
+ e.financing_kind.value=f.financing_kind;updateDebtForm();
+ const fields={debt_type:f.debt_type||debtTypes[f.financing_kind][0],where:group.first.where,amount:moneyText(group.principal),interest_rate:String(f.interest_rate||0),installment_count:group.items.length,first_charge_date:group.first.date,date:f.contract_date||group.first.date,amortization_system:f.amortization_system||'price',payment:group.first.payment,category:group.first.category,description:group.first.description.replace(/(?:^| · )Parcela \d+\/\d+$/,''),asset_name:f.asset_name||'',asset_value:f.asset_value!=null?moneyText(f.asset_value):'',down_payment:f.down_payment!=null?moneyText(f.down_payment):'',calculation_mode:f.calculation_mode||'rate',installment_amount:moneyText(f.installment_amount||group.first.amount)};
+ Object.entries(fields).forEach(([key,value])=>e[key].value=value);editingDebtId=group.first.id;updateDebtForm();document.querySelector('#debtFormTitle').textContent='Editar compromisso';debtForm.querySelector('[type="submit"]').textContent='Salvar alterações';document.querySelector('#cancelDebtEdit').hidden=false;const notice=document.querySelector('#debtEditNotice');notice.textContent=`Ao salvar, as ${group.items.length} parcelas deste cadastro serão substituídas pelo novo calendário, inclusive as de datas passadas. Outros gastos não serão alterados.`;notice.hidden=false;document.querySelector('.debt-form-card').scrollIntoView({behavior:'smooth',block:'start'});e.where.focus({preventScroll:true});
+}
+document.querySelector('#cancelDebtEdit').addEventListener('click',resetDebtForm);
 function debtGroups(){
  const groups=new Map();
  DATA.filter(item=>item.installment_group&&['loan','debt','asset'].includes(item.finance?.financing_kind)).forEach(item=>{if(!groups.has(item.installment_group))groups.set(item.installment_group,[]);groups.get(item.installment_group).push(item)});
@@ -79,7 +101,7 @@ function renderDebtsPanel(){
  const visible=groups.filter(g=>!debtFilter.value||g.id===debtFilter.value),principal=visible.reduce((s,g)=>s+g.principal,0),total=visible.reduce((s,g)=>s+g.items.reduce((v,x)=>v+x.amount,0),0);
  document.querySelector('#debtPrincipalTotal').textContent=brl(principal);document.querySelector('#debtInterestTotal').textContent=brl(Math.max(0,total-principal));document.querySelector('#debtPaymentsTotal').textContent=brl(total);
  drawDebtCharts(visible);document.querySelector('#debtContractCount').textContent=`${groups.length} contrato(s)`;
- document.querySelector('#debtContractList').innerHTML=groups.length?groups.map(g=>{const f=g.first.finance,total=g.items.reduce((s,x)=>s+x.amount,0);return `<article class="debt-contract"><div><h4>${esc(debtKindNames[f.financing_kind])} · ${esc(g.first.where)}</h4><p>${esc(f.debt_type||'Contrato cadastrado')} ${f.asset_name?'· '+esc(f.asset_name):''} · ${Number(f.interest_rate||0).toLocaleString('pt-BR')}% ao mês · ${esc((f.amortization_system||'price').toUpperCase())}</p><p>${g.items.length} parcela(s) de ${date(g.first.date)} a ${date(g.items.at(-1).date)} · Total ${brl(total)}</p><p>Principal ${brl(g.principal)} · Juros previstos ${brl(Math.max(0,total-g.principal))}</p></div><div class="debt-contract-actions"><button type="button" class="secondary" data-view-debt="${g.id}">Ver gráfico</button><button type="button" class="danger" data-remove-debt="${g.first.id}">Excluir</button></div></article>`}).join(''):'<div class="empty">Nenhum empréstimo, dívida ou financiamento cadastrado.</div>';
+ document.querySelector('#debtContractList').innerHTML=groups.length?groups.map(g=>{const f=g.first.finance,total=g.items.reduce((s,x)=>s+x.amount,0);return `<article class="debt-contract"><div><h4>${esc(debtKindNames[f.financing_kind])} · ${esc(g.first.where)}</h4><p>${esc(f.debt_type||'Contrato cadastrado')} ${f.asset_name?'· '+esc(f.asset_name):''} · ${Number(f.interest_rate||0).toLocaleString('pt-BR')}% ao mês · ${esc((f.amortization_system||'price').toUpperCase())}</p><p>${g.items.length} parcela(s) de ${date(g.first.date)} a ${date(g.items.at(-1).date)} · Total ${brl(total)}</p><p>Principal ${brl(g.principal)} · Juros previstos ${brl(Math.max(0,total-g.principal))}</p></div><div class="debt-contract-actions"><button type="button" class="secondary" data-edit-debt="${g.id}">Editar dívida</button><button type="button" class="secondary" data-view-debt="${g.id}">Ver gráfico</button><button type="button" class="danger" data-remove-debt="${g.first.id}">Excluir</button></div></article>`}).join(''):'<div class="empty">Nenhum empréstimo, dívida ou financiamento cadastrado.</div>';
 }
 debtFilter.addEventListener('change',renderDebtsPanel);
 document.querySelector('#newDebtButton').addEventListener('click',()=>{resetDebtForm();debtForm.scrollIntoView({behavior:'smooth',block:'start'});debtForm.elements.financing_kind.focus()});
@@ -87,17 +109,19 @@ debtForm.addEventListener('submit',async event=>{
  event.preventDefault();const message=document.querySelector('#debtFormMessage'),button=debtForm.querySelector('[type="submit"]');message.hidden=true;
  if(!canWrite){message.textContent=localOnlyMessage();message.className='message error';message.hidden=false;return}
  if(!updateDebtForm()||!debtForm.reportValidity())return;
- const payload=Object.fromEntries(new FormData(debtForm));payload.amount=moneyValue(payload.amount);payload.asset_value=moneyValue(payload.asset_value);payload.down_payment=moneyValue(payload.down_payment);payload.debt_entry=true;payload.installment=true;payload.amortization_system=debtForm.elements.amortization_system.value;
+ const payload=Object.fromEntries(new FormData(debtForm));payload.amount=moneyValue(payload.amount);payload.asset_value=moneyValue(payload.asset_value);payload.down_payment=moneyValue(payload.down_payment);if(payload.installment_amount)payload.installment_amount=moneyValue(payload.installment_amount);payload.debt_entry=true;payload.installment=true;payload.amortization_system=debtForm.elements.amortization_system.value;
  button.disabled=true;
  try{
-  let response=await fetch('/api/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();
-  if(response.status===409&&result.code==='duplicate'&&confirm(`${result.error}. Cadastrar mesmo assim?`)){payload.allow_duplicate=true;response=await fetch('/api/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});result=await response.json()}
+  const wasEditing=editingDebtId!=null;
+  let response=await fetch(wasEditing?`/api/debts/${editingDebtId}`:'/api/expenses',{method:wasEditing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();
+  if(!wasEditing&&response.status===409&&result.code==='duplicate'&&confirm(`${result.error}. Cadastrar mesmo assim?`)){payload.allow_duplicate=true;response=await fetch('/api/expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});result=await response.json()}
   if(!response.ok)throw new Error(result.error||'Não foi possível salvar o compromisso.');
-  await loadBootstrap();debtFilter.value=result.installment_group||'';renderDebtsPanel();resetDebtForm();message.textContent=`Compromisso salvo. ${result.ids?.length||1} parcela(s) no calendário e gráficos atualizados.`;message.className='message ok';message.hidden=false;
+  await loadBootstrap();debtFilter.value=result.installment_group||'';renderDebtsPanel();resetDebtForm();message.textContent=`${wasEditing?'Compromisso atualizado.':'Compromisso salvo.'} ${result.ids?.length||1} parcela(s) no calendário e gráficos atualizados.`;message.className='message ok';message.hidden=false;
  }catch(error){message.textContent=error.message;message.className='message error';message.hidden=false}finally{button.disabled=false}
 });
 document.querySelector('#debtContractList').addEventListener('click',async event=>{
- const view=event.target.closest('[data-view-debt]'),remove=event.target.closest('[data-remove-debt]');
+ const edit=event.target.closest('[data-edit-debt]'),view=event.target.closest('[data-view-debt]'),remove=event.target.closest('[data-remove-debt]');
+ if(edit){editDebt(edit.dataset.editDebt);return}
  if(view){debtFilter.value=view.dataset.viewDebt;renderDebtsPanel();document.querySelector('.debt-analysis').scrollIntoView({behavior:'smooth',block:'start'})}
  if(remove&&confirm('Excluir este compromisso e todas as parcelas dele?')){
   remove.disabled=true;try{const response=await fetch(`/api/expenses/${remove.dataset.removeDebt}?scope=all`,{method:'DELETE'}),result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível excluir');await loadBootstrap()}catch(error){alert(error.message);remove.disabled=false}

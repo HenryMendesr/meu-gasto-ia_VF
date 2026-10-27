@@ -290,8 +290,9 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         investment_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})", path)
         expense_match = re.fullmatch(r"/api/expenses/(\d+)", path)
+        debt_match = re.fullmatch(r"/api/debts/(\d+)", path)
         category_match = re.fullmatch(r"/api/categories/(.+)", path)
-        if not investment_match and not expense_match and not category_match:
+        if not investment_match and not expense_match and not debt_match and not category_match:
             self.send_error(404)
             return
         try:
@@ -299,6 +300,11 @@ class Handler(SimpleHTTPRequestHandler):
             if length <= 0 or length > 65_536:
                 raise ValueError("Requisição inválida")
             payload = json.loads(self.rfile.read(length))
+            if debt_match:
+                item = storage.update_debt(int(debt_match.group(1)), payload)
+                rebuild_dashboard()
+                self.respond(200, {"ok": True, **item})
+                return
             item = investments.update_investment(investment_match.group(1), payload) if investment_match else storage.update_expense(int(expense_match.group(1)), payload) if expense_match else storage.rename_category(unquote(category_match.group(1)), payload.get("name", ""))
             rebuild_dashboard()
             self.respond(200, {"ok": True, "investment": item} if investment_match else {"ok": True, **item} if expense_match else {"ok": True, "category": item})

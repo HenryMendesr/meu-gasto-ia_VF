@@ -35,6 +35,53 @@ def interest_rate(value=0) -> Decimal:
     return rate / 100
 
 
+def inferred_interest_rate(principal_value, payment_value, count_value) -> Decimal:
+    """Monthly effective Price rate, with equal end-of-month payments."""
+    principal, payment = money(principal_value, "Saldo sem juros"), money(payment_value, "Valor da parcela")
+    try:
+        count = int(count_value)
+        if Decimal(str(count_value)) != count or not 1 <= count <= 600:
+            raise ValueError()
+    except (TypeError, ValueError, OverflowError, InvalidOperation) as exc:
+        raise ValueError("Informe de 1 a 600 parcelas inteiras") from exc
+    if abs(payment - principal / count) <= CENT / 2:
+        return Decimal(0)
+    if payment * count < principal:
+        raise ValueError("As parcelas somadas são menores que o saldo sem juros. Revise os valores")
+    def installment(rate):
+        return principal * rate / (1 - (1 + rate) ** -count)
+    if payment > installment(Decimal(1)) + CENT / 2:
+        raise ValueError("A taxa estimada ultrapassa 100% ao mês. Revise saldo, parcela e prazo")
+    low, high = Decimal(0), Decimal(1)
+    for _ in range(100):
+        middle = (low + high) / 2
+        if installment(middle) < payment:
+            low = middle
+        else:
+            high = middle
+    return (low + high) / 2 * 100
+
+
+def prepare_debt_update(payload, categories, payments):
+    """Validate a whole contract before replacing any calendar entries."""
+    if not isinstance(payload, dict):
+        raise ValueError("Dados do compromisso inválidos")
+    try:
+        contract_date = date.fromisoformat(str(payload["date"])).isoformat()
+        money(payload["amount"], "Saldo sem juros")
+        place, category = str(payload["where"]).strip(), str(payload["category"]).strip()
+        payment, description = str(payload["payment"]).strip(), str(payload.get("description", "")).strip()
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Revise data, saldo, credor, categoria e pagamento") from exc
+    if not place or len(place) > 100 or len(description) > 160:
+        raise ValueError("Revise o credor e a descrição do compromisso")
+    if category not in categories or payment not in payments:
+        raise ValueError("Categoria ou pagamento inválido")
+    _, parts, finance = expense_finance({**payload, "debt_entry": True, "installment": True}, contract_date, payment)
+    return {"place": place, "category": category, "payment": payment, "description": description,
+            "parts": parts, "finance": finance}
+
+
 def installment_plan(total_value, count_value, first_charge, installment_value=None, rate_value=0, system="price", max_count=120, min_count=2) -> list[dict]:
     total = money(total_value, "Valor financiado")
     rate = interest_rate(rate_value)
@@ -132,10 +179,22 @@ def expense_finance(payload, expense_date, payment):
             details.update(asset_name=asset_name, asset_value=float(asset_value), down_payment=float(down))
     parts = None
     if parcelled:
+        mode = str(payload.get("calculation_mode") or "rate") if dedicated else "rate"
+        rate_value = payload.get("interest_rate", 0)
+        installment_value = None if dedicated else payload.get("installment_amount")
+        if mode not in {"rate", "payment"}:
+            raise ValueError("Forma de cálculo inválida")
+        if dedicated and mode == "payment":
+            if details["amortization_system"] != "price":
+                raise ValueError("A taxa pela parcela exige parcelas fixas (Price)")
+            installment_value = payload.get("installment_amount")
+            rate_value = inferred_interest_rate(payload["amount"], installment_value, payload.get("installment_count"))
         parts = installment_plan(payload["amount"], payload.get("installment_count"),
                                  payload.get("first_charge_date") or expense_date,
-                                 None if dedicated else payload.get("installment_amount"), payload.get("interest_rate", 0),
+                                 installment_value, rate_value,
                                  details.get("amortization_system", "price"),
                                  max_count=600 if dedicated else 120, min_count=1 if dedicated else 2)
         details.update(financing_kind=kind, interest_rate=parts[0]["interest_rate"])
+        if dedicated:
+            details.update(calculation_mode=mode, installment_amount=parts[0]["amount"])
     return expense_date, parts, details

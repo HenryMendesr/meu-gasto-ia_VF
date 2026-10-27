@@ -12,9 +12,9 @@ import secrets
 from threading import Lock
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 try:
-    from src.finance_rules import installment_plan, expense_finance
+    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update
 except ImportError:
-    from finance_rules import installment_plan, expense_finance
+    from finance_rules import installment_plan, expense_finance, prepare_debt_update
 
 import psycopg
 from psycopg.rows import dict_row
@@ -186,6 +186,28 @@ def update_expense(item_id:int,payload:dict,user_id:int)->dict:
         if not c.rowcount:raise KeyError('Gasto não encontrado')
         db.commit()
     return {'id':item_id}
+
+
+def update_debt(item_id: int, payload: dict, user_id: int) -> dict:
+    draft = prepare_debt_update(payload, set(read_categories(user_id)), PAYMENTS)
+    with connect() as db, db.cursor() as c:
+        c.execute('SELECT installment_group,finance_details FROM expenses WHERE id=%s AND user_id=%s FOR UPDATE', (item_id, user_id))
+        current = c.fetchone()
+        if not current or not current['installment_group'] or json.loads(current['finance_details']).get('financing_kind') not in {'loan', 'debt', 'asset'}:
+            raise KeyError('Compromisso não encontrado')
+        group = current['installment_group']
+        c.execute('DELETE FROM expenses WHERE user_id=%s AND installment_group=%s', (user_id, group))
+        ids = []
+        for part in draft['parts']:
+            finance = {**draft['finance'], 'principal_part': part['amortization'],
+                       'interest_part': part['interest'], 'balance_after': part['balance_after']}
+            description = f"{draft['description']} · Parcela {part['number']}/{part['count']}".strip(' ·')
+            c.execute('INSERT INTO expenses(user_id,expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total,finance_details) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id',
+                      (user_id, part['date'], part['amount'], draft['place'], draft['category'], draft['payment'], description,
+                       group, part['number'], part['count'], part['original_total'], json.dumps(finance)))
+            ids.append(c.fetchone()['id'])
+        db.commit()
+    return {'id': ids[0], 'ids': ids, 'installment_group': group}
 
 
 def delete_expense(item_id:int,user_id:int,scope:str='single')->None:

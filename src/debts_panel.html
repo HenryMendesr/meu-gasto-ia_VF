@@ -3,7 +3,7 @@
     <section class="debt-totals" aria-label="Resumo dos contratos"><div><small>Principal cadastrado</small><strong id="debtPrincipalTotal">R$ 0,00</strong></div><div><small>Juros previstos</small><strong id="debtInterestTotal">R$ 0,00</strong></div><div><small>Total das parcelas</small><strong id="debtPaymentsTotal">R$ 0,00</strong></div></section>
     <div class="debt-layout">
       <section class="debt-form-card"><h3 id="debtFormTitle">Novo compromisso</h3><p>Use o saldo que ainda precisa pagar. Parcelas anteriores já pagas ficam fora deste cadastro.</p>
-        <form id="debtForm" class="debt-form">
+        <div id="debtEditNotice" class="debt-edit-notice" hidden></div><form id="debtForm" class="debt-form">
           <label>Compromisso<select name="financing_kind" required><option value="loan">Empréstimo</option><option value="debt">Dívida</option><option value="asset">Financiamento de bem</option></select></label>
           <label><span id="debtTypeLabel">Tipo de empréstimo</span><select name="debt_type" required></select></label>
           <label class="debt-wide"><span id="debtCreditorLabel">Banco / credor</span><input name="where" maxlength="100" placeholder="Ex.: Banco ou pessoa" required></label>
@@ -11,8 +11,8 @@
           <label class="debt-asset" hidden>Valor do bem (R$)<input name="asset_value" type="text" inputmode="decimal" data-money placeholder="0,00" maxlength="18"></label>
           <label class="debt-asset" hidden>Entrada já paga (R$)<input name="down_payment" type="text" inputmode="decimal" data-money placeholder="0,00" maxlength="18"></label>
           <label><span id="debtAmountLabel">Valor emprestado / saldo atual (R$)</span><input name="amount" type="text" inputmode="decimal" data-money placeholder="0,00" maxlength="18" required></label>
-          <label>Juros ao mês (%)<input name="interest_rate" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" value="0" maxlength="10" required></label>
-          <label>Parcelas a pagar<input name="installment_count" type="number" min="1" max="600" value="12" required></label>
+          <label class="debt-wide">Como deseja calcular?<select name="calculation_mode"><option value="rate">Informar taxa de juros</option><option value="payment">Calcular juros pela parcela</option></select></label><label id="debtPaymentField" hidden>Valor de cada parcela (R$)<input name="installment_amount" type="text" inputmode="decimal" data-money placeholder="0,00" maxlength="18" disabled></label><label id="debtRateField"><span id="debtRateLabel">Juros ao mês (%)</span><input name="interest_rate" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" value="0" maxlength="10" required></label>
+          <label>Prazo (quantidade de meses)<input name="installment_count" type="number" min="1" max="600" value="12" required></label>
           <label>Primeiro vencimento<input name="first_charge_date" type="date" required></label>
           <label>Data do contrato / acordo<input name="date" type="date" required></label>
           <label>Sistema de amortização<select name="amortization_system"><option value="price">Price — parcelas fixas</option><option value="sac">SAC — parcelas decrescentes</option></select></label>
@@ -20,8 +20,8 @@
           <label>Categoria<select name="category" required></select></label>
           <label class="debt-wide">Observações (opcional)<input name="description" maxlength="160" placeholder="Ex.: Contrato renegociado em outubro"></label>
           <div id="debtPreview" class="debt-preview debt-wide" aria-live="polite">Preencha o valor para ver a simulação.</div>
-          <p class="debt-wide debt-form-help">Valores com centavos automáticos: 12345 → 123,45. Use a taxa mensal do contrato, incluindo os custos financiados no saldo. Price mantém as parcelas; SAC reduz as parcelas com o tempo. A entrada já paga não gera outro gasto.</p>
-          <button type="submit" class="save debt-wide">Salvar e gerar parcelas</button><div id="debtFormMessage" class="message debt-wide" hidden></div>
+          <p id="debtCalculationHelp" class="debt-wide debt-form-help">Valores com centavos automáticos: 12345 → 123,45. Use a taxa mensal do contrato, incluindo os custos financiados no saldo. Price mantém as parcelas; SAC reduz as parcelas com o tempo. A entrada já paga não gera outro gasto.</p>
+          <div class="debt-form-actions debt-wide"><button type="submit" class="save">Salvar e gerar parcelas</button><button type="button" id="cancelDebtEdit" class="secondary" hidden>Cancelar edição</button></div><div id="debtFormMessage" class="message debt-wide" hidden></div>
         </form>
       </section>
       <section class="debt-analysis"><div class="detail-heading"><div><span class="eyebrow">Projeção dos contratos</span><h3>Evolução da dívida</h3></div></div><label class="debt-chart-filter">Exibir contrato<select id="debtChartFilter"><option value="">Todos os compromissos</option></select></label>

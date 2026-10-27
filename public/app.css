@@ -2403,3 +2403,48 @@ body.offline-page>main.card img {
 .debt-chart polygon {
   fill:var(--green);
 }
+
+/* Debt editing and payment-based interest estimates. */
+.debt-form-actions {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.debt-form-actions .save {
+  flex:1;
+}
+.debt-edit-notice {
+  padding:14px 16px;
+  margin-top:18px;
+  border:1px solid #536244;
+  border-radius:10px;
+  background:#22291b;
+  color:#d5dfbc;
+  font-size:12px;
+  line-height:1.7;
+}
+#debtRateField input[readonly] {
+  border-color:#3e614c;
+  background:#18291e;
+  color:var(--green);
+}
+.debt-contract-actions {
+  flex-wrap:wrap;
+}
+@media(max-width:600px) {
+  .debt-form-actions {
+    flex-direction:column;
+  }
+  .debt-form-actions button {
+    width:100%;
+  }
+}
+
+.skip-link:not(:focus) {
+  clip-path:inset(50%);
+  width:1px;
+  height:1px;
+  padding:0;
+  overflow:hidden;
+  white-space:nowrap;
+}

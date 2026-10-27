@@ -8,9 +8,9 @@ from pathlib import Path
 import sqlite3
 from threading import Lock
 try:
-    from src.finance_rules import installment_plan, expense_finance
+    from src.finance_rules import installment_plan, expense_finance, prepare_debt_update
 except ImportError:
-    from finance_rules import installment_plan, expense_finance
+    from finance_rules import installment_plan, expense_finance, prepare_debt_update
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -193,6 +193,28 @@ def update_expense(item_id: int, payload: dict, user_id: int | None = None) -> d
             if not cursor.rowcount:
                 raise KeyError("Gasto não encontrado")
     return {"id": int(item_id), "backup": backup.name}
+
+
+def update_debt(item_id: int, payload: dict, user_id: int | None = None) -> dict:
+    draft = prepare_debt_update(payload, set(read_categories()), PAYMENTS)
+    with LOCK:
+        backup = create_backup()
+        with connect() as db:
+            current = db.execute("SELECT installment_group,finance_details FROM expenses WHERE id=?", (int(item_id),)).fetchone()
+            if not current or not current["installment_group"] or json.loads(current["finance_details"]).get("financing_kind") not in {"loan", "debt", "asset"}:
+                raise KeyError("Compromisso não encontrado")
+            group = current["installment_group"]
+            db.execute("DELETE FROM expenses WHERE installment_group=?", (group,))
+            ids = []
+            for part in draft["parts"]:
+                finance = {**draft["finance"], "principal_part": part["amortization"],
+                           "interest_part": part["interest"], "balance_after": part["balance_after"]}
+                description = f"{draft['description']} · Parcela {part['number']}/{part['count']}".strip(" ·")
+                cursor = db.execute("INSERT INTO expenses(expense_date,amount,place,category,payment,description,installment_group,installment_number,installment_count,original_total,finance_details) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                                    (part["date"], part["amount"], draft["place"], draft["category"], draft["payment"], description,
+                                     group, part["number"], part["count"], part["original_total"], json.dumps(finance)))
+                ids.append(cursor.lastrowid)
+    return {"id": ids[0], "ids": ids, "installment_group": group, "backup": backup.name}
 
 
 def delete_expense(item_id: int, user_id: int | None = None, scope: str = "single") -> None:

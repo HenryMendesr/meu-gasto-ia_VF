@@ -262,6 +262,14 @@ def remove_investment(item_id:str,request:Request):
     except ValueError as exc:return json_error(400,str(exc))
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
 
+@fastapi_app.put('/api/debts/{item_id}')
+async def update_debt(item_id:int,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**storage.update_debt(item_id,await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.put('/api/expenses/{item_id}')
 async def update_expense(item_id:int,request:Request):
     uid=protected(request)
