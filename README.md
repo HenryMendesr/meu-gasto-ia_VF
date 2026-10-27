@@ -133,7 +133,7 @@ Arquivos principais:
 - `public/manifest.webmanifest`: instalação da PWA.
 - `public/service-worker.js`: cache seguro e atualização.
 
-Os gráficos individuais de renda variável abrem com os últimos três meses de cotações, independentemente da data de compra. Mostram candles de abertura, máxima, mínima e fechamento quando disponíveis, com consulta de data, preço e volume por mouse, toque ou teclado. A fonte é Yahoo Finance, não um feed oficial em tempo real da B3. A linha tracejada indica seu preço médio.
+Os gráficos individuais de renda variável abrem com os últimos três meses de cotações, independentemente da data de compra. Mostram uma linha contínua de preços em fundo preto, com consulta de data, preço e volume por mouse, toque ou teclado. A fonte é Yahoo Finance, não um feed oficial em tempo real da B3. A linha tracejada indica seu preço médio.
 
 A opção **Meus ganhos e perdas** mostra apenas o resultado em reais desde a compra, incluindo vendas registradas. O painel geral também apresenta o resultado acumulado nas datas de atualização da carteira, sem incluir o capital aplicado. Lucro e prejuízo incluem resultado em aberto e realizado; não incluem dividendos, taxas ou impostos. Para renda fixa, os saldos históricos são estimativas pela taxa cadastrada.
 

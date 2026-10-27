@@ -10,3 +10,19 @@
 .asset-chart-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}.asset-chart-tabs [aria-pressed="true"]{background:#143d30;color:white}.asset-sales{margin-top:14px;font-size:12px}.asset-sales summary{cursor:pointer;font-weight:700}.asset-sales p{padding:8px 0;border-bottom:1px solid #dce7e3}.asset-detail-metrics{flex-wrap:wrap}.asset-detail-head{grid-template-columns:minmax(130px,1fr) auto auto}#salePreview{padding:12px;border-radius:10px;background:#edf6f1;font-size:13px;line-height:1.6}@media(max-width:700px){.asset-detail-head{grid-template-columns:1fr}.asset-detail-metrics{grid-column:auto}}
 
 @media(max-width:700px){.interactive-asset-chart .asset-chart{min-height:0;height:auto}.interactive-asset-chart .asset-chart text{font-size:23px}}
+
+/* Dark chart surfaces, with continuous price lines and readable controls. */
+.investment-table .investment-detail-row td,.investment-table .investment-detail-row:hover td{background:#080a0d;color:#e9eff4}
+.asset-detail{--muted:#99a6b4;--ink:#edf3f7;--teal:#edf3f7;--line:#2b3440;--green:#59e3b0;--red:#ff838b;background:#080a0d;color:#edf3f7;border-radius:14px;padding:22px}
+.asset-detail-head>div:first-child strong{color:#f5f8fb;font-size:18px}.asset-detail-head>div:first-child span{color:#99a6b4;margin-top:5px}
+.asset-detail .secondary,.asset-detail .history-period{background:#141920;border:1px solid #2b3440;color:#d3dce5}.asset-detail .secondary:hover,.asset-detail .history-period:hover{background:#202833;border-color:#526273}.asset-detail .history-period{color-scheme:dark}
+.asset-detail .asset-chart-tabs [aria-pressed="true"]{background:#173a30;border-color:#3dbb91;color:#89f2ca}.asset-detail .asset-chart-tabs button{transition:background .15s,border-color .15s}
+.asset-detail .interactive-asset-chart{background:#080a0d;border:1px solid #1c232d;border-radius:12px;padding:12px 6px 4px;margin-top:20px;overflow:hidden}
+.asset-detail .interactive-asset-chart .line{stroke:#59e3b0;stroke-width:2.5;filter:drop-shadow(0 0 4px #59e3b033);vector-effect:non-scaling-stroke}
+.asset-detail .asset-chart text{fill:#99a6b4}.asset-detail .chart-grid-line{stroke:#202731;stroke-dasharray:2 5}.asset-detail .chart-baseline{stroke:#637182;opacity:.65}.asset-detail .chart-cursor line{stroke:#a6b7c9}.asset-detail .chart-cursor circle{fill:#59e3b0;stroke:#080a0d}.asset-detail .chart-tooltip{background:#1b2531;border:1px solid #465668;color:#f4f8fc;box-shadow:0 8px 24px #0008}
+.asset-detail .quote-meta{color:#99a6b4;line-height:1.7;margin-top:12px}.asset-detail .asset-sales p{border-color:#26303b}.asset-detail .positive{color:#59e3b0}.asset-detail .negative{color:#ff838b}
+#investmentsPanel .investment-profit-visual{background:#080a0d;border-color:#202731;color:#edf3f7}#investmentsPanel .investment-profit-visual h3{color:#f5f8fb}#investmentsPanel .investment-profit-visual .eyebrow,#investmentsPanel .investment-profit-visual .quote-meta{color:#99a6b4}
+.investment-profit-visual .history-chart text{fill:#99a6b4}.investment-profit-visual .history-chart .line{stroke:#59e3b0}.investment-profit-visual .history-chart .dot{fill:#59e3b0}.investment-profit-visual .history-chart .axis{stroke:#29333e}.investment-profit-visual .history-chart .area{fill:#59e3b00c}
+@media(max-width:700px){.asset-detail{padding:16px}.asset-detail-head>div:first-child strong{font-size:16px}.asset-detail .interactive-asset-chart{padding:8px 2px;margin-top:14px}}
+
+.investment-table .scroll{max-height:none}
