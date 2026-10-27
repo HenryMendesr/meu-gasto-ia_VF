@@ -188,6 +188,9 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
         for field in ("type", "symbol", "quantity", "average_price", "purchase_date"):
             if common.get(field) != existing.get(field):
                 raise ValueError("Este ativo tem operações registradas. Use Novo aporte para comprar mais; os dados da compra original ficam preservados")
+    if existing and common.get("current_price")==existing.get("current_price"):
+        for key in ("quote_date","previous_close"):
+            if key in existing:common[key]=existing[key]
     if existing:
         for field in ("buys", "sales", "incomes", "operation_corrected"):
             if field in existing:
@@ -204,6 +207,16 @@ def fetch_json(url: str, timeout: int = 8) -> dict | list:
         raise ValueError("Fonte externa indisponível") from exc
 
 
+def market_date(value):
+    try:
+        if isinstance(value,str) and not value.isdigit():
+            stamp=datetime.fromisoformat(value.replace('Z','+00:00'))
+            if stamp.tzinfo is None:return None
+        else:stamp=datetime.fromtimestamp(float(value),timezone.utc)
+        return stamp.astimezone(ZoneInfo('America/Sao_Paulo')).date().isoformat()
+    except (TypeError,ValueError,OverflowError,OSError):return None
+
+
 def fetch_quote(symbol: str) -> dict:
     if re.fullmatch(r"[A-Z]{4}\d{1,2}", symbol):
         try:
@@ -213,6 +226,8 @@ def fetch_quote(symbol: str) -> dict:
                 "price": round(float(result["regularMarketPrice"]), 8),
                 "daily_change_percent": round(float(result.get("regularMarketChangePercent") or 0), 4),
                 "source": "Brapi",
+                "quote_date": market_date(result.get("regularMarketTime")),
+                "previous_close": number(result.get("regularMarketPreviousClose"),"Fechamento anterior",required=False),
                 "updated_at": now_iso(),
             }
         except (ValueError, KeyError, IndexError, TypeError):
@@ -224,11 +239,15 @@ def fetch_quote(symbol: str) -> dict:
         result = data["chart"]["result"][0]
         meta = result["meta"]
         price = float(meta["regularMarketPrice"])
-        previous = float(meta.get("chartPreviousClose") or meta.get("previousClose"))
+        previous = float(meta.get("previousClose") or meta.get("chartPreviousClose"))
+        market_day=market_date(meta.get("regularMarketTime"))
+        closes=result.get("indicators",{}).get("quote",[{}])[0].get("close",[])
+        earlier=[close for stamp,close in zip(result.get("timestamp",[]),closes) if close is not None and market_date(stamp) and market_date(stamp)<market_day] if market_day else []
+        if earlier:previous=float(earlier[-1])
         change = ((price / previous) - 1) * 100 if previous else 0
     except (KeyError, IndexError, TypeError, ValueError, ZeroDivisionError) as exc:
         raise ValueError(f"Cotação de {symbol} não encontrada") from exc
-    return {"price": round(price, 8), "daily_change_percent": round(change, 4), "source": "Yahoo Finance", "updated_at": now_iso()}
+    return {"price": round(price, 8), "daily_change_percent": round(change, 4), "source": "Yahoo Finance", "quote_date": market_day, "previous_close":previous if earlier or meta.get("previousClose") else None,"updated_at": now_iso()}
 
 
 def fetch_market_history(symbol: str, period: str = "1y") -> dict:
@@ -470,7 +489,10 @@ def portfolio(user_id: int | None = None) -> dict:
     estimated = bool(items) and all(item["type"] not in VARIABLE_TYPES for item in items)
     if estimated:
         history = fixed_portfolio_history(items)
-    return {"investments": items, "history": history[-730:], "history_source": "estimated" if estimated else "snapshots", "updated_at": store["updated_at"],
+    try:from src.daily_summary import summaries
+    except ImportError:from daily_summary import summaries
+    daily=summaries(store, storage.read_expenses(user_id), investment_today().isoformat())
+    return {"daily_summary":daily,"investments": items, "history": history[-730:], "history_source": "estimated" if estimated else "snapshots", "updated_at": store["updated_at"],
             "cash_updated_at": store.get("cash_updated_at"), "goals": store.get("goals", []), "preferences": store.get("preferences", {}), "audit_log": store.get("audit_log", [])[-50:],
             "summary": {"cash_balance": store.get("cash_balance", 0), "total_with_cash": round(current + store.get("cash_balance", 0), 2),
                         "amount_applied": applied, "current_value": current,
@@ -688,7 +710,8 @@ def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Call
             if item["type"] in VARIABLE_TYPES:
                 info = quote_fetcher(item["symbol"])
                 updates[item["id"]] = {"current_price": info["price"], "daily_change_percent": info["daily_change_percent"],
-                                       "quote_source": info["source"], "quote_updated_at": info["updated_at"]}
+                                       "quote_source": info["source"], "quote_updated_at": info["updated_at"],
+                                       "quote_date":info.get("quote_date"),"previous_close":info.get("previous_close")}
             elif item.get("profitability_type") == "CDI":
                 cdi = cdi or cdi_fetcher()
                 updates[item["id"]] = {"cdi_rate": cdi["rate"], "rate_source": cdi["source"], "rate_updated_at": cdi["updated_at"]}

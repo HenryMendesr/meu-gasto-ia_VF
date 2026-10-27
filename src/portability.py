@@ -145,6 +145,8 @@ def _validate(payload):
         if item['type'] in investments.VARIABLE_TYPES:
             if not re.fullmatch('[A-Z0-9.\\-]{2,20}',str(item.get('symbol',''))):raise ValueError('Código do ativo inválido')
             item['purchase_date']=day(item.get('purchase_date'))
+            if item.get('quote_date') is not None:item['quote_date']=day(item['quote_date'])
+            if item.get('previous_close') is not None:item['previous_close']=investments.number(item['previous_close'],'Fechamento anterior',minimum=0)
             item['quantity']=investments.number(item.get('quantity'),'Quantidade',minimum=0)
             item['average_price']=investments.number(item.get('average_price'),'Preço médio',minimum=.00000001)
             if item.get('current_price') is not None:item['current_price']=investments.number(item['current_price'],'Cotação',minimum=0)

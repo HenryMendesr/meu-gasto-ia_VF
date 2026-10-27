@@ -164,3 +164,10 @@ O resumo mostra **saldo planejado**, com explicação dos lançamentos e parcela
 Em **Investir → Histórico de movimentações → Corrigir**, veja uma prévia do efeito no caixa, quantidade, preço médio e resultado antes de corrigir, estornar ou restaurar. A operação e o motivo ficam preservados; mudanças concorrentes exigem nova prévia. Compras anteriores ao controle automático não geram débito retroativo. **Conferir saldo** registra diferenças do caixa e seu motivo.
 
 **Minha conta** reúne senha, códigos de recuperação de uso único, exportação JSON, restauração com prévia e cópia anterior, exclusão da conta, diagnóstico e feedback. Contagens de uso são opcionais e desligadas por padrão. Códigos devem ser guardados antes de perder o acesso; não há envio de recuperação por e-mail nesta versão. Consulte [piloto e operação](docs/PILOT.md) para limites, validação com clientes e dependências externas.
+
+
+### Resumo diário de investimentos
+
+Logo abaixo do cabeçalho de Investir, o resumo permite alternar entre Hoje e o último dia com operações registradas. Mostra aplicações/compras, vendas líquidas, resultado realizado, proventos, movimentação do caixa e taxas. Despesas pessoais aparecem separadas: dívidas seguem a data de pagamento e gastos comuns a data do lançamento. Operações estornadas ficam fora dos totais.
+
+A variação da posição considera quantidade anterior e final, cotação do dia e fechamento anterior, ajustada pelas compras, vendas e proventos; aportes não viram lucro. Cotações devem ter data do pregão identificada pelo provedor. Sem referências suficientes, o resumo identifica os ativos pendentes e não apresenta um total completo. Uma cotação consultada hoje pode ser de outro pregão. Renda fixa automática tem variação estimada pela taxa; valores manuais não são tratados como desempenho diário comprovado.
