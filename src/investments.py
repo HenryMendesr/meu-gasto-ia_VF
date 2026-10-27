@@ -183,7 +183,7 @@ def fetch_quote(symbol: str) -> dict:
 
 def fetch_market_history(symbol: str, period: str = "1y") -> dict:
     ranges = {"1m": ("1mo", "1d"), "3m": ("3mo", "1d"), "6m": ("6mo", "1d"),
-              "1y": ("1y", "1d"), "5y": ("5y", "1wk")}
+              "1y": ("1y", "1d"), "5y": ("5y", "1wk"), "all": ("max", "1d")}
     if period not in ranges:
         raise ValueError("Período inválido")
     chart_range, interval = ranges[period]
@@ -199,7 +199,7 @@ def fetch_market_history(symbol: str, period: str = "1y") -> dict:
         raise ValueError(f"Histórico de {symbol} não encontrado") from exc
     if not points:
         raise ValueError(f"Histórico de {symbol} não encontrado")
-    return {"source": "Yahoo Finance", "points": points[-260:]}
+    return {"source": "Yahoo Finance", "points": points}
 
 
 def investment_today() -> date:
@@ -250,13 +250,13 @@ def fixed_income_value(item: dict, as_of: date | None = None) -> float:
 
 
 def fixed_income_history(item: dict, period: str) -> list[dict]:
-    ranges = {"1m": 31, "3m": 92, "6m": 183, "1y": 366, "5y": 1827}
+    ranges = {"1m": 31, "3m": 92, "6m": 183, "1y": 366, "5y": 1827, "all": None}
     if period not in ranges:
         raise ValueError("Período inválido")
     start, end = date.fromisoformat(item["application_date"]), investment_today()
     if start > end:
         return []
-    visible_start = max(start, end - timedelta(days=ranges[period]))
+    visible_start = start if period == "all" else max(start, end - timedelta(days=ranges[period]))
     span = (end - visible_start).days
     steps = min(60, span + 1)
     dates = sorted({visible_start + timedelta(days=round(index * span / max(1, steps - 1))) for index in range(steps)})
@@ -268,15 +268,28 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
     item = next((entry for entry in load_store(user_id)["investments"] if entry["id"] == item_id), None)
     if not item:
         raise KeyError("Investimento não encontrado")
+    if period not in {"1m", "3m", "6m", "1y", "5y", "all"}:
+        raise ValueError("Período inválido")
     calculated_item = calculated(item)
     if item["type"] in VARIABLE_TYPES:
         history = market_fetcher(item["symbol"], period)
-        points = [{**point, "value": round(point["price"] * item["quantity"], 2)} for point in history["points"]]
+        points = [{**point, "value": round(point["price"] * item["quantity"], 2)} for point in history["points"]
+                  if item["purchase_date"] <= point["date"] <= investment_today().isoformat()]
         source = history["source"]
     else:
         points = fixed_income_history(item, period)
         source = "Estimativa pela taxa cadastrada"
-    return {"id": item_id, "label": item.get("symbol") or item.get("name"), "type": item["type"],
+    applied = calculated_item["amount_applied"]
+    for point in points:
+        point["profit_loss"] = round(point["value"] - applied, 2)
+        point["return_percent"] = round((point["value"] / applied - 1) * 100, 4) if applied else 0
+    # Keep both endpoints when reducing long daily histories for the browser.
+    if len(points) > 800:
+        points = [points[round(index * (len(points) - 1) / 799)] for index in range(800)]
+    return {"start_date": item.get("purchase_date") or item.get("application_date"),
+            "profit_loss": points[-1]["profit_loss"] if points else None,
+            "historical_return_percent": points[-1]["return_percent"] if points else None,
+            "id": item_id, "label": item.get("symbol") or item.get("name"), "type": item["type"],
             "period": period, "source": source, "average_price": item.get("average_price"),
             "amount_applied": calculated_item["amount_applied"], "current_value": calculated_item["current_value"],
             "return_percent": calculated_item["return_percent"], "points": points}

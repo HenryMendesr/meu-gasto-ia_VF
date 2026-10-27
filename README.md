@@ -132,3 +132,5 @@ Arquivos principais:
 - `vercel.json`: rotas, função e cabeçalhos da Vercel.
 - `public/manifest.webmanifest`: instalação da PWA.
 - `public/service-worker.js`: cache seguro e atualização.
+
+Os gráficos individuais abrem em **Desde o início**, limitados à data da compra/aplicação. A linha tracejada indica o valor aplicado; o resultado em reais e percentual usa o último fechamento disponível. Na renda variável, o histórico é reconstruído com a quantidade e o preço médio cadastrados, sem dividendos, taxas ou histórico de compras e vendas. Cotações históricas dependem da disponibilidade do Yahoo Finance.

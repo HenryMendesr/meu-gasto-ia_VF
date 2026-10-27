@@ -160,6 +160,31 @@ class AppStorageTests(unittest.TestCase):
         self.assertGreaterEqual(len(fixed_history["points"]), 2)
         self.assertGreater(fixed_history["points"][-1]["value"], fixed_history["points"][0]["value"])
 
+    def test_stock_history_since_purchase_excludes_earlier_quotes_and_calculates_gain(self):
+        stock = investments.create_investment({"type": "Ações", "symbol": "PETR4", "quantity": 2, "average_price": 30, "purchase_date": "2025-01-02"})
+        def history(symbol, period):
+            self.assertEqual("all", period)
+            return {"source": "Teste", "points": [
+                {"date": "2025-01-01", "price": 20},
+                {"date": "2025-01-02", "price": 30},
+                {"date": "2025-01-03", "price": 33},
+                {"date": "2099-01-01", "price": 99}]}
+        result = investments.investment_history(stock["id"], "all", market_fetcher=history)
+        self.assertEqual(["2025-01-02", "2025-01-03"], [point["date"] for point in result["points"]])
+        self.assertEqual(66, result["points"][-1]["value"])
+        self.assertEqual(6, result["profit_loss"])
+        self.assertEqual(10, result["historical_return_percent"])
+        with self.assertRaises(ValueError):
+            investments.investment_history(stock["id"], "invalid", market_fetcher=history)
+
+    def test_fixed_history_all_starts_at_application(self):
+        item = {"application_date": "2010-01-01", "amount_invested": 1000,
+                "profitability_type": "Prefixado", "contracted_rate": 10}
+        points = investments.fixed_income_history(item, "all")
+        self.assertEqual("2010-01-01", points[0]["date"])
+        self.assertEqual(1000, points[0]["value"])
+        self.assertEqual(investments.investment_today().isoformat(), points[-1]["date"])
+
     def test_password_hash_and_signed_session(self):
         auth.setup("uma-senha-segura", "uma-senha-segura")
         self.assertTrue(auth.verify_password("uma-senha-segura"))
