@@ -493,6 +493,14 @@ async def import_statement(request:Request):
     if isinstance(uid,JSONResponse):return uid
     try:return statement_import.commit_items(await request.json(),uid)
     except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+@fastapi_app.post('/api/investments/{item_id}/tracking')
+async def investment_tracking(item_id:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,'investment':investments.set_auto_tracking(item_id,await request.json(),uid)}
+    except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.post('/api/investments/{item_id}/sales')
 async def sell_investment(item_id:str,request:Request):
     uid=protected(request)

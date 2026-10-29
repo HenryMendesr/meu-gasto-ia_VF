@@ -121,7 +121,10 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
     investment_type = str(payload.get("type", "")).strip()
     if investment_type not in ALL_TYPES:
         raise ValueError("Tipo de investimento inválido")
+    tracking=payload.get('auto_tracking',(existing or {}).get('auto_tracking',True))
+    if not isinstance(tracking,bool):raise ValueError('Escolha se deseja acompanhamento automático')
     common = {
+        'auto_tracking':tracking,
         "id": (existing or {}).get("id", uuid4().hex),
         "type": investment_type,
         "created_at": (existing or {}).get("created_at", now_iso()),
@@ -236,7 +239,7 @@ def require_brl(info, symbol):
 
 
 def yahoo_chart(symbol, period='5d', interval='1d'):
-    ticker=symbol if symbol.endswith(YAHOO_SUFFIX) or '-' in symbol else symbol+YAHOO_SUFFIX
+    ticker=symbol+YAHOO_SUFFIX if re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol) else symbol
     for host in ('query1.finance.yahoo.com','query2.finance.yahoo.com'):
         try:
             data=fetch_json(f'https://{host}/v8/finance/chart/{quote(ticker)}?interval={interval}&range={period}',timeout=4)
@@ -816,12 +819,12 @@ def delete_investment(item_id: str, user_id: int | None = None) -> None:
 def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Callable = fetch_cdi_rate,
                         user_id: int | None = None, automatic=False) -> dict:
     store=load_store(user_id);errors=[];updates={};attempted=now_iso()
-    identities={i['id']:(i['type'],i.get('symbol'),i.get('profitability_type'),i.get('current_price'),i.get('quote_updated_at')) for i in store['investments']}
+    identities={i['id']:(i['type'],i.get('symbol'),i.get('profitability_type'),i.get('current_price'),i.get('quote_updated_at'),i.get('auto_tracking',True)) for i in store['investments']}
     def recent(stamp,seconds):
         try:return 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(stamp.replace('Z','+00:00'))).total_seconds()<seconds
         except (ValueError,TypeError,AttributeError):return False
     due=[i for i in store['investments'] if i['type'] in VARIABLE_TYPES and ops.position(i)['quantity']>0
-         and (not automatic or not recent(i.get('quote_checked_at'),60) and not recent(i.get('quote_updated_at'),300))]
+         and (not automatic or i.get('auto_tracking',True) and not recent(i.get('quote_checked_at'),60) and not recent(i.get('quote_updated_at'),300))]
     symbols=list(dict.fromkeys(i['symbol'] for i in due))[:8]
     def fetch(symbol):
         try:
@@ -843,7 +846,7 @@ def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Call
         if item['symbol'] not in quotes:continue
         info,error=quotes[item['symbol']];updates[item['id']]=info
         if error:errors.append({'id':item['id'],'name':item['symbol'],'error':error})
-    cdi_items=[i for i in store['investments'] if i.get('profitability_type')=='CDI' and (not automatic or not recent(i.get('rate_checked_at'),300))]
+    cdi_items=[i for i in store['investments'] if i.get('profitability_type')=='CDI' and (not automatic or i.get('auto_tracking',True) and not recent(i.get('rate_checked_at'),300))]
     if cdi_items:
         try:
             cdi=cdi_fetcher();cdi_update={'cdi_rate':cdi['rate'],'rate_source':cdi['source'],'rate_updated_at':cdi['updated_at'],'rate_checked_at':attempted}
@@ -856,7 +859,7 @@ def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Call
         def merge(current):
             changed=False
             for item in current['investments']:
-                identity=(item['type'],item.get('symbol'),item.get('profitability_type'),item.get('current_price'),item.get('quote_updated_at'))
+                identity=(item['type'],item.get('symbol'),item.get('profitability_type'),item.get('current_price'),item.get('quote_updated_at'),item.get('auto_tracking',True))
                 if identities.get(item['id'])==identity and item['id'] in updates:
                     item.update(updates[item['id']]);changed=True
             if changed:
@@ -920,4 +923,15 @@ def reverse_redemption(item_id,payload,user_id=None):
         item['updated_at']=store['updated_at']=now_iso()
         record_snapshot(store)
         return entry
+    return mutate_store(apply,user_id)
+
+
+def set_auto_tracking(item_id,payload,user_id=None):
+    if not isinstance(payload,dict) or not isinstance(payload.get('enabled'),bool):raise ValueError('Informe se deseja ligar ou desligar o acompanhamento')
+    def apply(store):
+        item=next((i for i in store['investments'] if i['id']==item_id),None)
+        if not item:raise KeyError('Investimento não encontrado')
+        before=item.get('auto_tracking',True);item['auto_tracking']=payload['enabled']
+        audit_change(store,'investment_tracking',item.get('symbol') or item.get('name'),{'enabled':before},{'enabled':payload['enabled']},'Preferência de consulta automática')
+        return calculated(item)
     return mutate_store(apply,user_id)

@@ -251,7 +251,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         operation_match=re.fullmatch(r"/api/investments/([a-f0-9]{32})/operations/((?:initial-)?[a-f0-9]{32})/(preview|confirm)",path)
-        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/') or path.startswith('/api/recurring/') or path.startswith('/api/cards/') or path.startswith('/api/bank-accounts/') or bool(re.fullmatch(r'/api/investments/[a-f0-9]{32}/redemptions',path))
+        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/') or path.startswith('/api/recurring/') or path.startswith('/api/cards/') or path.startswith('/api/bank-accounts/') or bool(re.fullmatch(r'/api/investments/[a-f0-9]{32}/(?:redemptions|tracking)',path))
         sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
         buy_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/buys", path)
         income_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/incomes", path)
@@ -280,6 +280,7 @@ class Handler(SimpleHTTPRequestHandler):
                 elif path=='/api/cards/purchase':result={'purchase':cards.purchase(payload)}
                 elif path=='/api/cards/purchase-delete':result=cards.delete_purchase(str(payload.get('id','')))
                 elif path.startswith('/api/bank-accounts/'):result=bank_accounts.action(path.rsplit('/',1)[1],payload)
+                elif path.endswith('/tracking'):result={'investment':investments.set_auto_tracking(path.split('/')[3],payload)}
                 elif path.endswith('/redemptions'):result={'redemption':(investments.reverse_redemption if payload.get('action')=='reverse' else investments.redeem_fixed)(path.split('/')[3],payload)}
                 elif path=='/api/cards/refund-reverse':result={'refund':cards.reverse_refund(payload)}
                 elif path=='/api/cards/refund':result={'refund':cards.refund(payload)}
