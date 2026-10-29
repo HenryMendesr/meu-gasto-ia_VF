@@ -16,9 +16,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
-    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts
+    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts, fixed_expenses
 except ImportError:  # execução direta: python src/dashboard_server.py
-    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts
+    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts, fixed_expenses
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -152,6 +152,10 @@ class Handler(SimpleHTTPRequestHandler):
             try:self.respond(200,{"ok":True,**cards.status(parse_qs(urlparse(self.path).query).get("month",[""])[0])})
             except ValueError as exc:self.respond(400,{"error":str(exc)})
             return
+        if path=="/api/fixed-expenses":
+            try:self.respond(200,{'ok':True,**fixed_expenses.status(parse_qs(urlparse(self.path).query).get('month',[''])[0])})
+            except ValueError as exc:self.respond(400,{'error':str(exc)})
+            return
         if path=="/api/recurring":
             try:self.respond(200,{"ok":True,**recurring.status(parse_qs(urlparse(self.path).query).get("month",[""])[0])})
             except ValueError as exc:self.respond(400,{"error":str(exc)})
@@ -282,6 +286,8 @@ class Handler(SimpleHTTPRequestHandler):
                 elif path=='/api/cards/review':result={'review':cards.review(payload)}
                 elif path=='/api/cards/pay':result={'payment':cards.pay(payload)}
                 elif path=='/api/cards/payment-reverse':result={'payment':cards.reverse_payment(str(payload.get('id','')))}
+                elif path=='/api/recurring/fixed-save':result={'item':fixed_expenses.save(payload)}
+                elif path=='/api/recurring/fixed-payment':result={'payment':fixed_expenses.payment(payload)}
                 elif path=='/api/recurring/salary':result=recurring.save_plan(payload)
                 elif path=='/api/recurring/card':result={'card':recurring.save_card(payload)}
                 elif path=='/api/recurring/card-delete':result=recurring.delete_card(str(payload.get('id','')))

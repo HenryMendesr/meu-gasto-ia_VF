@@ -260,6 +260,6 @@ def projected_expenses(rows, month):
     for row in rows:
         if row['payment']=='Voucher':continue
         finance=row.get('finance',{})
-        day=finance.get('paid_date',row['date']) if finance.get('financing_kind') in {'loan','debt','asset'} and finance.get('paid') else row['date']
+        day=finance.get('paid_date',row['date']) if (finance.get('financing_kind') in {'loan','debt','asset'} or finance.get('fixed_expense_id')) and finance.get('paid') else row['date']
         if day.startswith(month):total+=Decimal(str(row['amount']))
     return float(total.quantize(Decimal('.01')))

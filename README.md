@@ -215,3 +215,13 @@ Em **Cartões**, cada fatura oferece **Registrar estorno** e **Conferir total**.
 A projeção de dívidas pagas segue o mês da data efetiva, inclusive antecipações e atrasos; parcelas abertas permanecem no calendário previsto, com atrasadas reunidas no início do gráfico de saldo aberto. Cotações externas em moeda estrangeira são bloqueadas para evitar mistura com reais: use código BRL ou cotação manual convertida.
 
 O [roteiro de 30 dias e operação](docs/PILOT.md) registra as etapas do piloto e as limitações. O piloto com pessoas reais ainda precisa ser executado. As verificações automáticas estão em `.github/workflows/checks.yml`.
+
+### Início simples e Ganhos e fixos
+
+A primeira aba agora apresenta somente três números principais: **Entrou até agora**, **Saídas do mês** (pagas e previstas) e **Previsão ao fim do mês**. Pendências ficam logo abaixo. Gráficos, voucher, relatório e histórico continuam disponíveis em áreas que você abre quando precisar.
+
+Na nova aba **Ganhos e fixos**, escolha o mês, informe/edite os ganhos e adicione contas mensais por nome, valor e dia. A programação de salário em uma ou duas datas permanece disponível no mesmo lugar. O resumo “Depois dos fixos” desconta apenas fixos em dinheiro; outros gastos ainda precisam ser considerados no Início.
+
+Gastos fixos se repetem automaticamente no planejamento, ajustam dias inexistentes ao último dia do mês e só entram nas saídas confirmadas depois de **Marcar como pago**. O pagamento pode ser desfeito. Editar cria uma configuração válida a partir do mês escolhido, preservando meses anteriores e valores já pagos. Desmarcar **Repetir todo mês** encerra as próximas cobranças. **Não contar neste mês** permite evitar duplicidade quando a mesma conta já foi lançada ou importada; a repetição seguinte continua. Compras no cartão permanecem em Cartões.
+
+As repetições aparecem no histórico e nos limites como o mesmo gasto, sem criar outra despesa ao confirmar pagamento. Pagamentos antecipados/atrasados seguem a data real no fluxo de caixa. Os cadastros e confirmações acompanham o backup JSON e ficam privados por conta.

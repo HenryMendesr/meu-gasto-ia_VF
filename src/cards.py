@@ -90,6 +90,9 @@ def expense_fingerprint(entry):
 
 
 def planned_expenses(expenses,prefs):
+    try:from src import fixed_expenses
+    except ImportError:import fixed_expenses
+    expenses=list(expenses)+fixed_expenses.expense_rows(prefs)
     linked=Counter(entry['linked_fingerprint'] for entry in prefs.get('card_purchases',[]) if entry.get('linked_fingerprint'))
     if not linked:return list(expenses)+expense_rows(prefs)
     rows=[]
@@ -275,6 +278,9 @@ def ensure_original_editable(item_id,user_id=None):
 
 
 def ensure_category_editable(category,user_id=None):
+    prefs=investments.load_store(user_id).get('preferences',{})
+    if any(v.get('category')==category for plan in prefs.get('fixed_expenses',[]) for v in plan.get('versions',[])):
+        raise ValueError('Esta categoria tem gastos fixos no histórico. Preserve a categoria ou escolha outro nome para a nova categoria')
     if any(item['category']==category for item in investments.load_store(user_id).get('preferences',{}).get('card_purchases',[])):
         raise ValueError('Esta categoria está no histórico de cartões. Altere as compras sem pagamento antes de renomear ou excluir a categoria')
 

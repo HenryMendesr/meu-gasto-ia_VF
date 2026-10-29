@@ -155,6 +155,9 @@ def _validate(payload):
     try:from src import bank_accounts
     except ImportError:import bank_accounts
     bank_accounts.validate(prefs)
+    try:from src import fixed_expenses
+    except ImportError:import fixed_expenses
+    fixed_expenses.validate(prefs,categories)
     from collections import Counter
     available_links=Counter(card_rules.expense_fingerprint({'date':row['expense_date'],'amount':row['amount'],'where':row['place'],'category':row['category'],'payment':row['payment'],'description':row['description']}) for row in data['expenses'])
     needed_links=Counter(item['linked_fingerprint'] for item in prefs.get('card_purchases',[]) if item.get('linked_fingerprint'))

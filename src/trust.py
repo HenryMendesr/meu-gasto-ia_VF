@@ -282,7 +282,7 @@ def actual_cash(rows,prefs,month):
     for row in rows:
         finance=row.get('finance',{})
         if finance.get('card_purchase_id') or row['payment']=='Voucher':continue
-        debt=finance.get('financing_kind') in {'loan','debt','asset'}
+        debt=finance.get('financing_kind') in {'loan','debt','asset'} or bool(finance.get('fixed_expense_id'))
         effective=finance.get('paid_date',row['date']) if debt else row['date']
         if effective.startswith(month) and effective<=today and (not debt or finance.get('paid')):total+=row['amount']
     return round(total+sum(entry['amount'] for entry in cards.payment_expenses(prefs) if entry['date'].startswith(month)),2)

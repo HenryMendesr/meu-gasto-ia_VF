@@ -73,7 +73,7 @@ def summaries(store, expenses, today):
         personal=[]
         for row in expenses:
             finance=row.get('finance',{})
-            debt=finance.get('financing_kind') in {'loan','debt','asset'}
+            debt=finance.get('financing_kind') in {'loan','debt','asset'} or bool(finance.get('fixed_expense_id'))
             if debt and not finance.get('paid'):continue
             effective=finance.get('paid_date',row['date']) if debt else row['date']
             if effective==day:personal.append({'label':row['where'],'amount':row['amount'],'payment':row['payment']})

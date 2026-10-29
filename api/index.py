@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
-from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts
+from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts, fixed_expenses
 
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
@@ -293,6 +293,13 @@ def bootstrap(request:Request):
     user=storage.get_user(uid) if MULTI_USER else {'id':1,'name':'Você','email':''}
     portfolio=investments.portfolio(uid)
     return {'ok':True,'user':user,'expenses':cards.planned_expenses(storage.read_expenses(uid),portfolio.get('preferences',{})),'incomes':storage.read_incomes(uid),'income_entries':storage.read_income_entries(uid),'budgets':storage.read_budgets(uid),'categories':storage.read_categories(uid),'portfolio':portfolio}
+@fastapi_app.get('/api/fixed-expenses')
+def fixed_status(request:Request,month:str):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**fixed_expenses.status(month,uid)}
+    except (ValueError,TypeError) as exc:return json_error(400,str(exc))
+
 @fastapi_app.get('/api/recurring')
 def recurring_status(request:Request,month:str):
     uid=protected(request)
@@ -306,6 +313,8 @@ async def recurring_action(action:str,request:Request):
     if isinstance(uid,JSONResponse):return uid
     try:
         payload=await request.json()
+        if action=='fixed-save':return {'ok':True,'item':fixed_expenses.save(payload,uid)}
+        if action=='fixed-payment':return {'ok':True,'payment':fixed_expenses.payment(payload,uid)}
         if action=='salary':return {'ok':True,**recurring.save_plan(payload,uid)}
         if action=='card':return {'ok':True,'card':recurring.save_card(payload,uid)}
         if action=='card-delete':return {'ok':True,**recurring.delete_card(str(payload.get('id','')),uid)}

@@ -103,13 +103,15 @@ def monthly_report(month, user_id=None):
             if not entry.get('reversed'):
                 operations.append({'date':entry['date'],'kind':'Venda','label':item['name']+' · Resgate','amount':entry['net'],'realized':entry['net']-entry['principal'],'fees':entry['tax']})
     def is_debt(entry):
-        return entry.get('finance', {}).get('financing_kind') in {'loan', 'debt', 'asset'}
+        return entry.get('finance', {}).get('financing_kind') in {'loan','debt','asset'}
+    def requires_confirmation(entry):
+        return is_debt(entry) or bool(entry.get('finance',{}).get('fixed_expense_id'))
     def effective_date(entry):
-        return entry['finance'].get('paid_date', entry['date']) if is_debt(entry) else entry['date']
+        return entry['finance'].get('paid_date', entry['date']) if requires_confirmation(entry) else entry['date']
     def actual_entries(period):
         return [entry for entry in expenses if effective_date(entry).startswith(period)
                 and effective_date(entry)<=investments.investment_today().isoformat()
-                and (not is_debt(entry) or entry.get('finance', {}).get('paid') is True)]
+                and (not requires_confirmation(entry) or entry.get('finance', {}).get('paid') is True)]
     def income_for(period):
         try:from src.trust import income_basis
         except ImportError:from trust import income_basis
@@ -131,7 +133,7 @@ def monthly_report(month, user_id=None):
                      'expenses': round(sum(entry['amount'] for entry in actual_entries(period) if entry['payment'] != 'Voucher'), 2),
                      'invested': round(-sum(entry['amount'] for entry in operations if entry['kind'] == 'Aporte' and entry['date'].startswith(period)), 2)})
     wealth = [point for point in store.get('wealth_history', []) if flow[0]['month'] <= point['date'][:7] <= month]
-    transactions = [{'date': effective_date(entry), 'kind': 'Fatura paga' if entry.get('finance',{}).get('card_payment') else 'Parcela paga' if is_debt(entry) else 'Gasto',
+    transactions = [{'date': effective_date(entry), 'kind': 'Fatura paga' if entry.get('finance',{}).get('card_payment') else 'Gasto fixo pago' if entry.get('finance',{}).get('fixed_expense_id') else 'Parcela paga' if is_debt(entry) else 'Gasto',
                      'label': entry['where'], 'amount': -entry['amount'], 'account': 'Voucher' if entry['payment'] == 'Voucher' else 'Dia a dia'} for entry in actual]
     transactions += [{'date': entry['date'], 'kind': 'Entrada importada', 'label': entry['source'],
                       'amount': entry['amount'], 'account': 'Dia a dia'} for entry in imported if entry['date'].startswith(month) and entry['date']<=investments.investment_today().isoformat() and source=='imported']
