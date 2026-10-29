@@ -458,7 +458,7 @@ async def update_cash(request:Request):
 def refresh(request:Request):
     uid=protected(request)
     if isinstance(uid,JSONResponse):return uid
-    try:return {'ok':True,**investments.refresh_investments(user_id=uid)}
+    try:return {'ok':True,**investments.refresh_investments(user_id=uid,automatic=request.query_params.get('automatic')=='1')}
     except ValueError as exc:return json_error(400,str(exc))
 @fastapi_app.post('/api/investments/extract-image')
 async def extract_image(request:Request):

@@ -349,7 +349,7 @@ class Handler(SimpleHTTPRequestHandler):
                 self.respond(200, {"ok": True, **result})
                 return
             if path == "/api/investments/refresh":
-                result = investments.refresh_investments()
+                result = investments.refresh_investments(automatic=parse_qs(urlparse(self.path).query).get("automatic",[""])[0]=="1")
                 rebuild_dashboard()
                 self.respond(200, {"ok": True, **result})
                 return

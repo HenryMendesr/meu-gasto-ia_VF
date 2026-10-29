@@ -9,6 +9,8 @@ from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 import json
 import math
+import os
+from concurrent.futures import ThreadPoolExecutor
 import mimetypes
 from pathlib import Path
 import re
@@ -233,38 +235,59 @@ def require_brl(info, symbol):
         raise ValueError('Cotação estrangeira não convertida. Informe uma cotação manual em reais ou use um código negociado em BRL')
 
 
-def fetch_quote(symbol: str) -> dict:
-    if re.fullmatch(r"[A-Z]{4}\d{1,2}", symbol):
+def yahoo_chart(symbol, period='5d', interval='1d'):
+    ticker=symbol if symbol.endswith(YAHOO_SUFFIX) or '-' in symbol else symbol+YAHOO_SUFFIX
+    for host in ('query1.finance.yahoo.com','query2.finance.yahoo.com'):
         try:
-            data = fetch_json(f"https://brapi.dev/api/quote/{quote(symbol)}")
-            result = data["results"][0]
-            return {
-                "currency": result.get("currency", "BRL"),
-                "price": round(float(result["regularMarketPrice"]), 8),
-                "daily_change_percent": round(float(result.get("regularMarketChangePercent") or 0), 4),
-                "source": "Brapi",
-                "quote_date": market_date(result.get("regularMarketTime")),
-                "previous_close": number(result.get("regularMarketPreviousClose"),"Fechamento anterior",required=False),
-                "updated_at": now_iso(),
-            }
-        except (ValueError, KeyError, IndexError, TypeError):
-            pass
-    ticker = symbol if symbol.endswith(YAHOO_SUFFIX) or "-" in symbol else f"{symbol}{YAHOO_SUFFIX}"
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(ticker)}?interval=1d&range=5d"
-    data = fetch_json(url)
+            data=fetch_json(f'https://{host}/v8/finance/chart/{quote(ticker)}?interval={interval}&range={period}',timeout=4)
+            result=data['chart']['result'][0]
+            if not isinstance(result,dict):raise ValueError()
+            return result
+        except (ValueError,KeyError,IndexError,TypeError):continue
+    raise ValueError('Yahoo Finance indisponível para este ativo')
+
+
+def brapi_data(symbol, history=None):
+    token=os.environ.get('BRAPI_TOKEN','').strip()
+    params=[]
+    if token:params.append('token='+quote(token,safe=''))
+    if history:params.extend(['range='+history[0],'interval='+history[1]])
+    url='https://brapi.dev/api/quote/'+quote(symbol)+('?'+'&'.join(params) if params else '')
     try:
-        result = data["chart"]["result"][0]
-        meta = result["meta"]
-        price = float(meta["regularMarketPrice"])
-        previous = float(meta.get("previousClose") or meta.get("chartPreviousClose"))
-        market_day=market_date(meta.get("regularMarketTime"))
-        closes=result.get("indicators",{}).get("quote",[{}])[0].get("close",[])
-        earlier=[close for stamp,close in zip(result.get("timestamp",[]),closes) if close is not None and market_date(stamp) and market_date(stamp)<market_day] if market_day else []
-        if earlier:previous=float(earlier[-1])
-        change = ((price / previous) - 1) * 100 if previous else 0
-    except (KeyError, IndexError, TypeError, ValueError, ZeroDivisionError) as exc:
-        raise ValueError(f"Cotação de {symbol} não encontrada") from exc
-    return {"currency": meta.get("currency"), "price": round(price, 8), "daily_change_percent": round(change, 4), "source": "Yahoo Finance", "quote_date": market_day, "previous_close":previous if earlier or meta.get("previousClose") else None,"updated_at": now_iso()}
+        result=fetch_json(url,timeout=4)['results'][0]
+        if not isinstance(result,dict):raise ValueError()
+        return result
+    except (ValueError,KeyError,TypeError,IndexError) as exc:
+        raise ValueError('Brapi indisponível ou acesso não autorizado. Confira o BRAPI_TOKEN e o plano na Vercel') from exc
+
+
+def quote_values(result,source):
+    price=number(result.get('regularMarketPrice'),'Cotação',minimum=.00000001)
+    previous=number(result.get('regularMarketPreviousClose',result.get('previousClose')) or None,'Fechamento anterior',required=False,minimum=.00000001)
+    day=market_date(result.get('regularMarketTime'))
+    change=(price/previous-1)*100 if previous else number(result.get('regularMarketChangePercent'),'Variação diária',required=False,minimum=-100)
+    if not day:change=None
+    return {'currency':result.get('currency','BRL' if source=='Brapi' else None),
+            'price':price,'daily_change_percent':round(change,4) if change is not None else None,
+            'source':source,'quote_date':day,'previous_close':previous,'updated_at':now_iso()}
+
+
+def fetch_quote(symbol: str) -> dict:
+    errors=[]
+    if re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol):
+        try:return quote_values(brapi_data(symbol),'Brapi')
+        except ValueError as exc:errors.append(str(exc))
+    try:
+        result=yahoo_chart(symbol)
+        meta=dict(result['meta']);market_day=market_date(meta.get('regularMarketTime'))
+        closes=result.get('indicators',{}).get('quote',[{}])[0].get('close',[])
+        earlier=[close for stamp,close in zip(result.get('timestamp',[]),closes)
+                 if close is not None and market_date(stamp) and market_day and market_date(stamp)<market_day]
+        if earlier:meta['previousClose']=number(earlier[-1],'Fechamento anterior',minimum=.00000001)
+        # chartPreviousClose may be the start of the requested range, not yesterday.
+        return quote_values(meta,'Yahoo Finance')
+    except (ValueError,KeyError,TypeError,IndexError) as exc:
+        raise ValueError('Não foi possível atualizar '+symbol+'. '+(' '.join(errors) or 'Yahoo Finance indisponível')) from exc
 
 
 def fetch_market_history(symbol: str, period: str = "1y") -> dict:
@@ -273,10 +296,8 @@ def fetch_market_history(symbol: str, period: str = "1y") -> dict:
     if period not in ranges:
         raise ValueError("Período inválido")
     chart_range, interval = ranges[period]
-    ticker = symbol if symbol.endswith(YAHOO_SUFFIX) or "-" in symbol else f"{symbol}{YAHOO_SUFFIX}"
-    data = fetch_json(f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(ticker)}?interval={interval}&range={chart_range}")
     try:
-        result = data["chart"]["result"][0]
+        result = yahoo_chart(symbol, chart_range, interval)
         timestamps = result["timestamp"]
         quote_data = result["indicators"]["quote"][0]["close"]
         points = []
@@ -291,11 +312,18 @@ def fetch_market_history(symbol: str, period: str = "1y") -> dict:
                 if value is not None and math.isfinite(float(value)) and float(value) >= 0:
                     point[field] = round(float(value), 8)
             points.append(point)
-    except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise ValueError(f"Histórico de {symbol} não encontrado") from exc
-    if not points:
-        raise ValueError(f"Histórico de {symbol} não encontrado")
-    return {"currency": result.get("meta", {}).get("currency"), "source": "Yahoo Finance", "points": points}
+    except (KeyError, IndexError, TypeError, ValueError):
+        points=[]
+    if points:
+        return {'currency':result.get('meta',{}).get('currency'),'source':'Yahoo Finance','points':points}
+    if re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol):
+        try:
+            result=brapi_data(symbol,(chart_range,interval))
+            points=[{'date':datetime.fromtimestamp(float(p['date']),timezone.utc).date().isoformat(),
+                     'price':number(p['close'],'Fechamento',minimum=.00000001)} for p in result.get('historicalDataPrice',[]) if p.get('close') is not None]
+            if points:return {'currency':result.get('currency','BRL'),'source':'Brapi','points':points}
+        except (ValueError,KeyError,TypeError,OverflowError,OSError):pass
+    raise ValueError(f'Histórico de {symbol} indisponível nas fontes externas. Confira a conexão e, se usar Brapi, o token e o plano')
 
 
 def investment_today() -> date:
@@ -508,6 +536,10 @@ def calculated(item: dict) -> dict:
         if foreign_quote_unconverted(item):
             price=float(state['average']) if remaining else item['average_price']
             result.update(current_price=price, daily_change_percent=None, quote_source='Custo em reais; cotação estrangeira pendente', quote_updated_at=None, currency_warning=True)
+        result['quote_pending']=bool(remaining and (item.get('current_price') is None or foreign_quote_unconverted(item)))
+        result['daily_price_change']=round(price/item['previous_close']*100-100,4) if item.get('previous_close') and not result['quote_pending'] else None
+        result['unit_daily_change']=round(price-item['previous_close'],8) if item.get('previous_close') and not result['quote_pending'] else None
+        result['position_daily_change']=round(float(remaining)*(price-item['previous_close']),2) if item.get('previous_close') and not result['quote_pending'] else None
         current = float(ops.cents(remaining * Decimal(str(price))))
         realized = float(state["realized"])
         result.update(operation_positions=state["operations"],position_status="active" if remaining>0 else "closed",remaining_quantity=float(remaining), average_price=float(state["average"]) if state["average"] > 0 else item["average_price"],
@@ -781,34 +813,56 @@ def delete_investment(item_id: str, user_id: int | None = None) -> None:
     mutate_store(delete, user_id)
 
 
-def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Callable = fetch_cdi_rate, user_id: int | None = None) -> dict:
-    store = load_store(user_id)
-    errors = []
-    cdi = None
-    updates = {}
-    identities = {item["id"]: (item["type"], item.get("symbol"), item.get("profitability_type")) for item in store["investments"]}
-    for item in store["investments"]:
+def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Callable = fetch_cdi_rate,
+                        user_id: int | None = None, automatic=False) -> dict:
+    store=load_store(user_id);errors=[];updates={};attempted=now_iso()
+    identities={i['id']:(i['type'],i.get('symbol'),i.get('profitability_type'),i.get('current_price'),i.get('quote_updated_at')) for i in store['investments']}
+    def recent(stamp,seconds):
+        try:return 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(stamp.replace('Z','+00:00'))).total_seconds()<seconds
+        except (ValueError,TypeError,AttributeError):return False
+    due=[i for i in store['investments'] if i['type'] in VARIABLE_TYPES and ops.position(i)['quantity']>0
+         and (not automatic or not recent(i.get('quote_checked_at'),60) and not recent(i.get('quote_updated_at'),300))]
+    symbols=list(dict.fromkeys(i['symbol'] for i in due))[:8]
+    def fetch(symbol):
         try:
-            if item["type"] in VARIABLE_TYPES:
-                info = quote_fetcher(item["symbol"])
-                require_brl(info, item["symbol"])
-                updates[item["id"]] = {"current_price": info["price"], "daily_change_percent": info["daily_change_percent"],
-                                       "quote_source": info["source"], "quote_updated_at": info["updated_at"],
-                                       "quote_date":info.get("quote_date"),"previous_close":info.get("previous_close")}
-            elif item.get("profitability_type") == "CDI":
-                cdi = cdi or cdi_fetcher()
-                updates[item["id"]] = {"cdi_rate": cdi["rate"], "rate_source": cdi["source"], "rate_updated_at": cdi["updated_at"]}
+            info=quote_fetcher(symbol);require_brl(info,symbol)
+            price=number(info.get('price'),'Cotação',minimum=.00000001)
+            change=number(info.get('daily_change_percent'),'Variação diária',required=False,minimum=-100)
+            previous=number(info.get('previous_close'),'Fechamento anterior',required=False,minimum=.00000001)
+            return symbol,{'current_price':price,'daily_change_percent':change,'previous_close':previous,
+                'quote_source':info['source'],'quote_updated_at':info['updated_at'],'quote_date':info.get('quote_date'),
+                'quote_checked_at':attempted,'quote_error':None},None
+        except (ValueError,KeyError,TypeError,IndexError) as exc:
+            message=str(exc) if isinstance(exc,ValueError) else 'Resposta inválida da fonte de cotações'
+            return symbol,{'quote_checked_at':attempted,'quote_error':message},message
+    quotes={}
+    if symbols:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            quotes={symbol:(info,error) for symbol,info,error in executor.map(fetch,symbols)}
+    for item in due:
+        if item['symbol'] not in quotes:continue
+        info,error=quotes[item['symbol']];updates[item['id']]=info
+        if error:errors.append({'id':item['id'],'name':item['symbol'],'error':error})
+    cdi_items=[i for i in store['investments'] if i.get('profitability_type')=='CDI' and (not automatic or not recent(i.get('rate_checked_at'),300))]
+    if cdi_items:
+        try:
+            cdi=cdi_fetcher();cdi_update={'cdi_rate':cdi['rate'],'rate_source':cdi['source'],'rate_updated_at':cdi['updated_at'],'rate_checked_at':attempted}
+            for item in cdi_items:updates[item['id']]=cdi_update
         except ValueError as exc:
-            errors.append({"id": item["id"], "name": item.get("symbol") or item.get("name"), "error": str(exc)})
-    def merge(current):
-        for item in current["investments"]:
-            if identities.get(item["id"]) == (item["type"], item.get("symbol"), item.get("profitability_type")):
-                item.update(updates.get(item["id"], {}))
-        current["updated_at"] = now_iso()
-        record_snapshot(current)
-    mutate_store(merge, user_id)
-    result = portfolio(user_id)
-    result["errors"] = errors
+            for item in cdi_items:
+                updates[item['id']]={'rate_checked_at':attempted}
+                errors.append({'id':item['id'],'name':item['name'],'error':str(exc)})
+    if updates:
+        def merge(current):
+            changed=False
+            for item in current['investments']:
+                identity=(item['type'],item.get('symbol'),item.get('profitability_type'),item.get('current_price'),item.get('quote_updated_at'))
+                if identities.get(item['id'])==identity and item['id'] in updates:
+                    item.update(updates[item['id']]);changed=True
+            if changed:
+                current['updated_at']=attempted;record_snapshot(current)
+        mutate_store(merge,user_id)
+    result=portfolio(user_id);result['errors']=errors;result['pending_quotes']=max(0,len(set(i['symbol'] for i in due))-len(symbols))
     return result
 
 
