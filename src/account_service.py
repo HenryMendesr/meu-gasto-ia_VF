@@ -10,7 +10,7 @@ except ImportError:
     import portability
     import auth
 
-VERSION='2026.10.29.5'
+VERSION='2026.10.29.6'
 
 
 def status(user_id=None):

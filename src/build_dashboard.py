@@ -223,6 +223,32 @@ html=html.replace('</style>',(ROOT/'src/routine_panel.css').read_text(encoding='
 html=html.replace('</script>',(ROOT/'src/routine_panel.js').read_text(encoding='utf-8')+'\n</script>',1)
 html=html.replace('/app.css?v=26','/app.css?v=27')
 
+# A daily workspace and a small, optional first-use path sit directly on the home screen.
+experience=(ROOT/'src/experience.html').read_text(encoding='utf-8')
+html=html.replace('<section class="home-summary"',experience+'<section class="home-summary"',1)
+# Put the summary before the daily workspace; the guide remains first.
+a=html.index('<section class="home-summary"');b=html.index('</section>',a)+len('</section>')
+summary=html[a:b];html=html[:a]+html[b:]
+html=html.replace('<section id="homeWorkspace"',summary+'<section id="homeWorkspace"',1)
+# Keep the exhaustive task list available without duplicating the direct home actions.
+a=html.index('<section class="card trust-card" id="dailyTasks">');b=html.index('</section>',a)+len('</section>')
+html=html[:a]+'<details class="home-extra"><summary>Outras pendências e conferências</summary>'+html[a:b]+'</details>'+html[b:]
+advanced=[]
+for panel,title,description in [('budgetsPanel','Planejar','Limites de gastos e metas'),('investmentsPanel','Investir','Carteira, cotações e resultados'),('debtsPanel','Dívidas','Contratos e parcelas')]:
+    start=html.index('<button class="tab" data-panel="'+panel+'"');end=html.index('</button>',start)+len('</button>')
+    button=html[start:end];html=html[:start]+html[end:]
+    button=button.replace('class="tab"','class="tab" data-nav-title="'+title+'"',1)
+    button=button.replace('<span>'+title+'</span>','<span class="ex-navigation-copy"><strong>'+title+'</strong><small>'+description+'</small></span>')
+    advanced.append(button)
+a=html.index('<button id="openCreditCards"');b=html.index('</button>',a)+len('</button>');cards_link=html[a:b];html=html[:a]+html[b:]
+more='<details id="moreNavigation" class="ex-navigation-more"><summary><span class="ex-more-icon" aria-hidden="true">•••</span><span id="moreNavigationLabel">Mais</span></summary><div class="ex-navigation-extra"><span class="ex-navigation-caption">Explore quando precisar</span>'+''.join(advanced)+cards_link+'</div></details>'
+html=html.replace('</nav>',more+'</nav>',1)
+html=html.replace('<span>Lançar</span></button>','<span>Registrar</span></button>',1)
+html=html.replace('Acompanhe as entradas e saídas. Seus cadastros ficam em Ganhos e fixos.','Veja seu mês e resolva o dia a dia aqui mesmo.',1)
+html=html.replace('Editar ganhos e fixos <span>→</span>','Ajustar ganhos <span>→</span>',1)
+html=html.replace('</style>',(ROOT/'src/experience.css').read_text(encoding='utf-8')+'\n</style>',1)
+html=html.replace('</script>',(ROOT/'src/experience.js').read_text(encoding='utf-8')+'\n</script>',1)
+
 icons = {
     "⌁": '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
     "＋": '<path d="M12 5v14M5 12h14"/>',

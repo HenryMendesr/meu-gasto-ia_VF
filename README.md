@@ -253,3 +253,13 @@ Ao abrir o gráfico de um investimento, a área destaca o último fechamento ou 
 A linha possui preenchimento discreto e referência tracejada de preço médio ou capital. Ao tocar, passar o mouse ou usar as setas do teclado, o balão mostra apenas data e valor. Abertura, máxima, mínima e volume ficam em **Detalhes da data consultada**. **Sua posição** reúne quantidade, valor aplicado, valor da posição e resultado em cartões separados. A mesma apresentação se adapta ao celular e aos gráficos de renda fixa e do relatório.
 
 Atualizações de cotação mantêm o ativo aberto e o período escolhido. Se uma consulta de período falhar, o gráfico anterior permanece disponível com uma opção de tentar novamente. A reorganização visual não modifica preços, operações nem fórmulas financeiras.
+
+### Primeiro uso e dia a dia no Início
+
+O Início agora concentra as ações frequentes. Quem está começando vê uma orientação opcional com uma etapa por vez: informar os ganhos, registrar um gasto e visualizar o resumo. É possível pular os ganhos ou dispensar a orientação. Não é preciso configurar investimentos, metas ou dívidas para começar. Os cadastros existentes e a opção de já dispensar a orientação são respeitados.
+
+O resumo usa barras para comparar ganhos previstos e saídas, explicita o que ainda falta confirmar e mostra a sobra prevista. **Gastei com…** registra um gasto no próprio Início; data e pagamento ficam como opções secundárias, com Hoje/Pix visíveis por padrão. O resumo e os últimos gastos mudam após salvar. Possíveis duplicidades exigem uma escolha explícita antes de repetir. O rascunho pode ser levado ao lançamento completo quando for necessário cartão, parcelamento ou outras opções.
+
+**O que vem agora** reúne vencimentos e recebimentos do mês, permitindo confirmar salário, pagar parcelas, marcar contas fixas e registrar pagamentos de faturas sem navegar para outra aba. As ações usam as mesmas confirmações e registros existentes; não executam pagamentos bancários nem criam outra despesa para a baixa. As três primeiras pendências ficam visíveis e o restante pode ser expandido na mesma tela. Contas fixas também podem ser adicionadas diretamente dali.
+
+A navegação principal mostra **Início**, **Ganhos e fixos**, **Registrar** e **Mais**. Planejamento, investimentos, dívidas e cartões continuam disponíveis em Mais, com uma descrição de sua função. Gráficos e limites ficam em Planejar; voucher e conferências complementares, em Ganhos e fixos. Relatório mensal e histórico completo continuam acessíveis no Início, enquanto as informações comuns aparecem sem precisar abrir essas áreas. A experiência foi verificada em navegador com dados de teste; o efeito sobre entendimento e abandono ainda precisa ser medido no piloto com pessoas reais.
