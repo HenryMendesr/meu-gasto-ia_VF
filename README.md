@@ -245,3 +245,11 @@ Não há uma lista limitada a BBAS3/BPAC11: a rotina consulta os códigos cadast
 Depois de salvar um investimento com acompanhamento ligado, a interface tenta consultar a cotação/índice imediatamente. Durante o uso da aba, continuam valendo cache de cinco minutos, espera após erro, consulta compartilhada para códigos repetidos e lotes limitados. Desligar remove aquela posição das consultas periódicas e preserva o último preço; o botão de atualização manual e a abertura explícita de histórico continuam disponíveis. Ligar/desligar durante uma consulta impede que a resposta antiga sobrescreva a posição.
 
 Em renda fixa, a preferência controla a consulta externa do CDI quando aplicável. O cálculo local pela taxa cadastrada continua sendo uma estimativa, não uma cotação de venda ou marcação a mercado. Ativos sem cotação pública compatível devem usar o valor manual, e um índice indisponível precisa ser preenchido/conferido. A opção não contrata um feed nem torna universal a cobertura dos provedores.
+
+### Detalhes visuais de um ativo
+
+Ao abrir o gráfico de um investimento, a área destaca o último fechamento ou resultado do gráfico e a mudança no período selecionado. Os botões **Cotação/Saldo** e **Meu resultado** alternam a informação; os intervalos 1M, 3M, 6M, 1A, 5A e Tudo preservam a escolha ao alternar a visualização. O fechamento do gráfico e a cotação usada no valor da posição têm referências próprias e podem diferir durante o pregão.
+
+A linha possui preenchimento discreto e referência tracejada de preço médio ou capital. Ao tocar, passar o mouse ou usar as setas do teclado, o balão mostra apenas data e valor. Abertura, máxima, mínima e volume ficam em **Detalhes da data consultada**. **Sua posição** reúne quantidade, valor aplicado, valor da posição e resultado em cartões separados. A mesma apresentação se adapta ao celular e aos gráficos de renda fixa e do relatório.
+
+Atualizações de cotação mantêm o ativo aberto e o período escolhido. Se uma consulta de período falhar, o gráfico anterior permanece disponível com uma opção de tentar novamente. A reorganização visual não modifica preços, operações nem fórmulas financeiras.

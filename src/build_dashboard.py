@@ -156,9 +156,9 @@ html = html.replace("__INCOME_ENTRIES__", json.dumps(initial_income_entries, ens
 html = html.replace("__BUDGETS__", json.dumps(initial_budgets, ensure_ascii=False, separators=(",", ":"))).replace(
     "__CATEGORIES__", json.dumps(CATEGORIES, ensure_ascii=False, separators=(",", ":"))
 )
-investment_css = (ROOT / "src/investments_panel.css").read_text(encoding="utf-8")
+investment_css = (ROOT / "src/investments_panel.css").read_text(encoding="utf-8") + "\n" + (ROOT / "src/asset_detail.css").read_text(encoding="utf-8")
 investment_panel = (ROOT / "src/investments_panel.html").read_text(encoding="utf-8").replace('    <section class="investment-cash"', (ROOT / "src/daily_summary.html").read_text(encoding="utf-8") + '    <section class="investment-cash"', 1)
-investment_js = (ROOT / "src/investments_panel.js").read_text(encoding="utf-8") + "\n" + (ROOT / "src/daily_summary.js").read_text(encoding="utf-8")
+investment_js = (ROOT / "src/asset_detail.js").read_text(encoding="utf-8") + "\n" + (ROOT / "src/investments_panel.js").read_text(encoding="utf-8") + "\n" + (ROOT / "src/daily_summary.js").read_text(encoding="utf-8")
 statement_css = (ROOT / "src/statement_panel.css").read_text(encoding="utf-8")
 statement_panel = (ROOT / "src/statement_panel.html").read_text(encoding="utf-8")
 statement_js = (ROOT / "src/statement_panel.js").read_text(encoding="utf-8")
