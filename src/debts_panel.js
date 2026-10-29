@@ -74,7 +74,7 @@ function debtChartData(groups){
   principal+=group.principal;let balance=group.principal;
   for(const item of group.items){
    const rate=Number(item.finance?.interest_rate||0)/100,interest=item.finance?.interest_part??debtRound(balance*rate),capital=item.finance?.principal_part??Math.max(0,debtRound(item.amount-interest));
-   balance=Math.max(0,debtRound(balance-capital));const key=item.date.slice(0,7);
+   balance=Math.max(0,debtRound(balance-capital));const key=item.date.slice(0,7)<localDateValue().slice(0,7)?localDateValue().slice(0,7):item.date.slice(0,7);
    if(!months.has(key))months.set(key,{month:key,principal:0,interest:0,payments:0});
    const point=months.get(key);point.principal+=capital;point.interest+=interest;point.payments+=item.amount;
   }

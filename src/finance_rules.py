@@ -252,3 +252,14 @@ def debt_revision(draft, records):
     draft['finance']['revision_history'] = (old + [{'date': datetime.now(timezone.utc).isoformat(),
                 'before': before, 'after': after, 'paid_preserved': len(paid)}])[-10:]
     return paid, pending
+
+
+def projected_expenses(rows, month):
+    """Paid debts follow the real payment month, pending debts retain their due month."""
+    total=Decimal(0)
+    for row in rows:
+        if row['payment']=='Voucher':continue
+        finance=row.get('finance',{})
+        day=finance.get('paid_date',row['date']) if finance.get('financing_kind') in {'loan','debt','asset'} and finance.get('paid') else row['date']
+        if day.startswith(month):total+=Decimal(str(row['amount']))
+    return float(total.quantize(Decimal('.01')))

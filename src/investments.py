@@ -184,10 +184,15 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
             raise ValueError("A data do saldo deve ficar entre a aplicação e hoje")
         if common["maturity_date"] and common["maturity_date"] < common["application_date"]:
             raise ValueError("O vencimento não pode ser anterior à aplicação")
+    if existing and existing.get("redemptions"):
+        raise ValueError("Aplicação com resgates: preserve o cadastro e consulte o histórico")
     if existing and (existing.get("sales") or len(existing.get("buys", [])) > 1 or existing.get("incomes") or existing.get("operation_corrected")):
         for field in ("type", "symbol", "quantity", "average_price", "purchase_date"):
             if common.get(field) != existing.get(field):
                 raise ValueError("Este ativo tem operações registradas. Use Novo aporte para comprar mais; os dados da compra original ficam preservados")
+    if investment_type in VARIABLE_TYPES and (not existing or common.get('current_price') != existing.get('current_price')):
+        common['quote_source']='Manual'
+        common['quote_updated_at']=None
     if existing and common.get("current_price")==existing.get("current_price"):
         for key in ("quote_date","previous_close"):
             if key in existing:common[key]=existing[key]
@@ -217,12 +222,24 @@ def market_date(value):
     except (TypeError,ValueError,OverflowError,OSError):return None
 
 
+def foreign_quote_unconverted(item):
+    symbol=item.get('symbol','')
+    return item.get('quote_source') in {'Yahoo Finance','Brapi'} and '-' in symbol and not symbol.endswith('-BRL')
+
+
+def require_brl(info, symbol):
+    currency = info.get('currency')
+    if currency and currency != 'BRL' or not currency and '-' in symbol and not symbol.endswith('-BRL'):
+        raise ValueError('Cotação estrangeira não convertida. Informe uma cotação manual em reais ou use um código negociado em BRL')
+
+
 def fetch_quote(symbol: str) -> dict:
     if re.fullmatch(r"[A-Z]{4}\d{1,2}", symbol):
         try:
             data = fetch_json(f"https://brapi.dev/api/quote/{quote(symbol)}")
             result = data["results"][0]
             return {
+                "currency": result.get("currency", "BRL"),
                 "price": round(float(result["regularMarketPrice"]), 8),
                 "daily_change_percent": round(float(result.get("regularMarketChangePercent") or 0), 4),
                 "source": "Brapi",
@@ -247,7 +264,7 @@ def fetch_quote(symbol: str) -> dict:
         change = ((price / previous) - 1) * 100 if previous else 0
     except (KeyError, IndexError, TypeError, ValueError, ZeroDivisionError) as exc:
         raise ValueError(f"Cotação de {symbol} não encontrada") from exc
-    return {"price": round(price, 8), "daily_change_percent": round(change, 4), "source": "Yahoo Finance", "quote_date": market_day, "previous_close":previous if earlier or meta.get("previousClose") else None,"updated_at": now_iso()}
+    return {"currency": meta.get("currency"), "price": round(price, 8), "daily_change_percent": round(change, 4), "source": "Yahoo Finance", "quote_date": market_day, "previous_close":previous if earlier or meta.get("previousClose") else None,"updated_at": now_iso()}
 
 
 def fetch_market_history(symbol: str, period: str = "1y") -> dict:
@@ -278,7 +295,7 @@ def fetch_market_history(symbol: str, period: str = "1y") -> dict:
         raise ValueError(f"Histórico de {symbol} não encontrado") from exc
     if not points:
         raise ValueError(f"Histórico de {symbol} não encontrado")
-    return {"source": "Yahoo Finance", "points": points}
+    return {"currency": result.get("meta", {}).get("currency"), "source": "Yahoo Finance", "points": points}
 
 
 def investment_today() -> date:
@@ -304,7 +321,7 @@ def fixed_annual_rate(item: dict) -> float | None:
     return math.expm1(12 * math.log1p(rate)) if item.get("rate_period", "year") == "month" else rate
 
 
-def fixed_income_value(item: dict, as_of: date | None = None) -> float:
+def fixed_base_value(item: dict, as_of: date | None = None) -> float:
     as_of = as_of or investment_today()
     start = date.fromisoformat(item["application_date"])
     maturity = date.fromisoformat(item["maturity_date"]) if item.get("maturity_date") else None
@@ -326,6 +343,57 @@ def fixed_income_value(item: dict, as_of: date | None = None) -> float:
             return manual
         return manual * math.exp(math.log1p(rate) * max(0, (end - reference).days) / 365)
     return applied if rate is None else applied * math.exp(math.log1p(rate) * max(0, (end - start).days) / 365)
+
+
+def fixed_state(item, as_of=None):
+    day = as_of or investment_today()
+    fraction, principal, realized = 1.0, item['amount_invested'], 0.0
+    for entry in item.get('redemptions', []):
+        if entry.get('reversed') or entry['date'] > day.isoformat():
+            continue
+        fraction *= 1 - entry['fraction']
+        principal = round(principal - entry['principal'], 2)
+        realized = round(realized + entry['net'] - entry['principal'], 2)
+    return {'value': fixed_base_value(item, day) * fraction,
+            'principal': max(0, principal), 'realized': realized}
+
+
+def fixed_income_value(item, as_of=None):
+    return fixed_state(item, as_of)['value']
+
+
+def redeem_fixed(item_id, payload, user_id=None):
+    if not isinstance(payload, dict):raise ValueError('Dados do resgate inválidos')
+    request = str(payload.get('request_id', ''))
+    if not 1 <= len(request) <= 100:raise ValueError('Identificador do resgate obrigatório')
+    def apply(store):
+        item = next((item for item in store['investments'] if item['id'] == item_id), None)
+        if not item or item['type'] != 'Renda fixa':raise ValueError('Escolha uma aplicação de renda fixa')
+        entries = item.setdefault('redemptions', [])
+        previous = next((entry for entry in entries if entry['request_id'] == request), None)
+        if previous:
+            if previous['date'] != payload.get('date') or any(previous[key] != float(ops.cents(number(payload.get(key,0), key))) for key in ('gross','tax')):
+                raise ValueError('Identificador já usado em outro resgate')
+            return previous
+        day = iso_date(payload.get('date'), 'Data do resgate')
+        if not max([item['application_date']] + [entry['date'] for entry in entries]) <= day <= investment_today().isoformat():
+            raise ValueError('Registre resgates em ordem cronológica, entre a aplicação e hoje')
+        state = fixed_state(item, date.fromisoformat(day))
+        gross = float(ops.cents(number(payload.get('gross'), 'Valor bruto', minimum=.01)))
+        tax = float(ops.cents(number(payload.get('tax', 0), 'Impostos e taxas')))
+        available = round(state['value'], 2)
+        if gross > available or tax >= gross:raise ValueError('Revise saldo disponível, valor bruto e impostos')
+        fraction = 1.0 if gross == available else gross / state['value']
+        principal = state['principal'] if fraction == 1 else round(state['principal'] * fraction, 2)
+        entry = {'id': uuid4().hex, 'request_id': request, 'date': day, 'gross': gross, 'tax': tax,
+                 'net': round(gross-tax, 2), 'fraction': fraction, 'principal': principal}
+        entries.append(entry)
+        adjust_cash(store, -ops.cents(entry['net']))
+        audit_change(store, 'fixed_redemption', item['name'], {}, entry, 'Resgate realizado informado pelo usuário')
+        item['updated_at'] = store['updated_at'] = now_iso()
+        record_snapshot(store)
+        return entry
+    return mutate_store(apply, user_id)
 
 
 def fixed_income_history(item: dict, period: str) -> list[dict]:
@@ -353,6 +421,7 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
     calculated_item = calculated(item)
     if item["type"] in VARIABLE_TYPES:
         history = market_fetcher(item["symbol"], period)
+        require_brl(history, item["symbol"])
         points = [{**point, "value": round(point["price"] * item["quantity"], 2)} for point in history["points"]
                   if point["date"] <= investment_today().isoformat()]
         source = history["source"]
@@ -362,6 +431,9 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
     applied = calculated_item["amount_applied"]
     for point in points:
         point["profit_loss"] = round(point["value"] - applied, 2)
+        if item['type'] not in VARIABLE_TYPES:
+            state=fixed_state(item,date.fromisoformat(point['date']))
+            point['profit_loss']=round(state['value']-state['principal']+state['realized'],2)
         point["return_percent"] = round((point["value"] / applied - 1) * 100, 4) if applied else 0
     gain_points = []
     for point in points:
@@ -371,7 +443,8 @@ def investment_history(item_id: str, period: str = "1y", user_id: int | None = N
             state = ops.position(item, point["date"])
             gain = float(ops.cents(state["quantity"] * Decimal(str(point["price"])) - state["basis"] + state["realized"] + state["income"]))
         else:
-            gain = point["profit_loss"]
+            state = fixed_state(item, date.fromisoformat(point["date"]))
+            gain = state["value"] - state["principal"] + state["realized"]
         gain_points.append({"date": point["date"], "value": round(gain, 2)})
     purchase = item.get("purchase_date") or item.get("application_date")
     if period == "all" and purchase <= investment_today().isoformat() and (not gain_points or gain_points[0]["date"] > purchase):
@@ -432,6 +505,9 @@ def calculated(item: dict) -> dict:
         remaining = state["quantity"]
         applied = float(state["basis"])
         price = item.get("current_price") if item.get("current_price") is not None else (float(state["average"]) if remaining else item["average_price"])
+        if foreign_quote_unconverted(item):
+            price=float(state['average']) if remaining else item['average_price']
+            result.update(current_price=price, daily_change_percent=None, quote_source='Custo em reais; cotação estrangeira pendente', quote_updated_at=None, currency_warning=True)
         current = float(ops.cents(remaining * Decimal(str(price))))
         realized = float(state["realized"])
         result.update(operation_positions=state["operations"],position_status="active" if remaining>0 else "closed",remaining_quantity=float(remaining), average_price=float(state["average"]) if state["average"] > 0 else item["average_price"],
@@ -440,8 +516,10 @@ def calculated(item: dict) -> dict:
                       total_profit_loss=round(current - applied + realized + float(state["income"]), 2),
                       total_return_percent=round((current - applied + realized + float(state["income"])) / float(cash_cost(item)) * 100, 4) if cash_cost(item) else 0)
     else:
-        applied = item["amount_invested"]
-        current = fixed_income_value(item)
+        fixed = fixed_state(item)
+        applied = fixed["principal"]
+        current = fixed["value"]
+        result.update(realized_profit_loss=fixed["realized"], total_profit_loss=round(current-applied+fixed["realized"],2), position_status="active" if current > .005 else "closed")
         annual = fixed_annual_rate(item)
         today = investment_today()
         mode = fixed_mode(item)
@@ -471,7 +549,8 @@ def fixed_portfolio_history(items: list[dict]) -> list[dict]:
     dates = sorted({start + timedelta(days=round(index * span / max(1, steps - 1))) for index in range(steps)})
     return [{"date": current.isoformat(),
              "current_value": round(sum(fixed_income_value(item, current) for item in eligible if item["application_date"] <= current.isoformat()), 2),
-             "amount_applied": round(sum(item["amount_invested"] for item in eligible if item["application_date"] <= current.isoformat()), 2)} for current in dates]
+             "amount_applied": round(sum(fixed_state(item, current)["principal"] for item in eligible if item["application_date"] <= current.isoformat()), 2),
+             "profit_loss": round(sum(fixed_state(item,current)["value"]-fixed_state(item,current)["principal"]+fixed_state(item,current)["realized"] for item in eligible if item["application_date"]<=current.isoformat()),2)} for current in dates]
 
 
 def portfolio(user_id: int | None = None) -> dict:
@@ -692,7 +771,7 @@ def delete_investment(item_id: str, user_id: int | None = None) -> None:
         existing = next((item for item in store["investments"] if item["id"] == item_id), None)
         if not existing:
             raise KeyError("Investimento não encontrado")
-        if existing.get("sales") or existing.get("incomes"):
+        if existing.get("sales") or existing.get("incomes") or existing.get("redemptions"):
             raise ValueError("Ativo com vendas registradas: mantenha-o para preservar o resultado realizado")
         if "cash_funded_amount" in existing:
             adjust_cash(store, -Decimal(str(existing["cash_funded_amount"])))
@@ -712,6 +791,7 @@ def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Call
         try:
             if item["type"] in VARIABLE_TYPES:
                 info = quote_fetcher(item["symbol"])
+                require_brl(info, item["symbol"])
                 updates[item["id"]] = {"current_price": info["price"], "daily_change_percent": info["daily_change_percent"],
                                        "quote_source": info["source"], "quote_updated_at": info["updated_at"],
                                        "quote_date":info.get("quote_date"),"previous_close":info.get("previous_close")}
@@ -766,3 +846,24 @@ def extract_image(data_url: str) -> dict:
     if cdi:
         fields.update({"profitability_type": "CDI", "contracted_rate": float(cdi.group(1).replace(",", "."))})
     return {"text": text[:4000], "fields": fields}
+
+
+def reverse_redemption(item_id,payload,user_id=None):
+    reason=str(payload.get('reason','')).strip()
+    if not 3<=len(reason)<=200:raise ValueError('Informe o motivo da correção')
+    def apply(store):
+        item=next((i for i in store['investments'] if i['id']==item_id),None)
+        if not item:raise ValueError('Aplicação não encontrada')
+        entries=item.get('redemptions',[])
+        entry=next((r for r in entries if r['id']==payload.get('id')),None)
+        if not entry:raise ValueError('Resgate não encontrado')
+        if entry.get('reversed'):return entry
+        active=[r for r in entries if not r.get('reversed')]
+        if active[-1]['id']!=entry['id']:raise ValueError('Desfaça primeiro o resgate mais recente')
+        adjust_cash(store,ops.cents(entry['net']))
+        before=dict(entry);entry['reversed']=True
+        audit_change(store,'fixed_redemption_reversed',item['name'],before,entry,reason)
+        item['updated_at']=store['updated_at']=now_iso()
+        record_snapshot(store)
+        return entry
+    return mutate_store(apply,user_id)

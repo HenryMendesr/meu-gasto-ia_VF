@@ -16,9 +16,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 import webbrowser
 
 try:
-    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards
+    from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts
 except ImportError:  # execução direta: python src/dashboard_server.py
-    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards
+    import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -156,6 +156,9 @@ class Handler(SimpleHTTPRequestHandler):
             try:self.respond(200,{"ok":True,**recurring.status(parse_qs(urlparse(self.path).query).get("month",[""])[0])})
             except ValueError as exc:self.respond(400,{"error":str(exc)})
             return
+        if path=="/api/bank-accounts":
+            self.respond(200,{"ok":True,**bank_accounts.status()})
+            return
         if path in {"/api/insights","/api/account/status","/api/account/export","/api/account/previous-backup","/api/support/status"}:
             try:
                 if path=="/api/insights":result=trust.insights(parse_qs(urlparse(self.path).query).get("month",[""])[0])
@@ -244,7 +247,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.require_auth():
             return
         operation_match=re.fullmatch(r"/api/investments/([a-f0-9]{32})/operations/((?:initial-)?[a-f0-9]{32})/(preview|confirm)",path)
-        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/') or path.startswith('/api/recurring/') or path.startswith('/api/cards/')
+        extra_path=path in {"/api/preferences","/api/product/events","/api/product/feedback","/api/investments/reconcile"} or path.startswith('/api/account/') or path.startswith('/api/recurring/') or path.startswith('/api/cards/') or path.startswith('/api/bank-accounts/') or bool(re.fullmatch(r'/api/investments/[a-f0-9]{32}/redemptions',path))
         sale_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/sales", path)
         buy_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/buys", path)
         income_match = re.fullmatch(r"/api/investments/([a-f0-9]{32})/incomes", path)
@@ -272,6 +275,11 @@ class Handler(SimpleHTTPRequestHandler):
                 if operation_match:result=trust.operation_change(operation_match.group(1),operation_match.group(2),payload,preview=operation_match.group(3)=='preview')
                 elif path=='/api/cards/purchase':result={'purchase':cards.purchase(payload)}
                 elif path=='/api/cards/purchase-delete':result=cards.delete_purchase(str(payload.get('id','')))
+                elif path.startswith('/api/bank-accounts/'):result=bank_accounts.action(path.rsplit('/',1)[1],payload)
+                elif path.endswith('/redemptions'):result={'redemption':(investments.reverse_redemption if payload.get('action')=='reverse' else investments.redeem_fixed)(path.split('/')[3],payload)}
+                elif path=='/api/cards/refund-reverse':result={'refund':cards.reverse_refund(payload)}
+                elif path=='/api/cards/refund':result={'refund':cards.refund(payload)}
+                elif path=='/api/cards/review':result={'review':cards.review(payload)}
                 elif path=='/api/cards/pay':result={'payment':cards.pay(payload)}
                 elif path=='/api/cards/payment-reverse':result={'payment':cards.reverse_payment(str(payload.get('id','')))}
                 elif path=='/api/recurring/salary':result=recurring.save_plan(payload)

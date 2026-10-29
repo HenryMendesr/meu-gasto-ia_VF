@@ -50,9 +50,20 @@ def invoices(prefs):
         if payment.get('reversed'):continue
         if payment['invoice_key'] in result:
             bill=result[payment['invoice_key']];bill['paid']=float(ops.cents(bill['paid'])+ops.cents(payment['amount']));bill['payments'].append(payment)
+    for entry in prefs.get('card_refunds',[]):
+        if entry.get('reversed'):continue
+        if entry['invoice_key'] in result:
+            bill=result[entry['invoice_key']]
+            bill.setdefault('refunds',[]).append(entry)
+            bill['total']=round(bill['total']-entry['amount'],2)
     today=investments.investment_today().isoformat()
     for bill in result.values():
         bill['remaining']=float(ops.cents(bill['total'])-ops.cents(bill['paid']))
+        bill['credit']=max(0,-bill['remaining'])
+        bill['remaining']=max(0,bill['remaining'])
+        review=prefs.get('invoice_reviews',{}).get(bill['key'])
+        bill['review']=review
+        bill['review_difference']=round(review['amount']-bill['total'],2) if review else None
         bill['status']='paid' if bill['remaining']==0 else 'overdue' if bill['due_date']<today else 'partial' if bill['paid'] else 'open'
     return sorted(result.values(),key=lambda bill:(bill['due_date'],bill['name']))
 
@@ -66,6 +77,10 @@ def expense_rows(prefs):
                 'description':f"{purchase.get('description','')} · Cartão · Parcela {part['number']}/{purchase['installments']}",
                 'finance':{'card_purchase_id':purchase['id'],'credit_card_id':purchase['card_id'],'invoice_key':invoice_key(purchase['card_id'],part['date'][:7])},
                 'installment_group':None,'installment_number':part['number'],'installment_count':purchase['installments']})
+    for entry in prefs.get('card_refunds',[]):
+        if entry.get('reversed'):continue
+        bill=next((b for b in invoices(prefs) if b['key']==entry['invoice_key']),None)
+        if bill:rows.append({'id':'refund:'+entry['id'],'date':bill['due_date'],'amount':-entry['amount'],'where':bill['name']+' · Estorno','category':'Contas','payment':'Crédito','description':entry['reason'],'finance':{'card_purchase_id':'refund','invoice_key':bill['key']},'installment_group':None})
     return rows
 
 
@@ -136,6 +151,9 @@ def purchase(payload,user_id=None):
 
 
 def assert_editable(prefs,purchase):
+    keys={invoice_key(purchase['card_id'],p['date'][:7]) for p in parts(purchase)}
+    if any(e['invoice_key'] in keys for e in prefs.get('card_refunds',[])) or any(k in keys for k in prefs.get('invoice_reviews',{})):
+        raise ValueError('Fatura com estorno ou conferência: preserve a compra e seu histórico')
     keys={invoice_key(purchase['card_id'],part['date'][:7]) for part in parts(purchase)}
     if any(payment['invoice_key'] in keys and not payment.get('reversed') for payment in prefs.get('card_payments',[])):
         raise ValueError('Desfaça os pagamentos das faturas afetadas antes de editar ou excluir esta compra')
@@ -226,7 +244,26 @@ def validate_state(prefs):
         if key in known and payment['date']<min(entry['purchase_date'] for entry in known[key]['items']):raise ValueError('Pagamento anterior à compra')
         payment['amount']=float(ops.cents(investments.number(payment.get('amount'),'Pagamento',minimum=.01)))
         if 'reversed' in payment and not isinstance(payment['reversed'],bool):raise ValueError('Estorno inválido')
-    if any(bill['remaining']<0 for bill in invoices(prefs)):raise ValueError('Pagamentos excedem o valor da fatura')
+    for bill in invoices({**prefs,'card_refunds':[]}):
+        if bill.get('credit',0)>0:raise ValueError('Pagamentos excedem o valor da fatura')
+    refunds=prefs.get('card_refunds',[])
+    if not isinstance(refunds,list):raise ValueError('Estornos inválidos')
+    refund_ids=set();refund_requests=set()
+    for e in refunds:
+        if not isinstance(e,dict) or not re.fullmatch('[a-f0-9]{32}',str(e.get('id',''))) or e['id'] in refund_ids or e.get('invoice_key') not in known:raise ValueError('Estorno inválido')
+        if 'reversed' in e and not isinstance(e['reversed'],bool):raise ValueError('Estado de estorno inválido')
+        refund_ids.add(e['id'])
+        if not isinstance(e.get('request_id'),str) or not 1<=len(e['request_id'])<=100 or e['request_id'] in refund_requests:raise ValueError('Estorno duplicado')
+        refund_requests.add(e['request_id']);e['date']=investments.iso_date(e.get('date'),'Estorno')
+        e['amount']=float(ops.cents(investments.number(e.get('amount'),'Crédito',minimum=.01)))
+        if not isinstance(e.get('reason'),str) or not 3<=len(e['reason'])<=200:raise ValueError('Motivo inválido')
+    if any(b['total']<0 for b in invoices(prefs)):raise ValueError('Estorno excede a fatura')
+    reviews=prefs.get('invoice_reviews',{})
+    if not isinstance(reviews,dict):raise ValueError('Conferências inválidas')
+    for key,e in reviews.items():
+        if key not in known or not isinstance(e,dict):raise ValueError('Conferência sem fatura')
+        e['date']=investments.iso_date(e.get('date'),'Conferência')
+        for field in ('amount','registered_total'):e[field]=float(ops.cents(investments.number(e.get(field),'Conferência')))
 
 
 def ensure_original_editable(item_id,user_id=None):
@@ -240,3 +277,52 @@ def ensure_original_editable(item_id,user_id=None):
 def ensure_category_editable(category,user_id=None):
     if any(item['category']==category for item in investments.load_store(user_id).get('preferences',{}).get('card_purchases',[])):
         raise ValueError('Esta categoria está no histórico de cartões. Altere as compras sem pagamento antes de renomear ou excluir a categoria')
+
+
+def refund(payload,user_id=None):
+    """Record an actual credit on one invoice, preserving the purchase and payments."""
+    if not isinstance(payload,dict):raise ValueError('Estorno inválido')
+    request=str(payload.get('request_id',''));key=str(payload.get('invoice_key',''))
+    day=investments.iso_date(payload.get('date'),'Data do crédito')
+    amount=float(ops.cents(investments.number(payload.get('amount'),'Crédito',minimum=.01)))
+    reason=str(payload.get('reason','')).strip()
+    if not 1<=len(request)<=100 or not 3<=len(reason)<=200 or day>investments.investment_today().isoformat():raise ValueError('Confira data, motivo e identificador')
+    def apply(store):
+        prefs=store.setdefault('preferences',{});entries=prefs.setdefault('card_refunds',[])
+        previous=next((e for e in entries if e['request_id']==request),None)
+        if previous:
+            if any(previous[k]!=v for k,v in {'invoice_key':key,'date':day,'amount':amount,'reason':reason}.items()):raise ValueError('Identificador já usado')
+            return previous
+        bill=next((bill for bill in invoices(prefs) if bill['key']==key),None)
+        if not bill or amount>bill['total'] or day<min(e['purchase_date'] for e in bill['items']):raise ValueError('Crédito deve corresponder a uma fatura existente e não ultrapassar seu total líquido')
+        entry={'id':uuid4().hex,'request_id':request,'invoice_key':key,'date':day,'amount':amount,'reason':reason}
+        entries.append(entry);investments.audit_change(store,'card_refund',bill['name'],{},entry,reason)
+        return entry
+    return investments.mutate_store(apply,user_id)
+
+
+def review(payload,user_id=None):
+    key=str(payload.get('invoice_key',''))
+    amount=float(ops.cents(investments.number(payload.get('amount'),'Total da fatura')))
+    def apply(store):
+        prefs=store.setdefault('preferences',{})
+        bill=next((b for b in invoices(prefs) if b['key']==key),None)
+        if not bill:raise ValueError('Fatura não encontrada')
+        entry={'date':investments.investment_today().isoformat(),'amount':amount,'registered_total':bill['total']}
+        prefs.setdefault('invoice_reviews',{})[key]=entry
+        investments.audit_change(store,'invoice_review',bill['name'],{},entry,'Total conferido no extrato')
+        return {**entry,'difference':round(amount-bill['total'],2)}
+    return investments.mutate_store(apply,user_id)
+
+
+def reverse_refund(payload,user_id=None):
+    reason=str(payload.get('reason','')).strip()
+    if not 3<=len(reason)<=200:raise ValueError('Informe o motivo da correção')
+    def apply(store):
+        entry=next((e for e in store.get('preferences',{}).get('card_refunds',[]) if e['id']==payload.get('id')),None)
+        if not entry:raise ValueError('Estorno não encontrado')
+        if not entry.get('reversed'):
+            before=dict(entry);entry['reversed']=True
+            investments.audit_change(store,'card_refund_reversed','Fatura',before,entry,reason)
+        return entry
+    return investments.mutate_store(apply,user_id)

@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
-from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards
+from src import auth, investments, runtime_storage as storage, statement_import, planning, trust, account_service, account_security, recurring, cards, bank_accounts
 
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATES=ROOT/'templates'
@@ -327,12 +327,38 @@ async def card_action(action:str,request:Request):
     if isinstance(uid,JSONResponse):return uid
     try:
         payload=await request.json()
+        if action=='refund-reverse':return {'ok':True,'refund':cards.reverse_refund(payload,uid)}
+        if action=='refund':return {'ok':True,'refund':cards.refund(payload,uid)}
+        if action=='review':return {'ok':True,'review':cards.review(payload,uid)}
         if action=='purchase':return {'ok':True,'purchase':cards.purchase(payload,uid)}
         if action=='purchase-delete':return {'ok':True,**cards.delete_purchase(str(payload.get('id','')),uid)}
         if action=='pay':return {'ok':True,'payment':cards.pay(payload,uid)}
         if action=='payment-reverse':return {'ok':True,'payment':cards.reverse_payment(str(payload.get('id','')),uid)}
         return json_error(404,'Ação não encontrada')
     except KeyError as exc:return json_error(404,str(exc).strip("'"))
+    except (ValueError,TypeError,AttributeError) as exc:return json_error(400,str(exc))
+
+@fastapi_app.get('/api/bank-accounts')
+def bank_status(request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    return {'ok':True,**bank_accounts.status(uid)}
+
+@fastapi_app.post('/api/bank-accounts/{action}')
+async def bank_action(action:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:return {'ok':True,**bank_accounts.action(action,await request.json(),uid)}
+    except (ValueError,TypeError,AttributeError) as exc:return json_error(400,str(exc))
+
+@fastapi_app.post('/api/investments/{item_id}/redemptions')
+async def fixed_redemption(item_id:str,request:Request):
+    uid=protected(request)
+    if isinstance(uid,JSONResponse):return uid
+    try:
+        payload=await request.json()
+        operation=investments.reverse_redemption if payload.get('action')=='reverse' else investments.redeem_fixed
+        return {'ok':True,'redemption':operation(item_id,payload,uid)}
     except (ValueError,TypeError,AttributeError) as exc:return json_error(400,str(exc))
 
 @fastapi_app.get('/api/{resource}')

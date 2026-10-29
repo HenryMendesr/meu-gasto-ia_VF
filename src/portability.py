@@ -152,6 +152,9 @@ def _validate(payload):
     try:from src import cards as card_rules
     except ImportError:import cards as card_rules
     card_rules.validate_state(prefs)
+    try:from src import bank_accounts
+    except ImportError:import bank_accounts
+    bank_accounts.validate(prefs)
     from collections import Counter
     available_links=Counter(card_rules.expense_fingerprint({'date':row['expense_date'],'amount':row['amount'],'where':row['place'],'category':row['category'],'payment':row['payment'],'description':row['description']}) for row in data['expenses'])
     needed_links=Counter(item['linked_fingerprint'] for item in prefs.get('card_purchases',[]) if item.get('linked_fingerprint'))
@@ -206,7 +209,26 @@ def _validate(payload):
                             entry['net_total']=round(entry['total']-entry['fees'],2)
             ops.position(item)
         else:
+            saved_redemptions=item.pop('redemptions',[])
             item.update(investments.normalize_payload(item, item))
+            if not isinstance(saved_redemptions,list):raise ValueError('Resgates inválidos')
+            item['redemptions']=[]
+            seen=set();requests=set();last=item['application_date']
+            for entry in saved_redemptions:
+                if not isinstance(entry,dict) or not re.fullmatch('[a-f0-9]{32}',str(entry.get('id',''))) or entry['id'] in seen:raise ValueError('Resgate inválido')
+                seen.add(entry['id'])
+                request=entry.get('request_id')
+                if not isinstance(request,str) or not 1<=len(request)<=100 or request in requests:raise ValueError('Resgate duplicado')
+                requests.add(request);entry['date']=day(entry.get('date'))
+                if entry['date']<last:raise ValueError('Ordem dos resgates inválida')
+                last=entry['date']
+                for field in ('gross','tax','net','principal'):entry[field]=amount(entry.get(field))
+                fraction=investments.number(entry.get('fraction'),'Fração resgatada',minimum=.00000001)
+                if fraction>1 or entry['gross']<=0 or entry['tax']>=entry['gross'] or abs(entry['net']-entry['gross']+entry['tax'])>.011:raise ValueError('Valores de resgate inválidos')
+                remaining=investments.fixed_state(item,date.fromisoformat(entry['date']))['principal']
+                if not entry.get('reversed') and abs(entry['principal']-round(remaining*fraction,2))>.011:raise ValueError('Principal de resgate inválido')
+                if 'reversed' in entry and not isinstance(entry['reversed'],bool):raise ValueError('Estado de resgate inválido')
+                item['redemptions'].append(entry)
         investments.calculated(item)
     for goal in portfolio.get('goals',[]):
         if not re.fullmatch('[a-f0-9]{32}',str(goal.get('id',''))):raise ValueError('Meta inválida')
@@ -223,6 +245,8 @@ def _validate(payload):
 
 def counts(data):
     return {**{table:len(data[table]) for table in TABLES},'investments':len(data['portfolio']['investments']),
+            'bank_accounts':len(data['portfolio'].get('preferences',{}).get('bank_accounts',[])),
+            'account_entries':len(data['portfolio'].get('preferences',{}).get('account_entries',[])),
             'goals':len(data['portfolio'].get('goals',[])),'cash_balance':data['portfolio'].get('cash_balance',0)}
 
 

@@ -30,6 +30,10 @@ def summaries(store, expenses, today):
         elif item['application_date']<=today:
             operations.append({**common,'id':common['asset_id'],'date':item['application_date'],'kind':'Aplicação',
                                'amount':item['amount_invested'],'net':item['amount_invested'],'fees':0,'realized':0})
+    for item in store['investments']:
+        for entry in item.get('redemptions',[]):
+            if not entry.get('reversed'):
+                operations.append({'asset_id':item['id'],'label':item['name'],'type':item['type'],'id':entry['id'],'date':entry['date'],'kind':'Venda','amount':entry['gross'],'net':entry['net'],'fees':entry['tax'],'realized':entry['net']-entry['principal']})
     latest=max([entry['date'] for entry in operations] or [today])
 
     def build(day):
@@ -49,7 +53,7 @@ def summaries(store, expenses, today):
                 opening=ops.position(item,prior);closing=ops.position(item,day)
                 if not opening['quantity'] and not closing['quantity'] and not moves:continue
                 previous=item.get('previous_close');price=item.get('current_price')
-                if item.get('quote_date')==day and item.get('quote_source') not in {None,'Manual','Última compra'} and previous is not None and price is not None:
+                if not investments.foreign_quote_unconverted(item) and item.get('quote_date')==day and item.get('quote_source') not in {None,'Manual','Última compra'} and previous is not None and price is not None:
                     change=float(closing['quantity']*Decimal(str(price))-opening['quantity']*Decimal(str(previous)))
                     change+=sum(entry['net'] if entry['kind'] in {'Venda','Provento'} else -entry['amount'] for entry in moves)
                 elif not opening['quantity'] and not closing['quantity']:
@@ -60,6 +64,7 @@ def summaries(store, expenses, today):
                 if investments.fixed_mode(item)=='automatic' and investments.fixed_annual_rate(item) is not None:
                     start=investments.fixed_income_value(item,date.fromisoformat(prior))
                     change=investments.fixed_income_value(item,date.fromisoformat(day))-start
+                    change+=sum(entry['net'] for entry in moves if entry['kind']=='Venda')
             if change is None:missing+=1
             else:known+=change
             assets.append({'id':item.get('id',item.get('name','')),'label':label,'change':round(change,2) if change is not None else None,

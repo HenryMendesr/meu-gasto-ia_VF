@@ -203,3 +203,15 @@ Pagamentos podem ser desfeitos com histórico. Para editar/remover compras em fa
 Em Planejar → Nova meta → Como acompanhar, escolha acompanhamento manual, valor atual dos investimentos ou valor aplicado nas posições abertas. Uma meta de R$ 50.000 pode usar automaticamente o total mostrado em Investir. O valor atual considera valorização/desvalorização; o valor aplicado acompanha o custo das posições ainda abertas. Os dois modos excluem caixa e posições já vendidas. Metas antigas continuam manuais.
 
 O progresso é recalculado nas consultas e nas atualizações da carteira, sem gravar um saldo manual para metas automáticas. Compras, vendas e atualizações de cotação alteram o progresso; adicionar dinheiro apenas ao caixa não altera. A meta não reserva nem movimenta dinheiro e pode regredir se o patrimônio cair. Mais de uma meta pode acompanhar a mesma carteira; seus valores não devem ser somados como reservas independentes.
+
+### Rotina, contas e conferência
+
+A Visão geral reúne recebimentos a confirmar, parcelas em aberto e faturas para pagar/conferir em **Pendências para conferir**. **Contas e saldos conferidos** permite cadastrar saldo inicial, entradas/saídas manuais, transferências próprias e conciliação com motivo e prévia da diferença. Esse livro é separado do orçamento; os lançamentos existentes não recebem conta automaticamente.
+
+Em **Investir**, renda fixa possui **Registrar resgate** parcial ou total: informe bruto e impostos/taxas reais. O líquido entra no caixa, o principal é reduzido proporcionalmente e o histórico é preservado. O relatório e o resumo diário incluem o resgate. O vencimento sozinho continua sem encerrar a aplicação.
+
+Em **Cartões**, cada fatura oferece **Registrar estorno** e **Conferir total**. Estornos preservam compras e pagamentos; crédito em uma fatura já paga fica identificado para conferência. Não há transferência automática desse crédito. Conferir o total do extrato mostra a diferença, sem alterar compras ou marcar pagamento.
+
+A projeção de dívidas pagas segue o mês da data efetiva, inclusive antecipações e atrasos; parcelas abertas permanecem no calendário previsto, com atrasadas reunidas no início do gráfico de saldo aberto. Cotações externas em moeda estrangeira são bloqueadas para evitar mistura com reais: use código BRL ou cotação manual convertida.
+
+O [roteiro de 30 dias e operação](docs/PILOT.md) registra as etapas do piloto e as limitações. O piloto com pessoas reais ainda precisa ser executado. As verificações automáticas estão em `.github/workflows/checks.yml`.

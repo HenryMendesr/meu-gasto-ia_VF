@@ -98,6 +98,10 @@ def monthly_report(month, user_id=None):
         else:
             operations.append({'date': item['application_date'], 'kind': 'Aporte', 'label': label,
                                'amount': -item['amount_invested'], 'realized': 0, 'fees': 0})
+    for item in store['investments']:
+        for entry in item.get('redemptions', []):
+            if not entry.get('reversed'):
+                operations.append({'date':entry['date'],'kind':'Venda','label':item['name']+' · Resgate','amount':entry['net'],'realized':entry['net']-entry['principal'],'fees':entry['tax']})
     def is_debt(entry):
         return entry.get('finance', {}).get('financing_kind') in {'loan', 'debt', 'asset'}
     def effective_date(entry):

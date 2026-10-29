@@ -83,9 +83,11 @@ def insights(month, user_id=None):
     spent = round(sum(row['amount'] for row in cash), 2)
     reserved = round(sum(row['amount'] for row in pending), 2)
     card_payments=[entry for entry in store.get('preferences',{}).get('card_payments',[]) if not entry.get('reversed')]
-    paid_due=sum(entry['amount'] for entry in card_payments if entry['invoice_key'].endswith(':'+month))
+    paid_due=sum(min(bill['paid'],bill['total']) for bill in cards.invoices(store.get('preferences',{})) if bill['month']==month)
     paid_month=sum(entry['amount'] for entry in card_payments if entry['date'].startswith(month))
-    projected=round(spent-paid_due+paid_month,2)
+    try:from src.finance_rules import projected_expenses
+    except ImportError:from finance_rules import projected_expenses
+    projected=round(projected_expenses(rows,month)-paid_due+paid_month,2)
     wallet = investments.portfolio(user_id)
     quotes = []
     for item in wallet['investments']:
