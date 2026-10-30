@@ -12,6 +12,11 @@ import secrets
 from threading import Lock
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 try:
+    from src.budget_groups import GROUP_IDS
+except ImportError:
+    from budget_groups import GROUP_IDS
+
+try:
     from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
 except ImportError:
     from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
@@ -290,7 +295,7 @@ def set_budget(payload:dict,user_id:int)->dict:
     month=str(payload.get('month',''));category=str(payload.get('category','')).strip()
     try:date.fromisoformat(f'{month}-01');amount=round(float(payload.get('limit',0)),2)
     except (TypeError,ValueError) as exc:raise ValueError('Mês ou limite inválido') from exc
-    if category not in set(read_categories(user_id)) or amount<0 or amount>10_000_000:raise ValueError('Categoria ou limite inválido')
+    if category not in set(read_categories(user_id)) | GROUP_IDS or amount<0 or amount>10_000_000:raise ValueError('Categoria ou limite inválido')
     initialize()
     with connect() as db,db.cursor() as c:c.execute('INSERT INTO budgets(user_id,month,category,amount) VALUES(%s,%s,%s,%s) ON CONFLICT(user_id,month,category) DO UPDATE SET amount=EXCLUDED.amount,updated_at=NOW()',(user_id,month,category,amount));db.commit()
     return {'month':month,'category':category,'limit':amount}
@@ -311,6 +316,7 @@ def read_categories(user_id:int)->list[str]:
 
 def add_category(name:str,user_id:int)->str:
     name=str(name).strip()
+    if name.casefold().startswith('@budget:'):raise ValueError('Esse nome é reservado aos grupos de planejamento')
     if len(name)<2 or len(name)>40:raise ValueError('Use um nome de categoria entre 2 e 40 caracteres')
     initialize()
     with connect() as db,db.cursor() as c:c.execute('INSERT INTO budget_categories(user_id,name) VALUES(%s,%s) ON CONFLICT DO NOTHING',(user_id,name));db.commit()
@@ -328,6 +334,7 @@ def delete_category(name:str,user_id:int)->None:
 
 def rename_category(name:str,new_name:str,user_id:int)->str:
     name,new_name=str(name).strip(),str(new_name).strip()
+    if new_name.casefold().startswith('@budget:'):raise ValueError('Esse nome é reservado aos grupos de planejamento')
     if name in CATEGORIES:raise ValueError('As categorias padrão não podem ser renomeadas')
     if len(new_name)<2 or len(new_name)>40:raise ValueError('Use um nome de categoria entre 2 e 40 caracteres')
     with connect() as db,db.cursor() as c:

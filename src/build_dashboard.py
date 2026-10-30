@@ -7,8 +7,10 @@ from pathlib import Path
 try:
     from src.investments import portfolio
     from src import runtime_storage as storage
+    from src.budget_groups import GROUPS
 except ImportError:
     from investments import portfolio
+    from budget_groups import GROUPS
     import runtime_storage as storage
 
 
@@ -164,7 +166,7 @@ statement_panel = (ROOT / "src/statement_panel.html").read_text(encoding="utf-8"
 statement_js = (ROOT / "src/statement_panel.js").read_text(encoding="utf-8")
 budget_css = (ROOT / "src/budget_panel.css").read_text(encoding="utf-8")
 budget_panel = (ROOT / "src/budget_panel.html").read_text(encoding="utf-8")
-budget_js = (ROOT / "src/budget_panel.js").read_text(encoding="utf-8")
+budget_js = (ROOT / "src/budget_panel.js").read_text(encoding="utf-8").replace("__BUDGET_GROUPS__", json.dumps(GROUPS, ensure_ascii=False))
 debt_css = (ROOT / "src/debts_panel.css").read_text(encoding="utf-8")
 debt_panel = (ROOT / "src/debts_panel.html").read_text(encoding="utf-8")
 debt_js = (ROOT / "src/debts_panel.js").read_text(encoding="utf-8")

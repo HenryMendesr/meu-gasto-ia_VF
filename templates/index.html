@@ -410,6 +410,28 @@
   .budget-save-buttons button { flex: 1; min-width: 0; }
 }
 
+/* Five planning groups keep detailed categories out of the main controls. */
+.budget-group-count { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.budget-category .budget-group-description { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; max-width: 340px; }
+.budget-group-details { margin-top: 8px; border-top: 1px solid var(--line); }
+.budget-group-details summary { padding: 13px 0 5px; color: var(--muted); font-size: 11px; cursor: pointer; }
+.budget-group-details ul { margin: 12px 0 4px; padding: 0; list-style: none; display: grid; gap: 10px; }
+.budget-group-details li { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--muted); }
+.budget-group-details li strong { color: var(--ink); font-weight: 500; white-space: nowrap; }
+.budget-category-tools { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 18px; }
+.budget-category-tools > summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.budget-category-tools > p { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 680px; }
+#budgetCustomCategories { display: grid; gap: 10px; margin: 16px 0; }
+#budgetCustomCategories > div { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+#budgetCustomCategories > div > span { flex: 1; font-size: 12px; overflow-wrap: anywhere; }
+#budgetCustomCategories small { display: block; font-size: 10px; color: var(--muted); margin-top: 4px; }
+@media(max-width:600px) {
+ .budget-group-count { font-size: 11px; }
+ .budget-category .budget-group-description { font-size: 10px; }
+ .budget-card-heading { align-items: flex-start; }
+ #budgetCustomCategories > div { flex-wrap: wrap; }
+}
+
 /* Keep installment fields usable even before the external theme has loaded. */
 #creditOptions{grid-column:1/-1;padding:18px;border:1px solid #dce7e1;border-radius:14px;background:var(--surface)}#creditOptions>label{display:grid;gap:8px}#installmentFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}#installmentFields label{display:grid;gap:8px;min-width:0;grid-column:auto}#installmentFields input,#creditOptions select{display:block;width:100%;min-width:0;min-height:46px;border:1px solid #bccfc5;border-radius:10px;padding:11px 12px;background:var(--card);color:var(--ink);font-size:14px}#installmentPreview{padding:14px;border-radius:10px;background:#e8f4ed;white-space:normal;overflow-wrap:anywhere}#installmentFields[hidden],#creditOptions[hidden]{display:none!important}
 .debt-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}.debt-totals>div{border:1px solid var(--line,#dce7e1);border-radius:16px;padding:20px;background:var(--card,var(--card))}.debt-totals small{display:block;color:var(--muted,#687281)}.debt-totals strong{display:block;margin-top:8px;font-size:25px}.debt-layout{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(0,1.2fr);gap:22px;align-items:start}.debt-form-card,.debt-analysis{border:1px solid var(--line,#dce7e1);border-radius:18px;padding:24px;background:var(--card,var(--card));min-width:0}.debt-form-card h3,.debt-analysis h3{margin:0}.debt-form-card>p,.debt-form-help,.debt-chart-note{color:var(--muted,#687281);font-size:12px;line-height:1.6}.debt-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}.debt-form label,.debt-chart-filter{display:grid;gap:7px;color:var(--muted,#687281);font-size:12px;font-weight:700;min-width:0}.debt-form input,.debt-form select,.debt-chart-filter select{width:100%;min-width:0;min-height:46px;padding:10px 12px;border:1px solid #cddbd3;border-radius:10px;background:var(--card);color:var(--ink)}.debt-form input[readonly]{background:var(--surface)}.debt-wide{grid-column:1/-1}.debt-preview{padding:16px;border-radius:12px;background:#edf6f0;display:grid;gap:7px;color:var(--green);font-size:13px}.debt-preview small{color:var(--muted,#687281)}.debt-form .save{background:var(--green);color:var(--card)}.debt-chart-filter{margin:16px 0}.debt-analysis h4{font-size:13px;margin:24px 0 12px}.debt-chart svg{display:block;width:100%;height:auto;min-height:160px}.debt-bars{overflow-x:auto}.debt-bars svg{min-width:480px}.debt-chart text{fill:var(--muted);font:11px Arial,sans-serif}.debt-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted,#687281)}.debt-legend i{display:inline-block;width:10px;height:10px;background:var(--green);border-radius:3px;margin-right:4px}.debt-legend span+span i{background:var(--amber)}.debt-schedule summary{cursor:pointer;font-size:13px;color:var(--green);font-weight:700}.debt-schedule table{min-width:520px}.debt-contracts{margin-top:28px}.debt-contract{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;padding:20px;margin:12px 0;border:1px solid var(--line,#dce7e1);border-radius:14px;background:var(--card,var(--card))}.debt-contract h4{margin:0 0 7px;font-size:15px}.debt-contract p{margin:5px 0;color:var(--muted,#687281);font-size:12px}.debt-contract-actions{display:flex;align-items:start;gap:8px}.tab[data-panel="debtsPanel"]::before{content:"◷"}
@@ -542,7 +564,7 @@ body .shell>nav.tabs button:focus-visible{outline:2px solid var(--mint);outline-
           <h2>Um plano para o seu mês.</h2>
           <p>Arraste, experimente e encontre o equilíbrio do seu mês.</p>
         </div>
-        <button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria</button>
+        <span class="budget-group-count">5 grupos para organizar seu mês</span>
       </header>
       <div class="budget-toolbar">
         <label>Mês de referência<select id="budgetMonth" class="field"></select></label>
@@ -553,7 +575,7 @@ body .shell>nav.tabs button:focus-visible{outline:2px solid var(--mint);outline-
       </div>
       <section class="budget-summary" aria-label="Resumo dos limites">
         <div><span>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div>
-        <div><span>Gasto nas categorias com limite</span><strong id="budgetUsed">R$ 0,00</strong></div>
+        <div><span>Gasto nos grupos com limite</span><strong id="budgetUsed">R$ 0,00</strong></div>
         <div><span>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
       </section>
       <div id="limitsMessage" class="message" role="status" hidden></div>
@@ -568,9 +590,9 @@ body .shell>nav.tabs button:focus-visible{outline:2px solid var(--mint);outline-
           <div id="budgetLegend" class="budget-legend"></div>
           <p id="budgetUnbounded" class="budget-unbounded"></p>
         </aside>
-        <section class="limits-section" aria-label="Ajustar limites por categoria">
+        <section class="limits-section" aria-label="Ajustar limites por grupo">
           <div class="section-title">
-            <div><h3>Ajuste seus limites</h3><p>Puxe a bolinha para escolher quanto gastar.</p></div>
+            <div><h3>Ajuste seus limites</h3><p>Um limite por grupo. Menos ajustes para cuidar.</p></div>
             <label class="budget-unit-label">Editar em
               <select id="budgetUnit" aria-label="Unidade de edição dos limites">
                 <option value="money">Reais (R$)</option>
@@ -598,6 +620,12 @@ body .shell>nav.tabs button:focus-visible{outline:2px solid var(--mint);outline-
         <div class="section-title"><h3>Histórico mensal</h3><span>Limites salvos, gastos e saldo</span></div>
         <div id="budgetHistoryList"></div>
       </section>
+      <details class="budget-category-tools">
+        <summary>Categorias dos lançamentos</summary>
+        <p>Os gastos continuam detalhados no histórico. No planejamento, eles são reunidos nos cinco grupos acima. Categorias personalizadas sem associação entram em Outros.</p>
+        <div id="budgetCustomCategories"></div>
+        <button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria de gasto</button>
+      </details>
     </section>
     <div id="categoryModal" class="modal" hidden>
       <section class="modal-card compact-modal">
@@ -1100,12 +1128,22 @@ const budgetMonth=document.querySelector('#budgetMonth'),limitsList=document.que
 const budgetDrafts=new Map();
 let budgetSaving=false;
 let budgetSaveError='';
+const BUDGET_GROUPS=[{"id": "@budget:fixed", "label": "Custos fixos", "description": "Moradia, mercado, carro, transporte, saúde e contas.", "categories": ["Mercado", "Transporte", "Moradia", "Saúde", "Contas"], "aliases": ["Carro", "Automóvel", "Gasolina", "Combustível", "Aluguel", "Farmácia", "Internet", "Luz", "Água", "Custos fixos"]}, {"id": "@budget:comfort", "label": "Conforto", "description": "Alimentação fora, compras e assinaturas.", "categories": ["Alimentação", "Compras", "Assinaturas"], "aliases": []}, {"id": "@budget:leisure", "label": "Lazer e experiências", "description": "Lazer, viagens e presentes.", "categories": ["Lazer", "Viagem", "Presentes"], "aliases": []}, {"id": "@budget:learning", "label": "Conhecimento", "description": "Educação, cursos e estudos.", "categories": ["Educação"], "aliases": ["Cursos"]}, {"id": "@budget:other", "label": "Outros", "description": "Outros gastos e categorias personalizadas.", "categories": ["Outros"], "aliases": []}];
+const budgetGroupLabel=id=>BUDGET_GROUPS.find(group=>group.id===id)?.label||id;
+const BUDGET_GROUP_IDS=new Set(BUDGET_GROUPS.map(group=>group.id));
+const normalizedBudgetCategory=name=>name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function budgetGroupFor(category){return BUDGET_GROUPS.find(group=>[...group.categories,...(group.aliases||[])].some(name=>normalizedBudgetCategory(name)===normalizedBudgetCategory(category)))?.id||'@budget:other'}
+function savedBudgetGroups(key){
+ const raw=BUDGETS[key]||{},values=Object.fromEntries(BUDGET_GROUPS.map(group=>[group.id,0]));
+ Object.entries(raw).forEach(([name,value])=>{if(!BUDGET_GROUP_IDS.has(name))values[budgetGroupFor(name)]+=+value||0});
+ BUDGET_GROUPS.forEach(group=>{if(Object.hasOwn(raw,group.id))values[group.id]=+raw[group.id]||0;values[group.id]=Math.round(values[group.id]*100)/100});return values;
+}
 const BUDGET_COLORS=['#8cc8ee','#89dfc3','#e9cf7b','#d5a3dc','#9daff0','#edb07a','#b8cca1','#e49caa','#93c9cf','#b9a5df','#c9bf9a','#a4b9c7','#c3d8b0'];
-function categoryTotals(monthValue){const totals={};DATA.filter(item=>item.date.startsWith(monthValue)).forEach(item=>totals[item.category]=(totals[item.category]||0)+item.amount);return totals}
+function categoryTotals(monthValue){const totals={};DATA.filter(item=>item.date.startsWith(monthValue)).forEach(item=>totals[budgetGroupFor(item.category)]=(totals[budgetGroupFor(item.category)]||0)+item.amount);return totals}
 function budgetLevel(used,limit){if(!limit)return 'unset';const ratio=used/limit;return ratio>1?'over':ratio>=.8?'warning':'safe'}
 function budgetIncomeFor(key){const mode=ACCOUNT_PREFERENCES.income_modes?.[key]||'auto',salary=scheduledSalaryBasis(key),declared=+(incomeByMonth[key]||0),imported=INCOME_ENTRIES.filter(x=>x.date.startsWith(key)).reduce((sum,x)=>sum+x.amount,0);return Math.max(0,mode==='scheduled'||mode==='auto'&&salary.active?salary.expected:mode==='declared'||mode==='auto'&&declared>0?declared:imported)}
-function budgetValues(key){return {...BUDGETS[key],...budgetDrafts.get(key)}}
-function budgetCategories(key){return [...new Set([...ALL_CATEGORIES,...Object.keys(budgetValues(key)),...Object.keys(categoryTotals(key))])].sort((a,b)=>a.localeCompare(b,'pt-BR'))}
+function budgetValues(key){return {...savedBudgetGroups(key),...budgetDrafts.get(key)}}
+function budgetCategories(){return BUDGET_GROUPS.map(group=>group.id)}
 function budgetPercent(value){return value.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'}
 function fillBudgetMonths(){
  const selected=budgetMonth.value||month.value;
@@ -1123,12 +1161,12 @@ function paintBudgetOverview(){
  document.querySelector('#budgetDonut span').textContent=income?'da renda planejada':'em limites mensais';
  const note=document.querySelector('#budgetAllocationNote');note.textContent=income?(total>income?`${brl(total-income)} acima da renda. Ajuste as barras para equilibrar.`:`${brl(income-total)} da renda ainda livres para distribuir.`):'Sem renda cadastrada? Você pode ajustar os limites em reais.';note.classList.toggle('negative',income>0&&total>income);
  const unbounded=Object.entries(totals).filter(([name])=>!(configured[name]>0)).reduce((sum,[,value])=>sum+value,0);
- document.querySelector('#budgetUnbounded').textContent=unbounded?`${brl(unbounded)} gastos em categorias sem limite, fora do resumo acima.`:'';
+ document.querySelector('#budgetUnbounded').textContent=unbounded?`${brl(unbounded)} gastos em grupos sem limite, fora do resumo acima.`:'';
  let cursor=0;const denominator=Math.max(total,income),segments=[],active=categories.filter(name=>configured[name]>0);
  active.forEach(name=>{const start=cursor;cursor+=configured[name]/denominator*100;segments.push(`${BUDGET_COLORS[categories.indexOf(name)%BUDGET_COLORS.length]} ${start}% ${cursor}%`)});
  if(cursor<100)segments.push(`var(--surface) ${cursor}% 100%`);
  const donut=document.querySelector('#budgetDonut');donut.style.background=segments.length?`conic-gradient(${segments.join(',')})`:'var(--surface)';donut.setAttribute('aria-label',`Distribuição dos limites: ${brl(total)}${income?', '+budgetPercent(total/income*100)+' da renda':''}`);
- document.querySelector('#budgetLegend').innerHTML=active.length?active.map(name=>`<div><i style="background:${BUDGET_COLORS[categories.indexOf(name)%BUDGET_COLORS.length]}"></i><span>${esc(name)}</span><b>${brl(configured[name])}</b></div>`).join(''):'<p class="quiet">Comece arrastando a barra de uma categoria.</p>';
+ document.querySelector('#budgetLegend').innerHTML=active.length?active.map(name=>`<div><i style="background:${BUDGET_COLORS[categories.indexOf(name)%BUDGET_COLORS.length]}"></i><span>${esc(budgetGroupLabel(name))}</span><b>${brl(configured[name])}</b></div>`).join(''):'<p class="quiet">Comece arrastando a barra de uma categoria.</p>';
  const count=Object.keys(budgetDrafts.get(key)||{}).length;
  document.querySelector('#budgetDraftHint').textContent=budgetSaveError||'A prévia só vira seu limite ao salvar.';
  document.querySelector('#budgetSavebar').hidden=!count;document.querySelector('#budgetDraftCount').textContent=`${count} ${count===1?'limite ajustado':'limites ajustados'}`;
@@ -1161,20 +1199,30 @@ function renderBudgetPanel(){
  unit.querySelector('[value="percent"]').disabled=!income;if(!income)unit.value='money';unit.disabled=budgetSaving;const percent=unit.value==='percent';
  document.querySelector('#budgetEditHint').textContent=income?'Arraste para distribuir sua renda. O gráfico acompanha a prévia; os limites são salvos em reais.':'Arraste para ajustar em reais. Para usar percentuais, cadastre sua renda em Ganhos e fixos.';
  limitsList.innerHTML=categories.map((name,index)=>{
+  const group=BUDGET_GROUPS.find(group=>group.id===name),label=group.label;
   const limit=+configured[name]||0,scale=budgetSliderScale(limit,income,totals[name]||0),color=BUDGET_COLORS[index%BUDGET_COLORS.length];
-  return `<article class="limit-row" data-budget-category="${esc(name)}" style="--category-color:${color}"><div class="budget-card-heading"><div class="budget-category"><strong><i aria-hidden="true"></i>${esc(name)}</strong><span data-usage-label></span></div><label class="budget-limit-input"><small>${percent?'Limite em %':'Limite em R$'}</small><input aria-label="${percent?'Percentual da renda':'Limite em reais'} para ${esc(name)}" data-limit-category="${esc(name)}" type="number" min="0" max="${percent?10000000/income*100:10000000}" step="0.01" inputmode="decimal" ${budgetSaving?'disabled':''}></label></div><div class="budget-slider-area"><div class="budget-slider-label"><span>Arraste para ajustar</span><output data-slider-value></output></div><input class="budget-slider" data-budget-slider="${esc(name)}" type="range" min="0" max="${scale.max}" step="${scale.step}" value="${scale.value}" aria-label="Ajustar limite de ${esc(name)}" ${budgetSaving?'disabled':''}><div class="budget-slider-scale" aria-hidden="true"><span>${income?'0%':'R$ 0'}</span><span data-scale-max></span></div></div><div class="budget-card-stats"><div><small>Já gastou</small><strong>${brl(totals[name]||0)}</strong></div><div><small>Ainda pode gastar</small><strong data-budget-remaining></strong></div><div class="limit-track" aria-hidden="true"><i></i></div></div><div class="limit-foot"><span data-budget-status></span><details class="budget-actions"><summary>Opções</summary><div><button type="button" class="text-button" data-remove-limit="${esc(name)}" ${budgetSaving?'disabled':''}>Remover limite</button>${!DEFAULT_CATEGORIES.has(name)?`<button type="button" class="text-button" data-edit-category="${esc(name)}" ${budgetSaving?'disabled':''}>Renomear</button><button type="button" class="text-button danger-text" data-remove-category="${esc(name)}" ${budgetSaving?'disabled':''}>Excluir categoria</button>`:''}</div></details></div></article>`;
+  return `<article class="limit-row" data-budget-category="${esc(name)}" style="--category-color:${color}"><div class="budget-card-heading"><div class="budget-category"><strong><i aria-hidden="true"></i>${esc(label)}</strong><p class="budget-group-description">${esc(group.description)}</p><span data-usage-label></span></div><label class="budget-limit-input"><small>${percent?'Limite em %':'Limite em R$'}</small><input aria-label="${percent?'Percentual da renda':'Limite em reais'} para ${esc(label)}" data-limit-category="${esc(name)}" type="number" min="0" max="${percent?10000000/income*100:10000000}" step="0.01" inputmode="decimal" ${budgetSaving?'disabled':''}></label></div><div class="budget-slider-area"><div class="budget-slider-label"><span>Arraste para ajustar</span><output data-slider-value></output></div><input class="budget-slider" data-budget-slider="${esc(name)}" type="range" min="0" max="${scale.max}" step="${scale.step}" value="${scale.value}" aria-label="Ajustar limite de ${esc(label)}" ${budgetSaving?'disabled':''}><div class="budget-slider-scale" aria-hidden="true"><span>${income?'0%':'R$ 0'}</span><span data-scale-max></span></div></div><div class="budget-card-stats"><div><small>Já gastou</small><strong>${brl(totals[name]||0)}</strong></div><div><small>Ainda pode gastar</small><strong data-budget-remaining></strong></div><div class="limit-track" aria-hidden="true"><i></i></div></div><div class="limit-foot"><span data-budget-status></span><details class="budget-actions"><summary>Opções</summary><div><button type="button" class="text-button" data-remove-limit="${esc(name)}" ${budgetSaving?'disabled':''}>Remover limite</button></div></details></div><details class="budget-group-details"><summary>O que entra neste grupo?</summary>${budgetGroupBreakdown(name,key)}</details></article>`;
  }).join('');
- limitsList.querySelectorAll('[data-budget-category]').forEach(row=>paintBudgetRow(row,+configured[row.dataset.budgetCategory]||0));paintBudgetOverview();renderBudgetHistory();
+ limitsList.querySelectorAll('[data-budget-category]').forEach(row=>paintBudgetRow(row,+configured[row.dataset.budgetCategory]||0));paintBudgetOverview();renderBudgetHistory();renderBudgetCategoryTools();
+}
+function budgetGroupBreakdown(id,key){
+ const names=[...new Set([...ALL_CATEGORIES,...DATA.filter(item=>item.date.startsWith(key)).map(item=>item.category),...Object.keys(BUDGETS[key]||{}).filter(name=>!BUDGET_GROUP_IDS.has(name))])].filter(name=>budgetGroupFor(name)===id);
+ const totals={};DATA.filter(item=>item.date.startsWith(key)).forEach(item=>totals[item.category]=(totals[item.category]||0)+item.amount);
+ return '<ul>'+names.map(name=>`<li><span>${esc(name)}</span><strong>${brl(totals[name]||0)}</strong></li>`).join('')+'</ul>';
+}
+function renderBudgetCategoryTools(){
+ const custom=ALL_CATEGORIES.filter(name=>!DEFAULT_CATEGORIES.has(name));
+ document.querySelector('#budgetCustomCategories').innerHTML=custom.map(name=>`<div><span>${esc(name)} <small>${esc(budgetGroupLabel(budgetGroupFor(name)))}</small></span><button class="text-button" type="button" data-edit-category="${esc(name)}">Renomear</button><button class="text-button danger-text" type="button" data-remove-category="${esc(name)}">Excluir</button></div>`).join('');
 }
 function renderBudgetHistory(){
- const months=[...new Set([...Object.keys(BUDGETS),...DATA.map(item=>item.date.slice(0,7))])].sort().reverse();document.querySelector('#budgetHistoryList').innerHTML=months.length?months.map(value=>{const limits=BUDGETS[value]||{},spentByCategory=categoryTotals(value),limit=Object.values(limits).reduce((s,v)=>s+(+v||0),0),spent=Object.entries(spentByCategory).filter(([name])=>limits[name]>0).reduce((s,[,v])=>s+v,0);return `<button class="history-month" data-history-month="${value}" ${budgetSaving?'disabled':''}><span>${monthLabel(value)}</span><strong>${brl(limit)}</strong><span>${brl(spent)} gastos</span><b class="${limit-spent>=0?'positive':'negative'}">${brl(limit-spent)}</b></button>`}).join(''):'<div class="empty">O histórico aparecerá depois do primeiro limite.</div>';
+ const months=[...new Set([...Object.keys(BUDGETS),...DATA.map(item=>item.date.slice(0,7))])].sort().reverse();document.querySelector('#budgetHistoryList').innerHTML=months.length?months.map(value=>{const limits=savedBudgetGroups(value),spentByCategory=categoryTotals(value),limit=Object.values(limits).reduce((s,v)=>s+(+v||0),0),spent=Object.entries(spentByCategory).filter(([name])=>limits[name]>0).reduce((s,[,v])=>s+v,0);return `<button class="history-month" data-history-month="${value}" ${budgetSaving?'disabled':''}><span>${monthLabel(value)}</span><strong>${brl(limit)}</strong><span>${brl(spent)} gastos</span><b class="${limit-spent>=0?'positive':'negative'}">${brl(limit-spent)}</b></button>`}).join(''):'<div class="empty">O histórico aparecerá depois do primeiro limite.</div>';
 }
 function previewBudgetLimit(input){
  if(budgetSaving||!input.validity.valid)return;
  const key=budgetMonth.value,row=input.closest('[data-budget-category]'),name=row.dataset.budgetCategory,income=budgetIncomeFor(key),percent=input.matches('[data-budget-slider]')?income>0:document.querySelector('#budgetUnit').value==='percent';
  const value=Math.min(10000000,Math.round(Math.max(0,+input.value||0)*(percent?income/100:1)*100)/100);
  const drafts=budgetDrafts.get(key)||{};
- if(value===(+BUDGETS[key]?.[name]||0))delete drafts[name];else drafts[name]=value;
+ if(value===(+savedBudgetGroups(key)[name]||0))delete drafts[name];else drafts[name]=value;
  if(Object.keys(drafts).length)budgetDrafts.set(key,drafts);else budgetDrafts.delete(key);
  budgetSaveError='';paintBudgetRow(row,value,input);paintBudgetOverview();limitsMessage.hidden=true;
  const option=budgetMonth.selectedOptions[0];if(option)option.textContent=monthLabel(key)+(budgetDrafts.has(key)?' · em edição':'');
@@ -1199,12 +1247,18 @@ document.querySelector('#saveBudgetChanges').addEventListener('click',async()=>{
  finally{budgetSaving=false;render();renderBudgetPanel();limitsMessage.hidden=false;document.querySelector(budgetDrafts.has(key)?'#saveBudgetChanges':'#budgetUnit').focus({preventScroll:true})}
 });
 window.addEventListener('beforeunload',event=>{if(budgetDrafts.size){event.preventDefault();event.returnValue=''}});
-limitsList.addEventListener('click',async event=>{if(budgetSaving)return;const limitButton=event.target.closest('[data-remove-limit]'),categoryButton=event.target.closest('[data-remove-category]'),editButton=event.target.closest('[data-edit-category]');if(editButton){const oldName=editButton.dataset.editCategory,newName=prompt('Novo nome da categoria:',oldName)?.trim();if(!newName||newName===oldName)return;const response=await fetch(`/api/categories/${encodeURIComponent(oldName)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:newName})}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível renomear');ALL_CATEGORIES=ALL_CATEGORIES.map(item=>item===oldName?result.category:item);DATA.forEach(item=>{if(item.category===oldName)item.category=result.category});Object.values(BUDGETS).forEach(values=>{if(Object.hasOwn(values,oldName)){values[result.category]=values[oldName];delete values[oldName]}});for(const drafts of budgetDrafts.values()){if(Object.hasOwn(drafts,oldName)){drafts[result.category]=drafts[oldName];delete drafts[oldName]}}refreshCategoryOptions();render();renderBudgetPanel();return}if(!limitButton&&!categoryButton)return;const name=(limitButton?.dataset.removeLimit||categoryButton?.dataset.removeCategory);if(limitButton){const row=limitButton.closest('[data-budget-category]'),input=row.querySelector('[data-limit-category]');input.value=0;previewBudgetLimit(input);row.querySelector('details').open=false;return}if(!confirm(categoryButton?`Excluir a categoria “${name}”?`:`Remover o limite de “${name}”?`))return;const endpoint=categoryButton?`/api/categories/${encodeURIComponent(name)}`:`/api/budgets/${budgetMonth.value}/${encodeURIComponent(name)}`;const response=await fetch(endpoint,{method:'DELETE'}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível excluir');if(categoryButton){ALL_CATEGORIES=ALL_CATEGORIES.filter(item=>item!==name);for(const [key,drafts] of budgetDrafts){delete drafts[name];if(!Object.keys(drafts).length)budgetDrafts.delete(key)}}(categoryButton?Object.values(BUDGETS):[BUDGETS[budgetMonth.value]||{}]).forEach(values=>delete values[name]);render();renderBudgetPanel();refreshCategoryOptions()});
+document.querySelector('.budget-page').addEventListener('click',async event=>{if(budgetSaving)return;const limitButton=event.target.closest('[data-remove-limit]'),categoryButton=event.target.closest('[data-remove-category]'),editButton=event.target.closest('[data-edit-category]');if(editButton){const oldName=editButton.dataset.editCategory,newName=prompt('Novo nome da categoria:',oldName)?.trim();if(!newName||newName===oldName)return;const response=await fetch(`/api/categories/${encodeURIComponent(oldName)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:newName})}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível renomear');ALL_CATEGORIES=ALL_CATEGORIES.map(item=>item===oldName?result.category:item);DATA.forEach(item=>{if(item.category===oldName)item.category=result.category});Object.values(BUDGETS).forEach(values=>{if(Object.hasOwn(values,oldName)){values[result.category]=values[oldName];delete values[oldName]}});for(const drafts of budgetDrafts.values()){if(Object.hasOwn(drafts,oldName)){drafts[result.category]=drafts[oldName];delete drafts[oldName]}}refreshCategoryOptions();render();renderBudgetPanel();return}if(!limitButton&&!categoryButton)return;const name=(limitButton?.dataset.removeLimit||categoryButton?.dataset.removeCategory);if(limitButton){const row=limitButton.closest('[data-budget-category]'),input=row.querySelector('[data-limit-category]');input.value=0;previewBudgetLimit(input);row.querySelector('details').open=false;return}if(!confirm(categoryButton?`Excluir a categoria “${name}”?`:`Remover o limite de “${name}”?`))return;const endpoint=categoryButton?`/api/categories/${encodeURIComponent(name)}`:`/api/budgets/${budgetMonth.value}/${encodeURIComponent(name)}`;const response=await fetch(endpoint,{method:'DELETE'}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível excluir');if(categoryButton){ALL_CATEGORIES=ALL_CATEGORIES.filter(item=>item!==name);for(const [key,drafts] of budgetDrafts){delete drafts[name];if(!Object.keys(drafts).length)budgetDrafts.delete(key)}}(categoryButton?Object.values(BUDGETS):[BUDGETS[budgetMonth.value]||{}]).forEach(values=>delete values[name]);render();renderBudgetPanel();refreshCategoryOptions()});
 document.querySelector('#budgetHistoryList').addEventListener('click',event=>{const button=event.target.closest('[data-history-month]');if(button){budgetMonth.value=button.dataset.historyMonth;renderBudgetPanel()}});budgetMonth.addEventListener('change',()=>{budgetSaveError='';limitsMessage.hidden=true;renderBudgetPanel()});document.querySelector('#budgetUnit').addEventListener('change',renderBudgetPanel);
 const categoryModal=document.querySelector('#categoryModal'),categoryForm=document.querySelector('#categoryForm');document.querySelector('#newCategoryButton').onclick=()=>{categoryModal.hidden=false;categoryForm.name.focus()};document.querySelector('#closeCategoryModal').onclick=()=>categoryModal.hidden=true;categoryForm.addEventListener('submit',async event=>{event.preventDefault();const name=categoryForm.name.value.trim(),message=document.querySelector('#categoryMessage');try{const response=await fetch('/api/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}),result=await response.json();if(!response.ok)throw new Error(result.error);if(!ALL_CATEGORIES.includes(result.category))ALL_CATEGORIES.push(result.category);categoryModal.hidden=true;categoryForm.reset();refreshCategoryOptions();renderBudgetPanel()}catch(error){message.textContent=error.message;message.className='message error';message.hidden=false}});
 const DEFAULT_CATEGORIES=new Set(["Alimentação","Mercado","Transporte","Moradia","Saúde","Educação","Lazer","Compras","Assinaturas","Contas","Viagem","Presentes","Outros"]);
 function refreshCategoryOptions(){const selects=[form.elements.category,...document.querySelectorAll('.statement-category')];selects.forEach(select=>{if(!select)return;const current=select.value;select.innerHTML=ALL_CATEGORIES.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join('');if(ALL_CATEGORIES.includes(current))select.value=current})}
-function renderDashboardBudgets(){const totals=categoryTotals(month.value),configured=BUDGETS[month.value]||{},items=Object.entries(configured).filter(([,limit])=>+limit>0).sort((a,b)=>(totals[b[0]]||0)/(+b[1]||1)-(totals[a[0]]||0)/(+a[1]||1)),total=items.reduce((sum,[,limit])=>sum+(+limit||0),0),used=items.reduce((sum,[name])=>sum+(totals[name]||0),0),remaining=total-used,risk=items.filter(([name,limit])=>(totals[name]||0)/(+limit||1)>=.8).length;document.querySelector('#budgetTotalSummary').textContent=brl(total);document.querySelector('#budgetUsedSummary').textContent=brl(used);const remainingEl=document.querySelector('#budgetRemainingSummary');remainingEl.textContent=total?brl(remaining):'Sem limites';remainingEl.className=remaining>=0?'positive':'negative';document.querySelector('#budgetRiskSummary').textContent=risk?`${risk} ${risk===1?'categoria':'categorias'}`:'Tudo certo';document.querySelector('#budgetList').innerHTML=items.length?items.map(([name,rawLimit])=>{const limit=+rawLimit,used=totals[name]||0,remaining=limit-used,level=budgetLevel(used,limit),width=Math.min(used/limit*100,100);return `<div class="dashboard-limit ${level}"><div class="bar-head"><strong>${esc(name)}</strong><span>${brl(used)} de ${brl(limit)}</span></div><div class="limit-track"><i style="width:${width}%"></i></div><div class="budget-status ${level}">${remaining>=0?`${brl(remaining)} disponíveis`:`${brl(-remaining)} acima do limite`}</div></div>`}).join(''):'<div class="empty">Defina seus limites em Planejamento.</div>'}
+function renderDashboardBudgets(){
+ const totals=categoryTotals(month.value),configured=savedBudgetGroups(month.value),items=Object.entries(configured).filter(([,limit])=>+limit>0).sort((a,b)=>(totals[b[0]]||0)/(+b[1]||1)-(totals[a[0]]||0)/(+a[1]||1));
+ const total=items.reduce((sum,[,limit])=>sum+(+limit||0),0),used=items.reduce((sum,[name])=>sum+(totals[name]||0),0),remaining=total-used,risk=items.filter(([name,limit])=>(totals[name]||0)/(+limit||1)>=.8).length;
+ document.querySelector('#budgetTotalSummary').textContent=brl(total);document.querySelector('#budgetUsedSummary').textContent=brl(used);const remainingEl=document.querySelector('#budgetRemainingSummary');remainingEl.textContent=total?brl(remaining):'Sem limites';remainingEl.className=remaining>=0?'positive':'negative';document.querySelector('#budgetRiskSummary').textContent=risk?`${risk} ${risk===1?'grupo':'grupos'}`:'Tudo certo';
+ document.querySelector('#budgetList').innerHTML=items.length?items.map(([name,rawLimit])=>{const limit=+rawLimit,used=totals[name]||0,remaining=limit-used,level=budgetLevel(used,limit),width=Math.min(used/limit*100,100);return `<div class="dashboard-limit ${level}"><div class="bar-head"><strong>${esc(budgetGroupLabel(name))}</strong><span>${brl(used)} de ${brl(limit)}</span></div><div class="limit-track"><i style="width:${width}%"></i></div><div class="budget-status ${level}">${remaining>=0?`${brl(remaining)} disponíveis`:`${brl(-remaining)} acima do limite`}</div></div>`}).join(''):'<div class="empty">Defina seus limites em Planejamento.</div>';
+ document.querySelector('#budgetAlerts').innerHTML=items.filter(([name,limit])=>(totals[name]||0)/limit>=.8).map(([name,limit])=>{const used=totals[name]||0,level=budgetLevel(used,limit);return `<div class="alert ${level}">${esc(budgetGroupLabel(name))}: ${used>limit?`${brl(used-limit)} acima do limite`:`${brl(limit-used)} disponíveis`}</div>`}).join('');
+}
 const baseRender=render;render=function(){baseRender();renderDashboardBudgets()};
 renderDashboardBudgets();
 document.querySelector('#quickExpense').addEventListener('click',()=>document.querySelector('[data-panel="entryPanel"]').click());

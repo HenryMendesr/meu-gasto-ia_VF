@@ -325,3 +325,25 @@
   .budget-save-buttons { width: 100%; }
   .budget-save-buttons button { flex: 1; min-width: 0; }
 }
+
+/* Five planning groups keep detailed categories out of the main controls. */
+.budget-group-count { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.budget-category .budget-group-description { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; max-width: 340px; }
+.budget-group-details { margin-top: 8px; border-top: 1px solid var(--line); }
+.budget-group-details summary { padding: 13px 0 5px; color: var(--muted); font-size: 11px; cursor: pointer; }
+.budget-group-details ul { margin: 12px 0 4px; padding: 0; list-style: none; display: grid; gap: 10px; }
+.budget-group-details li { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--muted); }
+.budget-group-details li strong { color: var(--ink); font-weight: 500; white-space: nowrap; }
+.budget-category-tools { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 18px; }
+.budget-category-tools > summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.budget-category-tools > p { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 680px; }
+#budgetCustomCategories { display: grid; gap: 10px; margin: 16px 0; }
+#budgetCustomCategories > div { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+#budgetCustomCategories > div > span { flex: 1; font-size: 12px; overflow-wrap: anywhere; }
+#budgetCustomCategories small { display: block; font-size: 10px; color: var(--muted); margin-top: 4px; }
+@media(max-width:600px) {
+ .budget-group-count { font-size: 11px; }
+ .budget-category .budget-group-description { font-size: 10px; }
+ .budget-card-heading { align-items: flex-start; }
+ #budgetCustomCategories > div { flex-wrap: wrap; }
+}

@@ -8,9 +8,11 @@ from decimal import Decimal
 
 try:
     from src import investments, portfolio_ops as ops
+    from src.budget_groups import GROUP_IDS
 except ImportError:
     import investments
     import portfolio_ops as ops
+    from budget_groups import GROUP_IDS
 
 TABLES = {
     'expenses': ['expense_date','amount','place','category','payment','description','installment_group','installment_number','installment_count','original_total','finance_details'],
@@ -71,6 +73,7 @@ def _validate(payload):
             data[table].append({key:source.get(key) for key in columns})
     categories={text(row['name'],40,True) for row in data['budget_categories']}
     if not categories:raise ValueError('O backup não contém categorias')
+    if any(name.casefold().startswith('@budget:') for name in categories):raise ValueError('Categoria reservada aos grupos de planejamento')
     for row in data['budget_categories']:row['name']=text(row['name'],40,True)
     if len(categories)!=len(data['budget_categories']):raise ValueError('Categoria duplicada no backup')
     for table,keys in [('incomes',('month',)),('budgets',('month','category'))]:
@@ -113,7 +116,7 @@ def _validate(payload):
         row['source']=text(row['source'],100,True);row['category']=text(row['category'],40,True);row['description']=text(row['description'],200)
     for row in data['budgets']:
         day(str(row['month'])+'-01');row['amount']=amount(row['amount'])
-        if row['category'] not in categories:raise ValueError('Limite com categoria inválida')
+        if row['category'] not in categories | GROUP_IDS:raise ValueError('Limite com categoria inválida')
     portfolio=copy.deepcopy(original.get('portfolio'))
     if not isinstance(portfolio,dict) or not isinstance(portfolio.get('investments'),list):raise ValueError('Carteira inválida no backup')
     for key in ('history','wealth_history','goals','audit_log','feedback'):

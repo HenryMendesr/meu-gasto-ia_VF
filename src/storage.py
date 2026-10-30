@@ -8,6 +8,11 @@ from pathlib import Path
 import sqlite3
 from threading import Lock
 try:
+    from src.budget_groups import GROUP_IDS
+except ImportError:
+    from budget_groups import GROUP_IDS
+
+try:
     from src.finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
 except ImportError:
     from finance_rules import installment_plan, expense_finance, prepare_debt_update, debt_payment_metadata, debt_revision
@@ -324,7 +329,7 @@ def set_budget(payload: dict, user_id: int | None = None) -> dict:
         amount = round(float(payload.get("limit", 0)), 2)
     except (TypeError, ValueError) as exc:
         raise ValueError("Mês ou limite inválido") from exc
-    if category not in set(read_categories()) or amount < 0 or amount > 10_000_000:
+    if category not in set(read_categories()) | GROUP_IDS or amount < 0 or amount > 10_000_000:
         raise ValueError("Categoria ou limite inválido")
     with LOCK:
         backup = create_backup()
@@ -351,6 +356,8 @@ def read_categories(user_id: int | None = None) -> list[str]:
 
 def add_category(name: str, user_id: int | None = None) -> str:
     name = str(name).strip()
+    if name.casefold().startswith("@budget:"):
+        raise ValueError("Esse nome é reservado aos grupos de planejamento")
     if len(name) < 2 or len(name) > 40:
         raise ValueError("Use um nome de categoria entre 2 e 40 caracteres")
     with LOCK:
@@ -375,6 +382,8 @@ def delete_category(name: str, user_id: int | None = None) -> None:
 
 def rename_category(name: str, new_name: str, user_id: int | None = None) -> str:
     name, new_name = str(name).strip(), str(new_name).strip()
+    if new_name.casefold().startswith("@budget:"):
+        raise ValueError("Esse nome é reservado aos grupos de planejamento")
     if name in CATEGORIES:
         raise ValueError("As categorias padrão não podem ser renomeadas")
     if len(new_name) < 2 or len(new_name) > 40:

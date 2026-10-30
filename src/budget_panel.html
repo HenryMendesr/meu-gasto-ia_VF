@@ -6,7 +6,7 @@
           <h2>Um plano para o seu mês.</h2>
           <p>Arraste, experimente e encontre o equilíbrio do seu mês.</p>
         </div>
-        <button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria</button>
+        <span class="budget-group-count">5 grupos para organizar seu mês</span>
       </header>
       <div class="budget-toolbar">
         <label>Mês de referência<select id="budgetMonth" class="field"></select></label>
@@ -17,7 +17,7 @@
       </div>
       <section class="budget-summary" aria-label="Resumo dos limites">
         <div><span>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div>
-        <div><span>Gasto nas categorias com limite</span><strong id="budgetUsed">R$ 0,00</strong></div>
+        <div><span>Gasto nos grupos com limite</span><strong id="budgetUsed">R$ 0,00</strong></div>
         <div><span>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
       </section>
       <div id="limitsMessage" class="message" role="status" hidden></div>
@@ -32,9 +32,9 @@
           <div id="budgetLegend" class="budget-legend"></div>
           <p id="budgetUnbounded" class="budget-unbounded"></p>
         </aside>
-        <section class="limits-section" aria-label="Ajustar limites por categoria">
+        <section class="limits-section" aria-label="Ajustar limites por grupo">
           <div class="section-title">
-            <div><h3>Ajuste seus limites</h3><p>Puxe a bolinha para escolher quanto gastar.</p></div>
+            <div><h3>Ajuste seus limites</h3><p>Um limite por grupo. Menos ajustes para cuidar.</p></div>
             <label class="budget-unit-label">Editar em
               <select id="budgetUnit" aria-label="Unidade de edição dos limites">
                 <option value="money">Reais (R$)</option>
@@ -60,6 +60,12 @@
         <div class="section-title"><h3>Histórico mensal</h3><span>Limites salvos, gastos e saldo</span></div>
         <div id="budgetHistoryList"></div>
       </section>
+      <details class="budget-category-tools">
+        <summary>Categorias dos lançamentos</summary>
+        <p>Os gastos continuam detalhados no histórico. No planejamento, eles são reunidos nos cinco grupos acima. Categorias personalizadas sem associação entram em Outros.</p>
+        <div id="budgetCustomCategories"></div>
+        <button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria de gasto</button>
+      </details>
     </section>
     <div id="categoryModal" class="modal" hidden>
       <section class="modal-card compact-modal">
