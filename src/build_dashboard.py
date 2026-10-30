@@ -185,7 +185,7 @@ safe_investments = json.dumps(initial_investments, ensure_ascii=False, separator
 html = html.replace("let DATA=", f"const INVESTMENT_DATA={safe_investments};\nlet DATA=", 1)
 html = html.replace("__EXPENSE_FINANCE_JS__", (ROOT / "src/expense_finance.js").read_text(encoding="utf-8"))
 html = html.replace('  <div class="foot">', (ROOT / 'src/trust_panel.html').read_text(encoding='utf-8') + '\n  <div class="foot">', 1)
-html = html.replace('</nav>', '<button id="openCreditCards" class="sidebar-card-link" type="button"><span aria-hidden="true">▰</span> Cartões</button></nav>', 1)
+html = html.replace('</nav>', '<button id="openCreditCards" class="sidebar-card-link" type="button" aria-label="Cartões"><span class="tab-icon" aria-hidden="true">▰</span><span>Cartões</span></button></nav>', 1)
 html = html.replace('<div class="detail-columns"><section class="flow-section"><div class="section-title"><h3>Entradas identificadas', (ROOT / 'src/salary_panel.html').read_text(encoding='utf-8') + '<div class="detail-columns"><section class="flow-section"><div class="section-title"><h3>Entradas identificadas', 1)
 html = html.replace('<section class="debt-contracts">', (ROOT / 'src/cards_panel.html').read_text(encoding='utf-8') + (ROOT / 'src/card_bills.html').read_text(encoding='utf-8') + '<section class="debt-contracts">', 1)
 html = html.replace('<div id="trustUpcoming" class="trust-upcoming"></div>', '<div><div id="trustUpcoming" class="trust-upcoming"></div><div id="creditUpcoming" class="credit-upcoming" hidden></div></div>', 1)
@@ -233,16 +233,6 @@ html=html.replace('<section id="homeWorkspace"',summary+'<section id="homeWorksp
 # Keep the exhaustive task list available without duplicating the direct home actions.
 a=html.index('<section class="card trust-card" id="dailyTasks">');b=html.index('</section>',a)+len('</section>')
 html=html[:a]+'<details class="home-extra"><summary>Outras pendências e conferências</summary>'+html[a:b]+'</details>'+html[b:]
-advanced=[]
-for panel,title,description in [('budgetsPanel','Planejar','Limites de gastos e metas'),('investmentsPanel','Investir','Carteira, cotações e resultados'),('debtsPanel','Dívidas','Contratos e parcelas')]:
-    start=html.index('<button class="tab" data-panel="'+panel+'"');end=html.index('</button>',start)+len('</button>')
-    button=html[start:end];html=html[:start]+html[end:]
-    button=button.replace('class="tab"','class="tab" data-nav-title="'+title+'"',1)
-    button=button.replace('<span>'+title+'</span>','<span class="ex-navigation-copy"><strong>'+title+'</strong><small>'+description+'</small></span>')
-    advanced.append(button)
-a=html.index('<button id="openCreditCards"');b=html.index('</button>',a)+len('</button>');cards_link=html[a:b];html=html[:a]+html[b:]
-more='<details id="moreNavigation" class="ex-navigation-more"><summary><span class="ex-more-icon" aria-hidden="true">•••</span><span id="moreNavigationLabel">Mais</span></summary><div class="ex-navigation-extra"><span class="ex-navigation-caption">Explore quando precisar</span>'+''.join(advanced)+cards_link+'</div></details>'
-html=html.replace('</nav>',more+'</nav>',1)
 html=html.replace('<span>Lançar</span></button>','<span>Registrar</span></button>',1)
 html=html.replace('Acompanhe as entradas e saídas. Seus cadastros ficam em Ganhos e fixos.','Veja seu mês e resolva o dia a dia aqui mesmo.',1)
 html=html.replace('Editar ganhos e fixos <span>→</span>','Ajustar ganhos <span>→</span>',1)
@@ -250,11 +240,13 @@ html=html.replace('</style>',(ROOT/'src/experience.css').read_text(encoding='utf
 html=html.replace('</script>',(ROOT/'src/experience.js').read_text(encoding='utf-8')+'\n</script>',1)
 
 icons = {
+    "≡": '<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/>',
+    "▰": '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/>',
     "⌁": '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
     "＋": '<path d="M12 5v14M5 12h14"/>',
     "◌": '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16M8 15h3M8 18h6"/>',
     "↗": '<path d="M3 17l6-6 4 4 8-10M15 5h6v6M3 21h18"/>',
-    "◷": '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/>',
+    "◷": '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z M9 7h6M9 11h6M9 15h3"/>',
 }
 for glyph, paths in icons.items():
     html = html.replace(f'<span class="tab-icon" aria-hidden="true">{glyph}</span>',
