@@ -164,7 +164,7 @@ investment_js = (ROOT / "src/asset_detail.js").read_text(encoding="utf-8") + "\n
 statement_css = (ROOT / "src/statement_panel.css").read_text(encoding="utf-8")
 statement_panel = (ROOT / "src/statement_panel.html").read_text(encoding="utf-8")
 statement_js = (ROOT / "src/statement_panel.js").read_text(encoding="utf-8")
-budget_css = (ROOT / "src/budget_panel.css").read_text(encoding="utf-8")
+budget_css = (ROOT / "src/vendor/open-props/tokens.css").read_text(encoding="utf-8") + "\n" + (ROOT / "src/budget_panel.css").read_text(encoding="utf-8")
 budget_panel = (ROOT / "src/budget_panel.html").read_text(encoding="utf-8")
 budget_js = (ROOT / "src/budget_panel.js").read_text(encoding="utf-8").replace("__BUDGET_GROUPS__", json.dumps(GROUPS, ensure_ascii=False))
 debt_css = (ROOT / "src/debts_panel.css").read_text(encoding="utf-8")

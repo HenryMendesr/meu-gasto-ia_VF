@@ -1,40 +1,27 @@
   <div id="budgetsPanel" class="panel" role="region" aria-label="Planejamento" hidden>
     <section class="budget-page">
-      <header class="section-heading">
-        <div>
-          <span class="eyebrow">Seu dinheiro, com direção</span>
-          <h2>Um plano para o seu mês.</h2>
-          <p>Arraste, experimente e encontre o equilíbrio do seu mês.</p>
+      <header class="budget-hero">
+        <div class="budget-hero-copy">
+          <span class="eyebrow">PLANEJAMENTO / ORÇAMENTO MENSAL</span>
+          <h2>Seu mês, no seu controle.</h2>
+          <p>Dê um destino para sua renda. Ajuste o plano no seu ritmo.</p>
+          <span class="budget-group-count"><i aria-hidden="true"></i>5 grupos. Um plano mais simples.</span>
         </div>
-        <span class="budget-group-count">5 grupos para organizar seu mês</span>
+        <div class="budget-toolbar">
+          <label>Mês do planejamento<select id="budgetMonth" class="field"></select></label>
+          <div class="budget-income"><span>Renda planejada · sem voucher</span><strong id="budgetIncome">—</strong></div>
+        </div>
       </header>
-      <div class="budget-toolbar">
-        <label>Mês de referência<select id="budgetMonth" class="field"></select></label>
-        <div class="budget-income">
-          <span>Renda planejada do mês · sem voucher</span>
-          <strong id="budgetIncome">—</strong>
-        </div>
-      </div>
       <section class="budget-summary" aria-label="Resumo dos limites">
-        <div><span>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div>
-        <div><span>Gasto nos grupos com limite</span><strong id="budgetUsed">R$ 0,00</strong></div>
-        <div><span>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
+        <div class="budget-metric budget-metric-plan"><span><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 9h8M8 13h5M8 17h3"/></svg>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div>
+        <div class="budget-metric"><span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h14v12H5zM8 7V4h8v3M8 12h8"/></svg>Já utilizado nos limites</span><strong id="budgetUsed">R$ 0,00</strong></div>
+        <div class="budget-metric budget-metric-available"><span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
       </section>
       <div id="limitsMessage" class="message" role="status" hidden></div>
       <div class="budget-workspace">
-        <aside class="budget-allocation">
-          <span class="eyebrow">Distribuição do orçamento</span>
-          <h3>Cada parte tem um propósito.</h3>
-          <div id="budgetDonut" class="budget-donut" role="img" aria-label="Distribuição dos limites">
-            <div><strong id="budgetAllocationPercent">—</strong><span>da renda planejada</span></div>
-          </div>
-          <p id="budgetAllocationNote" class="budget-allocation-note"></p>
-          <div id="budgetLegend" class="budget-legend"></div>
-          <p id="budgetUnbounded" class="budget-unbounded"></p>
-        </aside>
         <section class="limits-section" aria-label="Ajustar limites por grupo">
           <div class="section-title">
-            <div><h3>Ajuste seus limites</h3><p>Um limite por grupo. Menos ajustes para cuidar.</p></div>
+            <div><h3>Ajuste seus limites</h3><p>Arraste a barra ou digite um valor exato.</p></div>
             <label class="budget-unit-label">Editar em
               <select id="budgetUnit" aria-label="Unidade de edição dos limites">
                 <option value="money">Reais (R$)</option>
@@ -55,6 +42,16 @@
             </div>
           </div>
         </section>
+        <aside class="budget-allocation">
+          <span class="eyebrow">Distribuição do orçamento</span>
+          <h3>O desenho do seu mês.</h3>
+          <div id="budgetDonut" class="budget-donut" role="img" aria-label="Distribuição dos limites">
+            <div><strong id="budgetAllocationPercent">—</strong><span>da renda planejada</span></div>
+          </div>
+          <p id="budgetAllocationNote" class="budget-allocation-note"></p>
+          <div id="budgetLegend" class="budget-legend"></div>
+          <p id="budgetUnbounded" class="budget-unbounded"></p>
+        </aside>
       </div>
       <section class="budget-history">
         <div class="section-title"><h3>Histórico mensal</h3><span>Limites salvos, gastos e saldo</span></div>
