@@ -1,12 +1,74 @@
   <div id="budgetsPanel" class="panel" role="region" aria-label="Planejamento" hidden>
     <section class="budget-page">
-      <header class="section-heading"><div><span class="eyebrow">Seu dinheiro, com direção</span><h2>Um plano para o seu mês.</h2><p>Distribua sua renda e saiba quanto ainda pode gastar.</p></div><button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria</button></header>
-      <div class="budget-toolbar"><label>Mês de referência<select id="budgetMonth" class="field"></select></label><div class="budget-income"><span>Renda planejada do mês · sem voucher</span><strong id="budgetIncome">—</strong></div></div>
-      <section class="budget-summary" aria-label="Resumo dos limites"><div><span>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div><div><span>Gasto nas categorias com limite</span><strong id="budgetUsed">R$ 0,00</strong></div><div><span>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div></section>
+      <header class="section-heading">
+        <div>
+          <span class="eyebrow">Seu dinheiro, com direção</span>
+          <h2>Um plano para o seu mês.</h2>
+          <p>Arraste, experimente e encontre o equilíbrio do seu mês.</p>
+        </div>
+        <button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria</button>
+      </header>
+      <div class="budget-toolbar">
+        <label>Mês de referência<select id="budgetMonth" class="field"></select></label>
+        <div class="budget-income">
+          <span>Renda planejada do mês · sem voucher</span>
+          <strong id="budgetIncome">—</strong>
+        </div>
+      </div>
+      <section class="budget-summary" aria-label="Resumo dos limites">
+        <div><span>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div>
+        <div><span>Gasto nas categorias com limite</span><strong id="budgetUsed">R$ 0,00</strong></div>
+        <div><span>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
+      </section>
       <div id="limitsMessage" class="message" role="status" hidden></div>
-      <div class="budget-workspace"><aside class="budget-allocation"><span class="eyebrow">Distribuição do orçamento</span><h3>Cada parte tem um propósito.</h3><div id="budgetDonut" class="budget-donut" role="img" aria-label="Distribuição dos limites"><div><strong id="budgetAllocationPercent">—</strong><span>da renda planejada</span></div></div><p id="budgetAllocationNote" class="budget-allocation-note"></p><div id="budgetLegend" class="budget-legend"></div><p id="budgetUnbounded" class="budget-unbounded"></p></aside>
-      <section class="limits-section"><div class="section-title"><div><h3>Limites mensais</h3><p>Ajuste os valores e acompanhe o uso.</p></div><label class="budget-unit-label">Editar em<select id="budgetUnit" aria-label="Unidade de edição dos limites"><option value="money">Reais (R$)</option><option value="percent">% da renda</option></select></label></div><p id="budgetEditHint" class="budget-edit-hint">Os valores são salvos ao sair do campo.</p><div class="budget-table-head" aria-hidden="true"><span>Categoria / utilização</span><span>Gasto</span><span>Limite</span><span>Disponível</span></div><div id="limitsList" class="limits-list"></div></section></div>
-      <section class="budget-history"><div class="section-title"><h3>Histórico mensal</h3><span>Limite, gasto e saldo</span></div><div id="budgetHistoryList"></div></section>
+      <div class="budget-workspace">
+        <aside class="budget-allocation">
+          <span class="eyebrow">Distribuição do orçamento</span>
+          <h3>Cada parte tem um propósito.</h3>
+          <div id="budgetDonut" class="budget-donut" role="img" aria-label="Distribuição dos limites">
+            <div><strong id="budgetAllocationPercent">—</strong><span>da renda planejada</span></div>
+          </div>
+          <p id="budgetAllocationNote" class="budget-allocation-note"></p>
+          <div id="budgetLegend" class="budget-legend"></div>
+          <p id="budgetUnbounded" class="budget-unbounded"></p>
+        </aside>
+        <section class="limits-section" aria-label="Ajustar limites por categoria">
+          <div class="section-title">
+            <div><h3>Ajuste seus limites</h3><p>Puxe a bolinha para escolher quanto gastar.</p></div>
+            <label class="budget-unit-label">Editar em
+              <select id="budgetUnit" aria-label="Unidade de edição dos limites">
+                <option value="money">Reais (R$)</option>
+                <option value="percent">% da renda</option>
+              </select>
+            </label>
+          </div>
+          <p id="budgetEditHint" class="budget-edit-hint">Veja a prévia enquanto ajusta. Salve quando estiver do seu jeito.</p>
+          <div id="limitsList" class="limits-list"></div>
+          <div id="budgetSavebar" class="budget-savebar" hidden>
+            <div class="budget-save-copy">
+              <strong id="budgetDraftCount"></strong>
+              <span id="budgetDraftHint" role="status">A prévia só vira seu limite ao salvar.</span>
+            </div>
+            <div class="budget-save-buttons">
+              <button id="discardBudgetChanges" class="secondary" type="button">Desfazer</button>
+              <button id="saveBudgetChanges" class="save" type="button">Salvar alterações</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <section class="budget-history">
+        <div class="section-title"><h3>Histórico mensal</h3><span>Limites salvos, gastos e saldo</span></div>
+        <div id="budgetHistoryList"></div>
+      </section>
     </section>
-    <div id="categoryModal" class="modal" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2>Nova categoria</h2><button id="closeCategoryModal" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="categoryForm" class="entry-grid"><label class="wide">Nome da categoria<input name="name" maxlength="40" placeholder="Ex.: Gasolina" required></label><button class="save" type="submit">Criar categoria</button><div id="categoryMessage" class="message" hidden></div></form></section></div>
+    <div id="categoryModal" class="modal" hidden>
+      <section class="modal-card compact-modal">
+        <div class="modal-head"><h2>Nova categoria</h2><button id="closeCategoryModal" class="icon-button" type="button" aria-label="Fechar">×</button></div>
+        <form id="categoryForm" class="entry-grid">
+          <label class="wide">Nome da categoria<input name="name" maxlength="40" placeholder="Ex.: Gasolina" required></label>
+          <button class="save" type="submit">Criar categoria</button>
+          <div id="categoryMessage" class="message" hidden></div>
+        </form>
+      </section>
+    </div>
   </div>

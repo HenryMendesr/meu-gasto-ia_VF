@@ -82,13 +82,333 @@
 @media(max-width:800px){.statement-row{grid-template-columns:28px 1fr 105px}.statement-row .statement-kind{grid-column:1/3}.statement-row .statement-category{grid-column:1/-1}.income-flow{padding:22px 5px}}
 .statement-place{display:grid;min-width:0}.statement-place strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.statement-place small{color:var(--muted);font-size:10px}.statement-row.transfer{opacity:.7;border-style:dashed}.statement-insights{margin:14px 0;padding:16px;border-radius:16px;background:var(--surface)}.insight-head{display:flex;justify-content:space-between;gap:12px}.insight-head span,.statement-insights p{color:var(--muted);font-size:11px}.income-suggestion{display:flex;align-items:flex-start;gap:10px;margin-top:13px;padding-top:13px;border-top:1px solid var(--line)}.income-suggestion input{width:18px;height:18px}.income-suggestion span,.recurring-summary{display:grid;gap:3px}.income-suggestion small,.recurring-summary span{color:var(--muted);font-size:11px}.recurring-summary{margin-top:14px}
 
-.budget-page{max-width:980px;margin:auto;padding:4px 0 40px}.section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:18px 4px 24px;border-bottom:1px solid var(--line)}.section-heading h2{margin:3px 0;font-size:clamp(27px,5vw,40px);letter-spacing:-.045em}.section-heading p{margin:0;color:var(--muted)}.eyebrow{color:var(--teal-2);font-size:10px;font-weight:850;letter-spacing:.13em;text-transform:uppercase}.budget-period{padding:18px 4px}.budget-period label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:800;color:var(--muted)}.budget-summary{display:grid;grid-template-columns:repeat(3,1fr);padding:22px 0;border-block:1px solid var(--line)}.budget-summary>div{display:grid;gap:5px;padding:0 24px;border-right:1px solid var(--line)}.budget-summary>div:last-child{border:0}.budget-summary span{color:var(--muted);font-size:11px}.budget-summary strong{font-size:clamp(21px,4vw,30px);letter-spacing:-.035em}.limits-section,.budget-history{padding:28px 4px 0}.section-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}.section-title h3{margin:0;font-size:17px}.section-title span{color:var(--muted);font-size:11px}.limit-row{padding:18px 0;border-bottom:1px solid var(--line)}.limit-head,.limit-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}.limit-head>div{display:grid;gap:2px}.limit-head span,.limit-foot{color:var(--muted);font-size:11px}.limit-head label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:10px;font-weight:800}.limit-head input{width:120px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:right;font-weight:800}.limit-track{height:8px;margin:13px 0 8px;border-radius:9px;background:#e9edf3;overflow:hidden}.limit-track i{display:block;height:100%;border-radius:inherit;background:var(--mint);transition:width .35s ease}.limit-row.warning .limit-track i{background:var(--amber)}.limit-row.over .limit-track i{background:var(--red)}.limit-row.over .limit-foot>span{color:var(--red);font-weight:800}.text-button{padding:4px 6px;border:0;background:transparent;color:var(--teal-2);font-size:10px;font-weight:800;cursor:pointer}.danger-text{color:var(--red)}.history-month{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;width:100%;padding:14px 4px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;cursor:pointer}.history-month>*:not(:first-child){text-align:right}.history-month span{color:var(--muted);font-size:11px}.compact-modal{max-width:480px}.dashboard-budget-overview .budget-row input{display:none}.dashboard-budget-overview .budget-row{grid-template-columns:1fr auto}.quick-expense{display:none}
-@media(max-width:700px){.section-heading{align-items:flex-start;flex-direction:column}.section-heading .secondary{width:100%}.budget-summary>div{padding:0 10px}.budget-summary strong{font-size:18px}.limit-head{align-items:flex-start}.limit-head label{display:grid;text-align:right}.limit-head input{width:108px}.limit-foot{align-items:flex-start}.limit-foot>div{display:grid;text-align:right}.history-month{grid-template-columns:1fr 1fr;gap:4px}.history-month>*:nth-child(even){text-align:right}.quick-expense{position:fixed;z-index:14;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));display:grid;place-items:center;width:54px;height:54px;border:0;border-radius:18px;background:var(--teal-2);color:var(--card);font-size:27px;box-shadow:0 14px 34px rgba(49,92,253,.32)}}
+/* Shared headings and actions used by the assembled dashboard. */
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 4px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.section-heading h2 {
+  margin: 3px 0;
+  font-size: clamp(27px, 5vw, 40px);
+  letter-spacing: -.045em;
+}
+.section-heading p { margin: 0; color: var(--muted); }
+.eyebrow {
+  color: var(--teal-2);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.section-title h3 { margin: 0; font-size: 17px; }
+.section-title > span { color: var(--muted); font-size: 11px; }
+.text-button {
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--teal-2);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.danger-text { color: var(--red); }
+.compact-modal { max-width: 480px; }
+.quick-expense { display: none; }
+.history-month {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  width: 100%;
+  gap: 12px;
+  padding: 16px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.history-month > :not(:first-child) { text-align: right; }
+.history-month span { color: var(--muted); font-size: 11px; }
+.history-month:hover { background: var(--surface); }
+.dashboard-budget-overview .budget-row input { display: none; }
+.dashboard-budget-overview .budget-row { grid-template-columns: 1fr auto; }
 
-/* Monthly budget workspace */
-.budget-page{max-width:1280px}.budget-toolbar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0}.budget-toolbar>label{display:grid;gap:8px;color:var(--muted);font-size:11px}.budget-toolbar select{min-width:200px}.budget-income{text-align:right;display:grid;gap:7px}.budget-income span{font-size:11px;color:var(--muted)}.budget-income strong{font-size:24px;letter-spacing:-.04em}.budget-page .budget-summary{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 0;margin-bottom:24px}.budget-page .budget-summary strong{font-size:clamp(20px,2.4vw,30px)}.budget-workspace{display:grid;grid-template-columns:280px minmax(0,1fr);gap:20px;align-items:start}.budget-allocation,.budget-page .limits-section{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:24px}.budget-allocation{position:sticky;top:24px}.budget-allocation h3{font-size:20px;line-height:1.35;letter-spacing:-.025em;margin:10px 0 26px}.budget-donut{width:202px;height:202px;border-radius:50%;display:grid;place-items:center;margin:0 auto 24px;transform:rotate(0deg)}.budget-donut>div{width:164px;height:164px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}.budget-donut strong{font-size:29px;letter-spacing:-.04em}.budget-donut span{font-size:10px;color:var(--muted)}.budget-allocation-note{font-size:12px;line-height:1.6;padding-bottom:18px;border-bottom:1px solid var(--line);color:var(--muted)}.budget-legend{display:grid;gap:14px;padding-top:10px}.budget-legend>div{display:grid;grid-template-columns:8px 1fr auto;gap:9px;align-items:center;font-size:11px}.budget-legend i,.budget-category strong i{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}.budget-legend b{font-size:10px;font-variant-numeric:tabular-nums}.budget-unbounded{font-size:11px;color:var(--amber);line-height:1.6;margin:20px 0 0}.budget-unbounded:empty{display:none}.budget-page .section-title{align-items:center;margin-bottom:14px}.budget-page .section-title p{color:var(--muted);font-size:12px;margin:6px 0 0}.budget-unit-label{display:grid;gap:5px;font-size:10px;color:var(--muted)}.budget-unit-label select{padding:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;font-size:12px}.budget-edit-hint{font-size:11px;line-height:1.6;color:var(--muted);margin:0 0 22px;max-width:530px}.budget-table-head,.budget-page .limit-row{display:grid;grid-template-columns:minmax(125px,1.6fr) minmax(75px,1fr) 105px minmax(75px,1fr);gap:14px;align-items:center}.budget-table-head{font-size:10px;color:var(--muted);padding-bottom:13px;border-bottom:1px solid var(--line)}.budget-table-head>*:not(:first-child){text-align:right}.budget-page .limit-row{padding:18px 0 10px}.budget-category strong{display:flex;gap:8px;align-items:center;font-size:12px}.budget-category strong i{background:var(--category-color)}.budget-category>span{font-size:10px;color:var(--muted)}.budget-page .limit-track{background:var(--surface);height:5px;margin:10px 0 5px}.budget-page .limit-track i{background:var(--category-color)}.budget-page .warning .limit-track i{background:var(--amber)}.budget-page .over .limit-track i{background:var(--red)}.budget-cell{text-align:right;font-size:12px;font-variant-numeric:tabular-nums}.budget-cell small{display:none}.budget-limit-input input{width:100%;min-width:0;text-align:right;padding:9px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit}.budget-limit-input input:focus{outline:2px solid var(--mint);outline-offset:2px}.budget-limit-input input:disabled{opacity:.4}.budget-page .limit-foot{grid-column:1/-1;min-height:12px;font-size:10px}.budget-page .limit-foot>span{color:var(--amber)}.budget-page .over .limit-foot>span{color:var(--red)}.budget-page .limit-foot .text-button{font-size:10px}.budget-page .budget-history{margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
-@media(max-width:1100px){.budget-workspace{grid-template-columns:1fr}.budget-allocation{position:static;display:grid;grid-template-columns:230px 1fr;column-gap:30px}.budget-allocation>.eyebrow,.budget-allocation>h3{grid-column:1}.budget-allocation>h3{margin-bottom:15px}.budget-donut{grid-column:1;grid-row:3/6}.budget-legend{grid-column:2;grid-row:1/6;align-content:center}.budget-allocation-note,.budget-unbounded{grid-column:1/-1;margin-bottom:0}.budget-allocation-note{border:0;padding-bottom:0}}
-@media(max-width:600px){.budget-toolbar{align-items:start;gap:12px}.budget-toolbar select{min-width:0;width:100%;max-width:180px}.budget-income{max-width:145px}.budget-income strong{font-size:20px}.budget-income span{line-height:1.5}.budget-page .budget-summary{padding:18px 0;gap:0}.budget-summary span{font-size:9px;line-height:1.5}.budget-page .budget-summary strong{font-size:15px}.budget-workspace{gap:16px}.budget-allocation{display:block;padding:20px}.budget-allocation h3{font-size:18px}.budget-donut{margin:20px auto}.budget-legend{grid-template-columns:1fr;gap:11px}.budget-page .limits-section{padding:20px 16px}.budget-page .section-title{align-items:flex-start}.budget-table-head{display:none}.budget-page .limit-row{grid-template-columns:1fr 1fr 1fr;gap:14px 10px;padding:20px 0 12px}.budget-category{grid-column:1/-1}.budget-cell{text-align:left}.budget-cell small{display:block;color:var(--muted);font-size:9px;margin-bottom:7px}.budget-limit-input input{text-align:left;padding:8px 6px}.budget-remaining{text-align:right}.budget-page .limit-foot>div{display:flex;flex-wrap:wrap;justify-content:flex-end}.budget-page .budget-history{padding:20px 16px}.budget-page .budget-history .section-title{display:block}.budget-page .budget-history .section-title>span{display:block;margin-top:7px}}
+/* Monthly planning: the controls are the primary content. */
+.budget-page {
+  max-width: 1280px;
+  margin: auto;
+  padding: 4px 0 40px;
+}
+.budget-page > .section-heading p { max-width: 550px; line-height: 1.6; }
+.budget-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 0;
+}
+.budget-toolbar > label { display: grid; gap: 8px; color: var(--muted); font-size: 11px; }
+.budget-toolbar select { min-width: 190px; }
+.budget-income { display: grid; gap: 6px; text-align: right; }
+.budget-income span { font-size: 11px; color: var(--muted); }
+.budget-income strong { font-size: 25px; font-weight: 600; letter-spacing: -.035em; }
+.budget-page .budget-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 22px 0;
+  margin: 0 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+.budget-page .budget-summary > div { display: grid; gap: 7px; padding: 0 22px; border-right: 1px solid var(--line); }
+.budget-page .budget-summary > div:last-child { border: 0; }
+.budget-page .budget-summary span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.budget-page .budget-summary strong { font-size: clamp(20px, 2.5vw, 29px); font-weight: 600; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.budget-workspace { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 24px; align-items: start; }
+.budget-allocation {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+  padding: 23px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+}
+.budget-allocation h3 { margin: 10px 0 24px; font-size: 20px; line-height: 1.35; font-weight: 600; letter-spacing: -.025em; }
+.budget-donut { display: grid; place-items: center; width: 196px; height: 196px; margin: 0 auto 22px; border-radius: 50%; }
+.budget-donut > div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; width: 158px; height: 158px; border-radius: 50%; background: var(--card); }
+.budget-page .budget-donut strong { max-width: calc(100% - 16px); font-size: 25px; font-weight: 600; letter-spacing: -.04em; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.budget-donut span { color: var(--muted); font-size: 10px; }
+.budget-allocation-note { margin: 0; padding-bottom: 18px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.65; }
+.budget-legend { display: grid; gap: 13px; padding-top: 18px; }
+.budget-legend > div { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 9px; align-items: center; font-size: 11px; }
+.budget-legend i { width: 7px; height: 7px; border-radius: 50%; }
+.budget-legend span { overflow-wrap: anywhere; }
+.budget-legend b { font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.budget-unbounded { margin: 18px 0 0; color: var(--amber); font-size: 11px; line-height: 1.65; }
+.budget-unbounded:empty { display: none; }
+.budget-page .limits-section { min-width: 0; padding: 0; border: 0; background: transparent; }
+.budget-page .limits-section > .section-title { align-items: center; margin: 0 0 12px; }
+.budget-page .limits-section h3 { font-size: 21px; letter-spacing: -.025em; }
+.budget-page .section-title p { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.budget-unit-label { display: grid; flex-shrink: 0; gap: 5px; color: var(--muted); font-size: 10px; }
+.budget-unit-label select { min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-size: 12px; }
+.budget-edit-hint { margin: 0 0 18px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.budget-table-head { display: none; }
+.budget-page .limits-list { display: grid; gap: 16px; }
+.budget-page .limit-row {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--category-color) 4%, var(--card)), var(--card));
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.budget-page .limit-row:focus-within { border-color: color-mix(in srgb, var(--category-color) 65%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--category-color) 18%, transparent); }
+.budget-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.budget-category { min-width: 0; }
+.budget-category strong { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.budget-category strong i { width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; background: var(--category-color); box-shadow: 0 0 0 4px color-mix(in srgb, var(--category-color) 10%, transparent); }
+.budget-category > span { display: block; margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.budget-limit-input { display: grid; flex-shrink: 0; width: 137px; gap: 6px; text-align: right; }
+.budget-limit-input small { color: var(--muted); font-size: 10px; }
+.budget-page .budget-limit-input input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.budget-slider-area { margin-top: 22px; }
+.budget-slider-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 11px; }
+.budget-slider-label output { color: var(--category-color); font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.budget-page input.budget-slider {
+  display: block;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  margin: 3px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  accent-color: var(--category-color);
+  cursor: grab;
+  touch-action: pan-y;
+}
+.budget-page input.budget-slider:active { cursor: grabbing; }
+.budget-page input.budget-slider::-webkit-slider-runnable-track { height: 7px; border-radius: 20px; background: linear-gradient(to right, var(--category-color) 0 var(--slider-fill, 0%), #303a35 var(--slider-fill, 0%) 100%); }
+.budget-page input.budget-slider::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 25px; height: 25px; margin-top: -9px; border: 3px solid var(--card); border-radius: 50%; background: var(--category-color); box-shadow: 0 0 0 1px var(--category-color), 0 2px 8px #0005; transition: box-shadow .15s ease; }
+.budget-page input.budget-slider::-moz-range-track { height: 7px; border-radius: 20px; background: #303a35; }
+.budget-page input.budget-slider::-moz-range-progress { height: 7px; border-radius: 20px; background: var(--category-color); }
+.budget-page input.budget-slider::-moz-range-thumb { width: 20px; height: 20px; border: 3px solid var(--card); border-radius: 50%; background: var(--category-color); box-shadow: 0 0 0 1px var(--category-color); }
+.budget-page input.budget-slider:hover::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--category-color) 17%, transparent); }
+.budget-page input.budget-slider:focus-visible { outline: 2px solid var(--category-color); outline-offset: 2px; }
+.budget-page .budget-limit-input input:focus-visible,
+.budget-page button:focus-visible,
+.budget-page summary:focus-visible,
+.budget-unit-label select:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+.budget-page input:disabled { opacity: .45; cursor: not-allowed; }
+.budget-slider-scale { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.budget-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; padding-top: 17px; margin-top: 18px; border-top: 1px solid var(--line); }
+.budget-card-stats > div:nth-child(2) { text-align: right; }
+.budget-card-stats small { display: block; color: var(--muted); font-size: 10px; margin-bottom: 5px; }
+.budget-card-stats strong { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.budget-page .limit-track { grid-column: 1 / -1; height: 4px; margin: 3px 0 0; border-radius: 10px; background: var(--surface); overflow: hidden; }
+.budget-page .limit-track i { display: block; height: 100%; border-radius: inherit; background: var(--category-color); transition: width .12s ease; }
+.budget-page .warning .limit-track i { background: var(--amber); }
+.budget-page .over .limit-track i { background: var(--red); }
+.budget-page .limit-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 32px; margin-top: 7px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.budget-page .limit-foot > span { min-width: 0; }
+.budget-page .warning .limit-foot > span { color: var(--amber); }
+.budget-page .over .limit-foot > span { color: var(--red); }
+.budget-actions { position: relative; flex-shrink: 0; }
+.budget-actions > summary { list-style: none; padding: 8px 0 8px 12px; color: var(--muted); cursor: pointer; font-size: 11px; }
+.budget-actions > summary::-webkit-details-marker { display: none; }
+.budget-actions > summary::after { content: ' ···'; font-weight: 700; }
+.budget-actions[open] { z-index: 2; }
+.budget-actions[open] > summary { color: var(--ink); }
+.budget-actions > div { position: absolute; right: 0; top: 100%; display: grid; min-width: 160px; padding: 7px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 8px 24px #0006; }
+.budget-actions .text-button { min-height: 40px; padding: 10px; text-align: left; font-size: 11px; border-radius: 6px; }
+.budget-actions .text-button:hover { background: var(--card); }
+.budget-page .budget-history { margin-top: 24px; padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.budget-page .budget-history .section-title { margin-bottom: 8px; }
+
+@media (max-width: 1050px) {
+  .budget-workspace { grid-template-columns: 230px minmax(0, 1fr); gap: 18px; }
+  .budget-allocation { padding: 19px; }
+  .budget-donut { width: 180px; height: 180px; }
+  .budget-donut > div { width: 144px; height: 144px; }
+  .budget-legend > div { grid-template-columns: 7px minmax(0, 1fr); }
+  .budget-legend b { grid-column: 2; }
+}
+@media (max-width: 800px) {
+  .budget-workspace { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .budget-page .limits-section { order: -1; }
+  .budget-allocation { position: static; display: grid; grid-template-columns: 190px minmax(0, 1fr); column-gap: 25px; }
+  .budget-allocation > .eyebrow, .budget-allocation > h3 { grid-column: 1 / -1; }
+  .budget-allocation h3 { margin: 7px 0 18px; font-size: 18px; }
+  .budget-donut { grid-column: 1; margin: 0; }
+  .budget-legend { grid-column: 2; grid-row: 3; align-content: center; padding: 0; }
+  .budget-legend > div { grid-template-columns: 7px minmax(0, 1fr) auto; }
+  .budget-legend b { grid-column: auto; }
+  .budget-allocation-note, .budget-unbounded { grid-column: 1 / -1; margin-top: 16px; }
+  .budget-allocation-note { padding: 0; border: 0; }
+}
+@media (max-width: 600px) {
+  .section-heading { align-items: flex-start; flex-direction: column; gap: 16px; }
+  .section-heading .secondary { width: 100%; }
+  .budget-page > .section-heading { padding: 8px 0 18px; }
+  .budget-page > .section-heading h2 { font-size: 29px; }
+  .budget-page > .section-heading p { font-size: 12px; }
+  .budget-toolbar { align-items: center; gap: 14px; padding: 18px 0; }
+  .budget-toolbar > label { font-size: 10px; gap: 6px; min-width: 0; }
+  .budget-toolbar select { min-width: 0; width: 100%; max-width: 160px; font-size: 11px; }
+  .budget-income { max-width: 135px; }
+  .budget-income span { font-size: 10px; line-height: 1.5; }
+  .budget-income strong { font-size: 20px; }
+  .budget-page .budget-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 22px; padding: 0; border-radius: 12px; }
+  .budget-page .budget-summary > div { min-width: 0; gap: 6px; padding: 15px 14px; }
+  .budget-page .budget-summary > div:first-child { grid-column: 1 / -1; padding: 16px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .budget-page .budget-summary span { font-size: 10px; line-height: 1.45; }
+  .budget-page .budget-summary strong { min-width: 0; font-size: clamp(16px, 4.5vw, 20px); line-height: 1.25; overflow-wrap: anywhere; }
+  .budget-page .budget-summary > div:first-child strong { font-size: 26px; }
+  .budget-page .limits-section > .section-title { gap: 12px; }
+  .budget-page .limits-section h3 { font-size: 20px; }
+  .budget-page .section-title p { font-size: 11px; }
+  .budget-unit-label { font-size: 9px; }
+  .budget-unit-label select { padding: 7px; font-size: 11px; }
+  .budget-edit-hint { font-size: 10px; margin-bottom: 14px; }
+  .budget-page .limits-list { gap: 14px; }
+  .budget-page .limit-row { padding: 18px 16px 12px; }
+  .budget-card-heading { gap: 12px; }
+  .budget-category strong { font-size: 15px; gap: 8px; }
+  .budget-category > span { font-size: 10px; }
+  .budget-limit-input { width: 112px; }
+  .budget-page .budget-limit-input input { font-size: 16px; padding-inline: 8px; }
+  .budget-slider-area { margin-top: 20px; }
+  .budget-slider-label { font-size: 10px; }
+  .budget-slider-label output { font-size: 12px; }
+  .budget-card-stats { gap: 10px; margin-top: 15px; padding-top: 14px; }
+  .budget-card-stats strong { font-size: 13px; }
+  .budget-page .limit-foot { gap: 7px; font-size: 10px; }
+  .budget-allocation { display: grid; grid-template-columns: 118px minmax(0, 1fr); column-gap: 16px; padding: 18px 16px; }
+  .budget-allocation h3 { font-size: 17px; margin-bottom: 17px; }
+  .budget-donut { width: 116px; height: 116px; }
+  .budget-donut > div { width: 92px; height: 92px; gap: 3px; }
+  .budget-page .budget-donut strong { font-size: 17px; }
+  .budget-donut span { max-width: 75px; text-align: center; font-size: 8px; line-height: 1.5; }
+  .budget-legend { gap: 9px; }
+  .budget-legend > div { grid-template-columns: 6px minmax(0, 1fr); gap: 5px 7px; font-size: 10px; }
+  .budget-legend b { grid-column: 2; font-size: 9px; }
+  .budget-allocation-note, .budget-unbounded { font-size: 11px; }
+  .budget-page .budget-history { padding: 20px 16px; }
+  .budget-page .budget-history .section-title { display: block; }
+  .budget-page .budget-history .section-title > span { display: block; margin-top: 6px; }
+  .history-month { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .history-month > :nth-child(odd) { text-align: left; }
+  .history-month > :nth-child(even) { text-align: right; }
+  .quick-expense { position: fixed; z-index: 14; right: 18px; bottom: calc(84px + env(safe-area-inset-bottom)); display: grid; place-items: center; width: 54px; height: 54px; border: 0; border-radius: 18px; background: var(--teal-2); color: var(--card); font-size: 27px; box-shadow: 0 14px 34px #315cfd52; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .budget-page .limit-row, .budget-page .limit-track i { transition: none; }
+}
+
+/* Experiment with the sliders, then save the plan together. */
+.budget-page .limit-row.is-edited {
+  border-color: color-mix(in srgb, var(--category-color) 60%, var(--line));
+}
+.budget-savebar {
+  position: sticky;
+  bottom: 20px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  margin-top: 20px;
+  border: 1px solid #44634f;
+  border-radius: 14px;
+  background: #18281ff5;
+  box-shadow: 0 10px 35px #0005;
+  backdrop-filter: blur(12px);
+}
+.budget-savebar[hidden] { display: none; }
+.budget-save-copy { min-width: 0; display: grid; gap: 5px; }
+.budget-save-copy strong { font-size: 13px; font-weight: 600; color: var(--ink); }
+.budget-save-copy span { color: #b1c9bb; font-size: 10px; line-height: 1.5; }
+.budget-save-buttons { display: flex; flex-shrink: 0; gap: 8px; }
+.budget-save-buttons button { min-height: 44px; padding: 10px 14px; font-size: 12px; white-space: nowrap; }
+@media (max-width: 600px) {
+  .budget-savebar { bottom: calc(90px + env(safe-area-inset-bottom)); flex-wrap: wrap; gap: 12px; padding: 14px; }
+  .budget-save-copy strong { font-size: 12px; }
+  .budget-save-buttons { width: 100%; }
+  .budget-save-buttons button { flex: 1; min-width: 0; }
+}
 
 /* Keep installment fields usable even before the external theme has loaded. */
 #creditOptions{grid-column:1/-1;padding:18px;border:1px solid #dce7e1;border-radius:14px;background:var(--surface)}#creditOptions>label{display:grid;gap:8px}#installmentFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}#installmentFields label{display:grid;gap:8px;min-width:0;grid-column:auto}#installmentFields input,#creditOptions select{display:block;width:100%;min-width:0;min-height:46px;border:1px solid #bccfc5;border-radius:10px;padding:11px 12px;background:var(--card);color:var(--ink);font-size:14px}#installmentPreview{padding:14px;border-radius:10px;background:#e8f4ed;white-space:normal;overflow-wrap:anywhere}#installmentFields[hidden],#creditOptions[hidden]{display:none!important}
@@ -216,17 +536,79 @@ body .shell>nav.tabs button:focus-visible{outline:2px solid var(--mint);outline-
   </form></section></div>
   <div id="budgetsPanel" class="panel" role="region" aria-label="Planejamento" hidden>
     <section class="budget-page">
-      <header class="section-heading"><div><span class="eyebrow">Seu dinheiro, com direção</span><h2>Um plano para o seu mês.</h2><p>Distribua sua renda e saiba quanto ainda pode gastar.</p></div><button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria</button></header>
-      <div class="budget-toolbar"><label>Mês de referência<select id="budgetMonth" class="field"></select></label><div class="budget-income"><span>Renda planejada do mês · sem voucher</span><strong id="budgetIncome">—</strong></div></div>
-      <section class="budget-summary" aria-label="Resumo dos limites"><div><span>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div><div><span>Gasto nas categorias com limite</span><strong id="budgetUsed">R$ 0,00</strong></div><div><span>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div></section>
+      <header class="section-heading">
+        <div>
+          <span class="eyebrow">Seu dinheiro, com direção</span>
+          <h2>Um plano para o seu mês.</h2>
+          <p>Arraste, experimente e encontre o equilíbrio do seu mês.</p>
+        </div>
+        <button id="newCategoryButton" class="secondary" type="button">＋ Nova categoria</button>
+      </header>
+      <div class="budget-toolbar">
+        <label>Mês de referência<select id="budgetMonth" class="field"></select></label>
+        <div class="budget-income">
+          <span>Renda planejada do mês · sem voucher</span>
+          <strong id="budgetIncome">—</strong>
+        </div>
+      </div>
+      <section class="budget-summary" aria-label="Resumo dos limites">
+        <div><span>Orçamento definido</span><strong id="budgetTotal">R$ 0,00</strong></div>
+        <div><span>Gasto nas categorias com limite</span><strong id="budgetUsed">R$ 0,00</strong></div>
+        <div><span>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
+      </section>
       <div id="limitsMessage" class="message" role="status" hidden></div>
-      <div class="budget-workspace"><aside class="budget-allocation"><span class="eyebrow">Distribuição do orçamento</span><h3>Cada parte tem um propósito.</h3><div id="budgetDonut" class="budget-donut" role="img" aria-label="Distribuição dos limites"><div><strong id="budgetAllocationPercent">—</strong><span>da renda planejada</span></div></div><p id="budgetAllocationNote" class="budget-allocation-note"></p><div id="budgetLegend" class="budget-legend"></div><p id="budgetUnbounded" class="budget-unbounded"></p></aside>
-      <section class="limits-section"><div class="section-title"><div><h3>Limites mensais</h3><p>Ajuste os valores e acompanhe o uso.</p></div><label class="budget-unit-label">Editar em<select id="budgetUnit" aria-label="Unidade de edição dos limites"><option value="money">Reais (R$)</option><option value="percent">% da renda</option></select></label></div><p id="budgetEditHint" class="budget-edit-hint">Os valores são salvos ao sair do campo.</p><div class="budget-table-head" aria-hidden="true"><span>Categoria / utilização</span><span>Gasto</span><span>Limite</span><span>Disponível</span></div><div id="limitsList" class="limits-list"></div></section></div>
+      <div class="budget-workspace">
+        <aside class="budget-allocation">
+          <span class="eyebrow">Distribuição do orçamento</span>
+          <h3>Cada parte tem um propósito.</h3>
+          <div id="budgetDonut" class="budget-donut" role="img" aria-label="Distribuição dos limites">
+            <div><strong id="budgetAllocationPercent">—</strong><span>da renda planejada</span></div>
+          </div>
+          <p id="budgetAllocationNote" class="budget-allocation-note"></p>
+          <div id="budgetLegend" class="budget-legend"></div>
+          <p id="budgetUnbounded" class="budget-unbounded"></p>
+        </aside>
+        <section class="limits-section" aria-label="Ajustar limites por categoria">
+          <div class="section-title">
+            <div><h3>Ajuste seus limites</h3><p>Puxe a bolinha para escolher quanto gastar.</p></div>
+            <label class="budget-unit-label">Editar em
+              <select id="budgetUnit" aria-label="Unidade de edição dos limites">
+                <option value="money">Reais (R$)</option>
+                <option value="percent">% da renda</option>
+              </select>
+            </label>
+          </div>
+          <p id="budgetEditHint" class="budget-edit-hint">Veja a prévia enquanto ajusta. Salve quando estiver do seu jeito.</p>
+          <div id="limitsList" class="limits-list"></div>
+          <div id="budgetSavebar" class="budget-savebar" hidden>
+            <div class="budget-save-copy">
+              <strong id="budgetDraftCount"></strong>
+              <span id="budgetDraftHint" role="status">A prévia só vira seu limite ao salvar.</span>
+            </div>
+            <div class="budget-save-buttons">
+              <button id="discardBudgetChanges" class="secondary" type="button">Desfazer</button>
+              <button id="saveBudgetChanges" class="save" type="button">Salvar alterações</button>
+            </div>
+          </div>
+        </section>
+      </div>
       <section class="goals-section" aria-labelledby="goalsTitle"><div class="section-title goals-title"><div><span class="eyebrow">O próximo capítulo</span><h3 id="goalsTitle">Suas metas, um passo de cada vez.</h3><p class="quiet">Defina um destino para o dinheiro que está construindo.</p></div><button id="newGoal" type="button" class="secondary">＋ Nova meta</button></div><div id="goalStatus" class="message" hidden></div><div id="goalList" class="goal-list"></div></section>
 <div id="goalModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="goalModalTitle" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2 id="goalModalTitle">Nova meta</h2><button id="closeGoalModal" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="goalForm" class="entry-grid"><input name="id" type="hidden"><label class="wide">O que você quer conquistar?<input name="name" maxlength="80" placeholder="Ex.: Reserva de emergência" required></label><label class="wide">Como acompanhar?<select name="tracking_mode"><option value="manual">Manual: informar quanto já reservei</option><option value="portfolio_value">Automático: valor atual dos investimentos</option><option value="portfolio_cost">Automático: valor aplicado nas posições abertas</option></select></label><label>Valor da meta (R$)<input name="target_amount" type="text" inputmode="decimal" data-goal-money placeholder="Ex.: 50.000,00" maxlength="18" required></label><label><span id="goalCurrentLabel">Já reservado (R$)</span><input name="current_amount" type="text" inputmode="decimal" data-goal-money placeholder="0,00" maxlength="18" required></label><label class="wide">Até quando?<input name="target_date" type="date" min="1900-01-01" required></label><p id="goalTrackingHelp" class="wide quote-meta">O acompanhamento é manual. Informe o total já reservado, não apenas o último aporte. A meta não retira dinheiro do caixa nem altera seus investimentos.</p><div id="goalFormMessage" class="message error" hidden></div><button type="submit" class="save">Salvar meta</button></form></section></div>
-<section class="budget-history"><div class="section-title"><h3>Histórico mensal</h3><span>Limite, gasto e saldo</span></div><div id="budgetHistoryList"></div></section>
+<section class="budget-history">
+        <div class="section-title"><h3>Histórico mensal</h3><span>Limites salvos, gastos e saldo</span></div>
+        <div id="budgetHistoryList"></div>
+      </section>
     </section>
-    <div id="categoryModal" class="modal" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2>Nova categoria</h2><button id="closeCategoryModal" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="categoryForm" class="entry-grid"><label class="wide">Nome da categoria<input name="name" maxlength="40" placeholder="Ex.: Gasolina" required></label><button class="save" type="submit">Criar categoria</button><div id="categoryMessage" class="message" hidden></div></form></section></div>
+    <div id="categoryModal" class="modal" hidden>
+      <section class="modal-card compact-modal">
+        <div class="modal-head"><h2>Nova categoria</h2><button id="closeCategoryModal" class="icon-button" type="button" aria-label="Fechar">×</button></div>
+        <form id="categoryForm" class="entry-grid">
+          <label class="wide">Nome da categoria<input name="name" maxlength="40" placeholder="Ex.: Gasolina" required></label>
+          <button class="save" type="submit">Criar categoria</button>
+          <div id="categoryMessage" class="message" hidden></div>
+        </form>
+      </section>
+    </div>
   </div>
 
   <div id="investmentsPanel" class="panel" role="region" aria-label="Investimentos" hidden>
@@ -715,27 +1097,110 @@ document.querySelector('#statementUploadForm').addEventListener('submit',async e
 document.querySelector('#importStatement').addEventListener('click',async event=>{const message=document.querySelector('#statementImportMessage'),button=event.currentTarget,items=readStatementRows().filter(item=>item.selected);message.hidden=true;if(!items.length){message.textContent='Selecione pelo menos um lançamento.';message.className='message error';message.hidden=false;return}if(items.some(item=>item.kind!=='transfer'&&!item.category)){message.textContent='Escolha a categoria dos itens destacados.';message.className='message error';message.hidden=false;return}button.disabled=true;button.textContent='Importando…';try{const confirmIncome=document.querySelector('#confirmIncomeSuggestion')?.checked===true,response=await fetch('/api/statements/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,remember_categories:document.querySelector('#rememberStatementCategories').checked,confirm_income_suggestion:confirmIncome,income_suggestion:statementAnalysis.income_suggestion})}),result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível importar');(result.processed||[]).forEach(index=>{if(items[index])items[index].selected=false});(result.errors||[]).forEach(error=>{if(items[error.line-1]){items[error.line-1].needs_review=true;items[error.line-1].flags=[error.error]}});renderStatementReview();await loadBootstrap();message.textContent=`${result.imported||0} gasto(s) e ${result.income_imported||0} entrada(s) importados. ${result.skipped||0} duplicado(s) ignorado(s).${result.income_updated?' Renda mensal atualizada.':''}${result.errors?.length?' Revise os '+result.errors.length+' itens com erro; os demais já estão salvos.':' Você pode importar outro arquivo ou voltar à visão geral.'}`;message.className=result.errors?.length?'message error':'message ok';message.hidden=false}catch(error){message.textContent=error.message;message.className='message error';message.hidden=false}finally{button.disabled=false;button.textContent='Importar selecionados'}});
 
 const budgetMonth=document.querySelector('#budgetMonth'),limitsList=document.querySelector('#limitsList'),limitsMessage=document.querySelector('#limitsMessage');
+const budgetDrafts=new Map();
+let budgetSaving=false;
+let budgetSaveError='';
+const BUDGET_COLORS=['#8cc8ee','#89dfc3','#e9cf7b','#d5a3dc','#9daff0','#edb07a','#b8cca1','#e49caa','#93c9cf','#b9a5df','#c9bf9a','#a4b9c7','#c3d8b0'];
 function categoryTotals(monthValue){const totals={};DATA.filter(item=>item.date.startsWith(monthValue)).forEach(item=>totals[item.category]=(totals[item.category]||0)+item.amount);return totals}
 function budgetLevel(used,limit){if(!limit)return 'unset';const ratio=used/limit;return ratio>1?'over':ratio>=.8?'warning':'safe'}
-function fillBudgetMonths(){const selected=budgetMonth.value||month.value;const values=new Set([...Object.keys(BUDGETS),...DATA.map(item=>item.date.slice(0,7)),new Date().toISOString().slice(0,7)]);budgetMonth.innerHTML='';[...values].sort().reverse().forEach(value=>budgetMonth.add(new Option(monthLabel(value),value)));budgetMonth.value=[...values].includes(selected)?selected:[...values].sort().reverse()[0]}
-const BUDGET_COLORS=['#8cc8ee','#89dfc3','#e9cf7b','#d5a3dc','#9daff0','#edb07a','#b8cca1','#e49caa','#93c9cf','#b9a5df','#c9bf9a','#a4b9c7','#c3d8b0'];
 function budgetIncomeFor(key){const mode=ACCOUNT_PREFERENCES.income_modes?.[key]||'auto',salary=scheduledSalaryBasis(key),declared=+(incomeByMonth[key]||0),imported=INCOME_ENTRIES.filter(x=>x.date.startsWith(key)).reduce((sum,x)=>sum+x.amount,0);return Math.max(0,mode==='scheduled'||mode==='auto'&&salary.active?salary.expected:mode==='declared'||mode==='auto'&&declared>0?declared:imported)}
-function renderBudgetPanel(){fillBudgetMonths();const key=budgetMonth.value,totals=categoryTotals(key),configured=BUDGETS[key]||{},income=budgetIncomeFor(key),percent=document.querySelector('#budgetUnit').value==='percent';const categories=[...new Set([...ALL_CATEGORIES,...Object.keys(configured),...Object.keys(totals)])].sort((a,b)=>a.localeCompare(b,'pt-BR'));const total=Object.values(configured).reduce((sum,value)=>sum+(+value||0),0),used=Object.entries(totals).filter(([name])=>configured[name]>0).reduce((sum,[,value])=>sum+value,0),available=total-used;
- document.querySelector('#budgetIncome').textContent=brl(income);document.querySelector('#budgetTotal').textContent=brl(total);document.querySelector('#budgetUsed').textContent=brl(used);const availableEl=document.querySelector('#budgetAvailable');availableEl.textContent=brl(available);availableEl.className=available>=0?'positive':'negative';
- const allocated=income?total/income*100:0;document.querySelector('#budgetAllocationPercent').textContent=income?`${allocated.toLocaleString('pt-BR',{maximumFractionDigits:1})}%`:'Sem renda';
- document.querySelector('#budgetAllocationNote').textContent=income?(total>income?`${brl(total-income)} acima da renda planejada.`:`${brl(income-total)} da renda ainda sem destino.`):'Cadastre sua renda em Ganhos e fixos para planejar por percentual.';
- document.querySelector('#budgetAllocationNote').classList.toggle('negative',income>0&&total>income);
- const unbounded=Object.entries(totals).filter(([name])=>!(configured[name]>0)).reduce((sum,[,value])=>sum+value,0);document.querySelector('#budgetUnbounded').textContent=unbounded?`${brl(unbounded)} gastos em categorias sem limite, fora do resumo acima.`:'';
- let cursor=0;const denominator=Math.max(total,income),segments=[];const active=categories.filter(name=>configured[name]>0);active.forEach(name=>{const start=cursor;cursor+=configured[name]/denominator*100;segments.push(`${BUDGET_COLORS[categories.indexOf(name)%BUDGET_COLORS.length]} ${start}% ${cursor}%`)});if(cursor<100)segments.push(`var(--surface) ${cursor}% 100%`);document.querySelector('#budgetDonut').style.background=segments.length?`conic-gradient(${segments.join(',')})`:'var(--surface)';
- document.querySelector('#budgetLegend').innerHTML=active.length?active.map(name=>`<div><i style="background:${BUDGET_COLORS[categories.indexOf(name)%BUDGET_COLORS.length]}"></i><span>${esc(name)}</span><b>${brl(configured[name])}</b></div>`).join(''):'<p class="quiet">Defina o primeiro limite ao lado para começar.</p>';
- document.querySelector('#budgetEditHint').textContent=percent?'O percentual é convertido em reais ao salvar. Mudanças futuras na renda não alteram o limite.':'Os valores são salvos ao sair do campo. Cores indicam atenção a partir de 80% de uso.';
- limitsList.innerHTML=categories.map((name,index)=>{const limit=+configured[name]||0,spent=+totals[name]||0,remaining=limit-spent,level=budgetLevel(spent,limit),ratio=limit?spent/limit*100:0,color=BUDGET_COLORS[index%BUDGET_COLORS.length];return `<article class="limit-row ${level}" style="--category-color:${color}"><div class="budget-category"><strong><i></i>${esc(name)}</strong><div class="limit-track"><i style="width:${Math.max(0,Math.min(ratio,100))}%"></i></div><span>${limit?`${ratio.toLocaleString('pt-BR',{maximumFractionDigits:0})}% utilizado`:'Sem limite definido'}</span></div><div class="budget-cell"><small>Gasto</small><strong>${brl(spent)}</strong></div><label class="budget-cell budget-limit-input"><small>${percent?'% da renda':'Limite em R$'}</small><input aria-label="${percent?'Percentual da renda':'Limite em reais'} para ${esc(name)}" data-limit-category="${esc(name)}" type="number" min="0" max="${percent?100:10000000}" step="0.01" value="${percent?(income?(limit/income*100).toFixed(2):''):(limit||'')}" placeholder="0,00" ${percent&&!income?'disabled':''}></label><div class="budget-cell budget-remaining"><small>Disponível</small><strong class="${limit&&remaining<0?'negative':''}">${limit?brl(remaining):'—'}</strong></div><div class="limit-foot"><span>${level==='over'?'Acima do limite':level==='warning'?'Perto do limite':''}</span><div><button type="button" class="text-button" data-remove-limit="${esc(name)}" ${limit?'':'hidden'}>Remover limite</button>${!DEFAULT_CATEGORIES.has(name)?`<button type="button" class="text-button" data-edit-category="${esc(name)}">Renomear</button><button type="button" class="text-button danger-text" data-remove-category="${esc(name)}">Excluir categoria</button>`:''}</div></div></article>`}).join('');
- const months=[...new Set([...Object.keys(BUDGETS),...DATA.map(item=>item.date.slice(0,7))])].sort().reverse();document.querySelector('#budgetHistoryList').innerHTML=months.length?months.map(value=>{const limits=BUDGETS[value]||{},spentByCategory=categoryTotals(value),limit=Object.values(limits).reduce((s,v)=>s+(+v||0),0),spent=Object.entries(spentByCategory).filter(([name])=>limits[name]>0).reduce((s,[,v])=>s+v,0);return `<button class="history-month" data-history-month="${value}"><span>${monthLabel(value)}</span><strong>${brl(limit)}</strong><span>${brl(spent)} gastos</span><b class="${limit-spent>=0?'positive':'negative'}">${brl(limit-spent)}</b></button>`}).join(''):'<div class="empty">O histórico aparecerá depois do primeiro limite.</div>';
+function budgetValues(key){return {...BUDGETS[key],...budgetDrafts.get(key)}}
+function budgetCategories(key){return [...new Set([...ALL_CATEGORIES,...Object.keys(budgetValues(key)),...Object.keys(categoryTotals(key))])].sort((a,b)=>a.localeCompare(b,'pt-BR'))}
+function budgetPercent(value){return value.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'}
+function fillBudgetMonths(){
+ const selected=budgetMonth.value||month.value;
+ const values=new Set([...Object.keys(BUDGETS),...Object.keys(incomeByMonth),...budgetDrafts.keys(),...DATA.map(item=>item.date.slice(0,7)),localDateValue().slice(0,7)]);
+ budgetMonth.innerHTML='';[...values].sort().reverse().forEach(value=>budgetMonth.add(new Option(monthLabel(value)+(budgetDrafts.has(value)?' · em edição':''),value)));
+ budgetMonth.value=values.has(selected)?selected:[...values].sort().reverse()[0];budgetMonth.disabled=budgetSaving;
 }
-async function saveLimit(input){if(!input.reportValidity())return;if(!canWrite)return alert(localOnlyMessage());const payload={month:budgetMonth.value,category:input.dataset.limitCategory,limit:Math.round(Math.max(0,+input.value||0)*(document.querySelector('#budgetUnit').value==='percent'?budgetIncomeFor(budgetMonth.value)/100:1)*100)/100};input.disabled=true;try{const response=await fetch('/api/budgets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível salvar o limite');BUDGETS[payload.month]??={};BUDGETS[payload.month][payload.category]=payload.limit;render();renderBudgetPanel();limitsMessage.textContent='Limite salvo.';limitsMessage.className='message ok';limitsMessage.hidden=false}catch(error){limitsMessage.textContent=error.message;limitsMessage.className='message error';limitsMessage.hidden=false}finally{input.disabled=false}}
-limitsList.addEventListener('change',event=>{const input=event.target.closest('[data-limit-category]');if(input)saveLimit(input)});
-limitsList.addEventListener('click',async event=>{const limitButton=event.target.closest('[data-remove-limit]'),categoryButton=event.target.closest('[data-remove-category]'),editButton=event.target.closest('[data-edit-category]');if(editButton){const oldName=editButton.dataset.editCategory,newName=prompt('Novo nome da categoria:',oldName)?.trim();if(!newName||newName===oldName)return;const response=await fetch(`/api/categories/${encodeURIComponent(oldName)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:newName})}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível renomear');ALL_CATEGORIES=ALL_CATEGORIES.map(item=>item===oldName?result.category:item);DATA.forEach(item=>{if(item.category===oldName)item.category=result.category});Object.values(BUDGETS).forEach(values=>{if(Object.hasOwn(values,oldName)){values[result.category]=values[oldName];delete values[oldName]}});refreshCategoryOptions();render();renderBudgetPanel();return}if(!limitButton&&!categoryButton)return;const name=(limitButton?.dataset.removeLimit||categoryButton?.dataset.removeCategory);if(!confirm(categoryButton?`Excluir a categoria “${name}”?`:`Remover o limite de “${name}”?`))return;const endpoint=categoryButton?`/api/categories/${encodeURIComponent(name)}`:`/api/budgets/${budgetMonth.value}/${encodeURIComponent(name)}`;const response=await fetch(endpoint,{method:'DELETE'}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível excluir');if(categoryButton)ALL_CATEGORIES=ALL_CATEGORIES.filter(item=>item!==name);(categoryButton?Object.values(BUDGETS):[BUDGETS[budgetMonth.value]||{}]).forEach(values=>delete values[name]);render();renderBudgetPanel();refreshCategoryOptions()});
-document.querySelector('#budgetHistoryList').addEventListener('click',event=>{const button=event.target.closest('[data-history-month]');if(button){budgetMonth.value=button.dataset.historyMonth;renderBudgetPanel()}});budgetMonth.addEventListener('change',()=>{limitsMessage.hidden=true;renderBudgetPanel()});document.querySelector('#budgetUnit').addEventListener('change',renderBudgetPanel);
+function paintBudgetOverview(){
+ const key=budgetMonth.value,configured=budgetValues(key),totals=categoryTotals(key),income=budgetIncomeFor(key),categories=budgetCategories(key);
+ const total=Object.values(configured).reduce((sum,value)=>sum+(+value||0),0),used=Object.entries(totals).filter(([name])=>configured[name]>0).reduce((sum,[,value])=>sum+value,0);
+ document.querySelector('#budgetIncome').textContent=brl(income);
+ document.querySelector('#budgetTotal').textContent=brl(total);document.querySelector('#budgetUsed').textContent=brl(used);
+ const available=document.querySelector('#budgetAvailable');available.textContent=brl(total-used);available.className=total>=used?'positive':'negative';
+ document.querySelector('#budgetAllocationPercent').textContent=income?budgetPercent(total/income*100):brl(total);
+ document.querySelector('#budgetDonut span').textContent=income?'da renda planejada':'em limites mensais';
+ const note=document.querySelector('#budgetAllocationNote');note.textContent=income?(total>income?`${brl(total-income)} acima da renda. Ajuste as barras para equilibrar.`:`${brl(income-total)} da renda ainda livres para distribuir.`):'Sem renda cadastrada? Você pode ajustar os limites em reais.';note.classList.toggle('negative',income>0&&total>income);
+ const unbounded=Object.entries(totals).filter(([name])=>!(configured[name]>0)).reduce((sum,[,value])=>sum+value,0);
+ document.querySelector('#budgetUnbounded').textContent=unbounded?`${brl(unbounded)} gastos em categorias sem limite, fora do resumo acima.`:'';
+ let cursor=0;const denominator=Math.max(total,income),segments=[],active=categories.filter(name=>configured[name]>0);
+ active.forEach(name=>{const start=cursor;cursor+=configured[name]/denominator*100;segments.push(`${BUDGET_COLORS[categories.indexOf(name)%BUDGET_COLORS.length]} ${start}% ${cursor}%`)});
+ if(cursor<100)segments.push(`var(--surface) ${cursor}% 100%`);
+ const donut=document.querySelector('#budgetDonut');donut.style.background=segments.length?`conic-gradient(${segments.join(',')})`:'var(--surface)';donut.setAttribute('aria-label',`Distribuição dos limites: ${brl(total)}${income?', '+budgetPercent(total/income*100)+' da renda':''}`);
+ document.querySelector('#budgetLegend').innerHTML=active.length?active.map(name=>`<div><i style="background:${BUDGET_COLORS[categories.indexOf(name)%BUDGET_COLORS.length]}"></i><span>${esc(name)}</span><b>${brl(configured[name])}</b></div>`).join(''):'<p class="quiet">Comece arrastando a barra de uma categoria.</p>';
+ const count=Object.keys(budgetDrafts.get(key)||{}).length;
+ document.querySelector('#budgetDraftHint').textContent=budgetSaveError||'A prévia só vira seu limite ao salvar.';
+ document.querySelector('#budgetSavebar').hidden=!count;document.querySelector('#budgetDraftCount').textContent=`${count} ${count===1?'limite ajustado':'limites ajustados'}`;
+ document.querySelector('#saveBudgetChanges').textContent=budgetSaving?'Salvando…':'Salvar alterações';
+ document.querySelector('#saveBudgetChanges').disabled=budgetSaving;document.querySelector('#discardBudgetChanges').disabled=budgetSaving;
+}
+function budgetSliderScale(limit,income,spent){
+ return income?{max:Math.max(100,Math.ceil(limit/income*100/25)*25),step:0.1,value:limit/income*100}:{max:Math.min(10000000,Math.max(5000,Math.ceil(Math.max(limit,spent)/500)*500)),step:10,value:limit};
+}
+function paintBudgetRow(row,limit,source){
+ const name=row.dataset.budgetCategory,income=budgetIncomeFor(budgetMonth.value),spent=categoryTotals(budgetMonth.value)[name]||0,level=budgetLevel(spent,limit),ratio=limit?spent/limit*100:0;
+ row.classList.remove('safe','warning','over','unset');row.classList.add(level);row.classList.toggle('is-edited',Object.hasOwn(budgetDrafts.get(budgetMonth.value)||{},name));
+ row.querySelector('[data-usage-label]').textContent=limit?`${budgetPercent(ratio)} do limite já usado`:'Sem limite definido';
+ const number=row.querySelector('[data-limit-category]'),percent=document.querySelector('#budgetUnit').value==='percent';
+ if(source!==number)number.value=percent?(income?(limit/income*100).toFixed(2):''):limit.toFixed(2);
+ const slider=row.querySelector('[data-budget-slider]'),value=income?limit/income*100:limit;
+ // Keep the scale stable under the pointer; expand it only for an exact typed value.
+ if(value>+slider.max)slider.max=budgetSliderScale(limit,income,spent).max;
+ if(source!==slider)slider.value=value;
+ slider.style.setProperty('--slider-fill',Math.min(100,value/+slider.max*100)+'%');
+ slider.setAttribute('aria-valuetext',`${brl(limit)}${income?', '+budgetPercent(value)+' da renda':''}`);
+ row.querySelector('[data-slider-value]').textContent=income?budgetPercent(value)+' da renda':brl(limit);
+ row.querySelector('[data-scale-max]').textContent=income?budgetPercent(+slider.max):brl(+slider.max);
+ row.querySelector('[data-budget-remaining]').textContent=limit?brl(limit-spent):'—';row.querySelector('[data-budget-remaining]').classList.toggle('negative',limit>0&&spent>limit);
+ row.querySelector('.limit-track i').style.width=Math.min(100,Math.max(0,ratio))+'%';
+ row.querySelector('[data-budget-status]').textContent=level==='over'?`${brl(spent-limit)} acima do limite`:level==='warning'?'Atenção: perto do limite':limit?'Dentro do limite':'Defina quanto quer gastar';
+}
+function renderBudgetPanel(){
+ fillBudgetMonths();const key=budgetMonth.value,configured=budgetValues(key),income=budgetIncomeFor(key),totals=categoryTotals(key),categories=budgetCategories(key),unit=document.querySelector('#budgetUnit');
+ unit.querySelector('[value="percent"]').disabled=!income;if(!income)unit.value='money';unit.disabled=budgetSaving;const percent=unit.value==='percent';
+ document.querySelector('#budgetEditHint').textContent=income?'Arraste para distribuir sua renda. O gráfico acompanha a prévia; os limites são salvos em reais.':'Arraste para ajustar em reais. Para usar percentuais, cadastre sua renda em Ganhos e fixos.';
+ limitsList.innerHTML=categories.map((name,index)=>{
+  const limit=+configured[name]||0,scale=budgetSliderScale(limit,income,totals[name]||0),color=BUDGET_COLORS[index%BUDGET_COLORS.length];
+  return `<article class="limit-row" data-budget-category="${esc(name)}" style="--category-color:${color}"><div class="budget-card-heading"><div class="budget-category"><strong><i aria-hidden="true"></i>${esc(name)}</strong><span data-usage-label></span></div><label class="budget-limit-input"><small>${percent?'Limite em %':'Limite em R$'}</small><input aria-label="${percent?'Percentual da renda':'Limite em reais'} para ${esc(name)}" data-limit-category="${esc(name)}" type="number" min="0" max="${percent?10000000/income*100:10000000}" step="0.01" inputmode="decimal" ${budgetSaving?'disabled':''}></label></div><div class="budget-slider-area"><div class="budget-slider-label"><span>Arraste para ajustar</span><output data-slider-value></output></div><input class="budget-slider" data-budget-slider="${esc(name)}" type="range" min="0" max="${scale.max}" step="${scale.step}" value="${scale.value}" aria-label="Ajustar limite de ${esc(name)}" ${budgetSaving?'disabled':''}><div class="budget-slider-scale" aria-hidden="true"><span>${income?'0%':'R$ 0'}</span><span data-scale-max></span></div></div><div class="budget-card-stats"><div><small>Já gastou</small><strong>${brl(totals[name]||0)}</strong></div><div><small>Ainda pode gastar</small><strong data-budget-remaining></strong></div><div class="limit-track" aria-hidden="true"><i></i></div></div><div class="limit-foot"><span data-budget-status></span><details class="budget-actions"><summary>Opções</summary><div><button type="button" class="text-button" data-remove-limit="${esc(name)}" ${budgetSaving?'disabled':''}>Remover limite</button>${!DEFAULT_CATEGORIES.has(name)?`<button type="button" class="text-button" data-edit-category="${esc(name)}" ${budgetSaving?'disabled':''}>Renomear</button><button type="button" class="text-button danger-text" data-remove-category="${esc(name)}" ${budgetSaving?'disabled':''}>Excluir categoria</button>`:''}</div></details></div></article>`;
+ }).join('');
+ limitsList.querySelectorAll('[data-budget-category]').forEach(row=>paintBudgetRow(row,+configured[row.dataset.budgetCategory]||0));paintBudgetOverview();renderBudgetHistory();
+}
+function renderBudgetHistory(){
+ const months=[...new Set([...Object.keys(BUDGETS),...DATA.map(item=>item.date.slice(0,7))])].sort().reverse();document.querySelector('#budgetHistoryList').innerHTML=months.length?months.map(value=>{const limits=BUDGETS[value]||{},spentByCategory=categoryTotals(value),limit=Object.values(limits).reduce((s,v)=>s+(+v||0),0),spent=Object.entries(spentByCategory).filter(([name])=>limits[name]>0).reduce((s,[,v])=>s+v,0);return `<button class="history-month" data-history-month="${value}" ${budgetSaving?'disabled':''}><span>${monthLabel(value)}</span><strong>${brl(limit)}</strong><span>${brl(spent)} gastos</span><b class="${limit-spent>=0?'positive':'negative'}">${brl(limit-spent)}</b></button>`}).join(''):'<div class="empty">O histórico aparecerá depois do primeiro limite.</div>';
+}
+function previewBudgetLimit(input){
+ if(budgetSaving||!input.validity.valid)return;
+ const key=budgetMonth.value,row=input.closest('[data-budget-category]'),name=row.dataset.budgetCategory,income=budgetIncomeFor(key),percent=input.matches('[data-budget-slider]')?income>0:document.querySelector('#budgetUnit').value==='percent';
+ const value=Math.min(10000000,Math.round(Math.max(0,+input.value||0)*(percent?income/100:1)*100)/100);
+ const drafts=budgetDrafts.get(key)||{};
+ if(value===(+BUDGETS[key]?.[name]||0))delete drafts[name];else drafts[name]=value;
+ if(Object.keys(drafts).length)budgetDrafts.set(key,drafts);else budgetDrafts.delete(key);
+ budgetSaveError='';paintBudgetRow(row,value,input);paintBudgetOverview();limitsMessage.hidden=true;
+ const option=budgetMonth.selectedOptions[0];if(option)option.textContent=monthLabel(key)+(budgetDrafts.has(key)?' · em edição':'');
+}
+limitsList.addEventListener('input',event=>{const input=event.target.closest('[data-limit-category],[data-budget-slider]');if(input)previewBudgetLimit(input)});
+document.querySelector('#discardBudgetChanges').addEventListener('click',()=>{budgetDrafts.delete(budgetMonth.value);budgetSaveError='';limitsMessage.hidden=true;renderBudgetPanel()});
+document.querySelector('#saveBudgetChanges').addEventListener('click',async()=>{
+ if(budgetSaving)return;
+ if(!canWrite){budgetSaveError='Sem conexão. Seus ajustes continuam aqui; tente salvar quando a conexão voltar.';paintBudgetOverview();limitsMessage.textContent=localOnlyMessage();limitsMessage.className='message error';limitsMessage.hidden=false;return}
+ for(const input of limitsList.querySelectorAll('[data-limit-category]'))if(!input.reportValidity())return;
+ const key=budgetMonth.value,changes=Object.entries(budgetDrafts.get(key)||{});if(!changes.length)return;
+ budgetSaving=true;budgetSaveError='';renderBudgetPanel();let saved=0;
+ try{
+  for(const [category,limit] of changes){
+   const response=await fetch('/api/budgets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month:key,category,limit})}),result=await response.json();
+   if(!response.ok)throw Error(result.error||'Não foi possível salvar os limites.');
+   BUDGETS[key]??={};BUDGETS[key][category]=limit;saved++;
+   const drafts=budgetDrafts.get(key);if(drafts){delete drafts[category];if(!Object.keys(drafts).length)budgetDrafts.delete(key)}
+  }
+  limitsMessage.textContent='Pronto! Seus limites foram salvos.';limitsMessage.className='message ok';
+ }catch(error){budgetSaveError='Não foi possível salvar tudo. Os ajustes pendentes foram mantidos. Tente novamente.';limitsMessage.textContent=`${saved?`${saved} limite(s) salvo(s). `:''}${error.message} Seus ajustes pendentes continuam na prévia. Tente salvar novamente.`;limitsMessage.className='message error'}
+ finally{budgetSaving=false;render();renderBudgetPanel();limitsMessage.hidden=false;document.querySelector(budgetDrafts.has(key)?'#saveBudgetChanges':'#budgetUnit').focus({preventScroll:true})}
+});
+window.addEventListener('beforeunload',event=>{if(budgetDrafts.size){event.preventDefault();event.returnValue=''}});
+limitsList.addEventListener('click',async event=>{if(budgetSaving)return;const limitButton=event.target.closest('[data-remove-limit]'),categoryButton=event.target.closest('[data-remove-category]'),editButton=event.target.closest('[data-edit-category]');if(editButton){const oldName=editButton.dataset.editCategory,newName=prompt('Novo nome da categoria:',oldName)?.trim();if(!newName||newName===oldName)return;const response=await fetch(`/api/categories/${encodeURIComponent(oldName)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:newName})}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível renomear');ALL_CATEGORIES=ALL_CATEGORIES.map(item=>item===oldName?result.category:item);DATA.forEach(item=>{if(item.category===oldName)item.category=result.category});Object.values(BUDGETS).forEach(values=>{if(Object.hasOwn(values,oldName)){values[result.category]=values[oldName];delete values[oldName]}});for(const drafts of budgetDrafts.values()){if(Object.hasOwn(drafts,oldName)){drafts[result.category]=drafts[oldName];delete drafts[oldName]}}refreshCategoryOptions();render();renderBudgetPanel();return}if(!limitButton&&!categoryButton)return;const name=(limitButton?.dataset.removeLimit||categoryButton?.dataset.removeCategory);if(limitButton){const row=limitButton.closest('[data-budget-category]'),input=row.querySelector('[data-limit-category]');input.value=0;previewBudgetLimit(input);row.querySelector('details').open=false;return}if(!confirm(categoryButton?`Excluir a categoria “${name}”?`:`Remover o limite de “${name}”?`))return;const endpoint=categoryButton?`/api/categories/${encodeURIComponent(name)}`:`/api/budgets/${budgetMonth.value}/${encodeURIComponent(name)}`;const response=await fetch(endpoint,{method:'DELETE'}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível excluir');if(categoryButton){ALL_CATEGORIES=ALL_CATEGORIES.filter(item=>item!==name);for(const [key,drafts] of budgetDrafts){delete drafts[name];if(!Object.keys(drafts).length)budgetDrafts.delete(key)}}(categoryButton?Object.values(BUDGETS):[BUDGETS[budgetMonth.value]||{}]).forEach(values=>delete values[name]);render();renderBudgetPanel();refreshCategoryOptions()});
+document.querySelector('#budgetHistoryList').addEventListener('click',event=>{const button=event.target.closest('[data-history-month]');if(button){budgetMonth.value=button.dataset.historyMonth;renderBudgetPanel()}});budgetMonth.addEventListener('change',()=>{budgetSaveError='';limitsMessage.hidden=true;renderBudgetPanel()});document.querySelector('#budgetUnit').addEventListener('change',renderBudgetPanel);
 const categoryModal=document.querySelector('#categoryModal'),categoryForm=document.querySelector('#categoryForm');document.querySelector('#newCategoryButton').onclick=()=>{categoryModal.hidden=false;categoryForm.name.focus()};document.querySelector('#closeCategoryModal').onclick=()=>categoryModal.hidden=true;categoryForm.addEventListener('submit',async event=>{event.preventDefault();const name=categoryForm.name.value.trim(),message=document.querySelector('#categoryMessage');try{const response=await fetch('/api/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}),result=await response.json();if(!response.ok)throw new Error(result.error);if(!ALL_CATEGORIES.includes(result.category))ALL_CATEGORIES.push(result.category);categoryModal.hidden=true;categoryForm.reset();refreshCategoryOptions();renderBudgetPanel()}catch(error){message.textContent=error.message;message.className='message error';message.hidden=false}});
 const DEFAULT_CATEGORIES=new Set(["Alimentação","Mercado","Transporte","Moradia","Saúde","Educação","Lazer","Compras","Assinaturas","Contas","Viagem","Presentes","Outros"]);
 function refreshCategoryOptions(){const selects=[form.elements.category,...document.querySelectorAll('.statement-category')];selects.forEach(select=>{if(!select)return;const current=select.value;select.innerHTML=ALL_CATEGORIES.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join('');if(ALL_CATEGORIES.includes(current))select.value=current})}
