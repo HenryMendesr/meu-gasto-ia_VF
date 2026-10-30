@@ -178,7 +178,7 @@ html = html.replace(
 )
 html = html.replace('  <div class="foot">', budget_panel + '\n' + investment_panel + '\n' + debt_panel + '\n  <button id="quickExpense" class="quick-expense" type="button" aria-label="Lançar novo gasto">＋</button>\n  <div class="foot">', 1)
 html = html.replace('<section class="card entry" data-entry-content="manual"><span class="eyebrow">Lançamento manual</span>', statement_panel + '<section class="card entry" data-entry-content="manual"><span class="eyebrow">Lançamento manual</span>', 1)
-html = html.replace('<div class="budget-period">', (ROOT / "src/goals_panel.html").read_text(encoding="utf-8") + '<div class="budget-period">', 1)
+html = html.replace('<section class="budget-history">', (ROOT / "src/goals_panel.html").read_text(encoding="utf-8") + '<section class="budget-history">', 1)
 html = html.replace('<div class="dashboard-details">', (ROOT / 'src/finance_workflow.html').read_text(encoding='utf-8') + '<div class="dashboard-details">', 1)
 html = html.replace('<div class="dashboard-details">', (ROOT / "src/report_panel.html").read_text(encoding="utf-8") + '<div class="dashboard-details">', 1)
 safe_investments = json.dumps(initial_investments, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
