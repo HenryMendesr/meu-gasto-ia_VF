@@ -55,7 +55,8 @@ def pending_receipts(prefs,today):
             day=due_date(month,payment['day']);key=month+':'+payment['slot']
             if day<=today and key not in existing:
                 result.append({'key':key,'date':day,'month':month,'slot':payment['slot'],
-                    'amount':payment['amount'],'source':plan['source'],'status':'scheduled'})
+                    'amount':payment['amount'],'source':plan['source'],'status':'confirmed',
+                    'received_date':day,'automatic':True})
         current=date(current.year+(current.month==12),current.month%12+1,1)
     return result
 
@@ -63,11 +64,14 @@ def pending_receipts(prefs,today):
 def process_due(user_id=None):
     today=investments.investment_today().isoformat()
     prefs=investments.load_store(user_id).get('preferences',{})
-    if not pending_receipts(prefs,today):return {'posted':0}
+    if not pending_receipts(prefs,today) and not any(e.get('status')=='scheduled' and not e.get('manual_pending') and e['date']<=today for e in prefs.get('salary_receipts',[])):return {'posted':0}
     def apply(store):
         current=store.setdefault('preferences',{});pending=pending_receipts(current,today)
         for entry in pending:entry['posted_at']=investments.now_iso()
         current.setdefault('salary_receipts',[]).extend(pending)
+        for entry in current['salary_receipts']:
+            if entry.get('status')=='scheduled' and not entry.get('manual_pending') and entry['date']<=today:
+                entry.update(status='confirmed',received_date=entry['date'],automatic=True)
         return {'posted':len(pending)}
     return investments.mutate_store(apply,user_id)
 
@@ -97,7 +101,7 @@ def save_plan(payload,user_id=None):
 
 def receipt_action(key,payload,user_id=None):
     action=payload.get('action')
-    if action not in {'confirm','skip','restore'}:raise ValueError('Escolha confirmar, desconsiderar ou restaurar')
+    if action not in {'confirm','skip','restore','delay'}:raise ValueError('Escolha confirmar, desconsiderar ou restaurar')
     def apply(store):
         prefs=store.setdefault('preferences',{})
         entry=next((entry for entry in prefs.get('salary_receipts',[]) if entry['key']==key),None)
@@ -111,7 +115,17 @@ def receipt_action(key,payload,user_id=None):
             if received_date>investments.investment_today().isoformat():raise ValueError('Confirme apenas recebimentos já ocorridos')
             entry['received_date']=received_date
             entry['status']='confirmed'
-        else:entry['status']='skipped' if action=='skip' else 'scheduled'
+            entry['automatic']=False
+            entry.pop('manual_pending',None)
+        elif action=='delay':
+            entry['status']='scheduled'
+            entry['manual_pending']=True
+            entry.pop('received_date',None)
+            entry['automatic']=False
+        elif action=='restore':
+            entry.update(status='confirmed',received_date=entry['date'],automatic=True)
+            entry.pop('manual_pending',None)
+        else:entry['status']='skipped'
         investments.audit_change(store,'salary_receipt',entry['source'],before,entry,'Ajuste do recebimento de '+entry['date'])
         return entry
     return investments.mutate_store(apply,user_id)

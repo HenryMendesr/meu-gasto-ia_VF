@@ -26,9 +26,9 @@ class RecurringTests(unittest.TestCase):
 
     def test_split_salary_only_posts_when_each_date_arrives_and_is_idempotent(self):
         self.assertEqual(0,recurring.save_plan(self.plan)['posted']);self.assertEqual(0,trust.insights('2026-10')['income']['used'])
-        self.today=date(2026,10,15);self.assertEqual(1,recurring.process_due()['posted']);self.assertEqual(0,trust.insights('2026-10')['income']['used']);self.assertEqual(4000,trust.insights('2026-10')['income']['expected'])
+        self.today=date(2026,10,15);self.assertEqual(1,recurring.process_due()['posted']);self.assertEqual(1500,trust.insights('2026-10')['income']['used']);self.assertEqual(4000,trust.insights('2026-10')['income']['expected'])
         self.today=date(2026,10,30);self.assertEqual(1,recurring.process_due()['posted']);self.assertEqual(0,recurring.process_due()['posted'])
-        self.assertEqual(0,planning.monthly_report('2026-10')['income']);self.assertEqual(4000,planning.monthly_report('2026-10')['expected_income']);self.assertEqual(2,len(self.prefs()['salary_receipts']))
+        self.assertEqual(4000,planning.monthly_report('2026-10')['income']);self.assertEqual(4000,planning.monthly_report('2026-10')['expected_income']);self.assertEqual(2,len(self.prefs()['salary_receipts']))
         self.assertEqual(1000,investments.portfolio()['summary']['cash_balance'])
 
     def test_salary_not_double_counted_with_declared_or_imported_salary(self):
@@ -47,7 +47,7 @@ class RecurringTests(unittest.TestCase):
 
     def test_missing_visits_catch_up_later_months_without_duplicates(self):
         recurring.save_plan(self.plan);self.today=date(2026,12,31);recurring.process_due();recurring.process_due()
-        self.assertEqual(6,len(self.prefs()['salary_receipts']));self.assertEqual(4000,planning.monthly_report('2026-11')['expected_income']);self.assertEqual(0,planning.monthly_report('2026-11')['income'])
+        self.assertEqual(6,len(self.prefs()['salary_receipts']));self.assertEqual(4000,planning.monthly_report('2026-11')['expected_income']);self.assertEqual(4000,planning.monthly_report('2026-11')['income'])
 
     def test_edits_preserve_due_receipts_and_pause_stops_future_posts(self):
         self.today=date(2026,10,15);recurring.save_plan(self.plan)
@@ -61,13 +61,36 @@ class RecurringTests(unittest.TestCase):
         recurring.receipt_action('2026-10:2',{'action':'confirm','amount':2300})
         self.assertEqual(3800,planning.monthly_report('2026-10')['income'])
         recurring.receipt_action('2026-10:1',{'action':'skip'});recurring.process_due();self.assertEqual(2300,planning.monthly_report('2026-10')['income'])
-        recurring.receipt_action('2026-10:1',{'action':'restore'});self.assertEqual(2300,planning.monthly_report('2026-10')['income'])
+        recurring.receipt_action('2026-10:1',{'action':'restore'});self.assertEqual(3800,planning.monthly_report('2026-10')['income'])
         self.assertEqual(2,len(self.prefs()['salary_receipts']))
 
     def test_concurrent_reads_do_not_post_twice(self):
         recurring.save_plan(self.plan);self.today=date(2026,10,30)
         with ThreadPoolExecutor(max_workers=4) as executor:list(executor.map(lambda _:recurring.process_due(),range(8)))
-        self.assertEqual(2,len(self.prefs()['salary_receipts']));self.assertEqual(4000,planning.monthly_report('2026-10')['expected_income']);self.assertEqual(0,planning.monthly_report('2026-10')['income'])
+        self.assertEqual(2,len(self.prefs()['salary_receipts']));self.assertEqual(4000,planning.monthly_report('2026-10')['expected_income']);self.assertEqual(4000,planning.monthly_report('2026-10')['income'])
+
+    def test_delayed_receipt_stays_out_until_received_and_carries_forward(self):
+        self.today=date(2026,10,30);recurring.save_plan(self.plan)
+        recurring.receipt_action('2026-10:2',{'action':'delay'})
+        recurring.process_due()
+        self.assertEqual(1500,trust.insights('2026-10')['income']['used'])
+        self.assertEqual(4000,trust.insights('2026-10')['income']['expected'])
+        self.today=date(2026,11,2)
+        self.assertEqual(1500,trust.insights('2026-11')['opening_balance'])
+        recurring.receipt_action('2026-10:2',{'action':'confirm','amount':2500,'received_date':'2026-11-02'})
+        self.assertEqual(4000,trust.insights('2026-11')['accumulated_balance'])
+
+    def test_existing_unconfirmed_receipts_migrate_once_except_explicit_delays(self):
+        self.today=date(2026,10,30);recurring.save_plan(self.plan)
+        def legacy(store):
+            for entry in store['preferences']['salary_receipts']:
+                entry['status']='scheduled'
+                entry.pop('received_date',None)
+            store['preferences']['salary_receipts'][1]['manual_pending']=True
+        investments.mutate_store(legacy)
+        recurring.process_due();recurring.process_due()
+        self.assertEqual(1500,trust.insights('2026-10')['income']['used'])
+        self.assertEqual(2,len(self.prefs()['salary_receipts']))
 
     def test_invalid_plan_does_not_change_data(self):
         before=investments.load_store()
