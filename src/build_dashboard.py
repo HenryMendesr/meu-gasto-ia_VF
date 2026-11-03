@@ -267,6 +267,32 @@ html=html.replace('O cartão com tudo no lugar.', 'Faturas', 1)
 html=html.replace('Acompanhamento automático por ativo. Ligue ou desligue no cadastro ou na carteira. Consulte a fonte e a data; pode haver atraso.', 'Acompanhe sua carteira e adicione investimentos.', 1)
 html=html.replace('PLANEJAMENTO / ORÇAMENTO MENSAL', 'Orçamento mensal', 1)
 html=html.replace('/app.css?v=27', '/app.css?v=28')
+# Direct interface copy; remove decorative slogans from generated markup.
+html=html.replace('<div class="sidebar-note"><strong>Um passo de cada vez.</strong>Organize o presente.<br>Construa seu próximo capítulo.</div>','')
+for old,new in {
+ 'Seu mês, em um olhar.':'Visão geral',
+ 'Cada movimento conta.':'Registrar gasto',
+ 'O desenho do seu mês.':'Distribuição dos limites',
+ 'Suas metas, um passo de cada vez.':'Metas',
+ 'Seu relatório mensal':'Relatório mensal',
+ 'O mês em números.':'Resumo mensal',
+ 'Quanto você ganha?':'Recebimentos',
+ 'Quais contas se repetem?':'Contas fixas',
+ 'Gastei com…':'Novo gasto',
+ 'Registrar e conferir detalhes':'Lançamentos e detalhes',
+ 'Salário programado: confirmar recebimentos':'Salário programado: entradas automáticas',
+ '<p>Dê um destino para sua renda. Ajuste o plano no seu ritmo.</p>':'',
+ '<p class="quiet">Defina um destino para o dinheiro que está construindo.</p>':'',
+ '<p>Entrou, saiu e o que vem pela frente.</p>':'',
+ '<span class="eyebrow">O próximo capítulo</span>':'',
+ '<span class="eyebrow">Mais clareza para decidir</span>':'',
+ '<span class="eyebrow">No seu ritmo</span>':'',
+ '<span class="eyebrow">No seu radar</span>':'',
+ '<span class="eyebrow">Vencimentos à vista</span>':'',
+ '<span class="ex-eyebrow">No dia a dia</span>':'',
+}.items():
+    html=html.replace(old,new)
+html=html.replace('/app.css?v=28','/app.css?v=29')
 html=html.replace('</style>',(ROOT/'src/calm.css').read_text(encoding='utf-8')+'\n</style>',1)
 
 icons = {

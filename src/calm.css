@@ -1,51 +1,90 @@
-/* Shared hierarchy: quiet surfaces, one emphasis per section, fewer nested boxes. */
-:root{--radius:12px;--shadow:none}
-body .shell{max-width:1500px}
-body .panel h2{font-size:clamp(27px,3vw,38px);letter-spacing:-.035em;line-height:1.2}
-body .panel h3{letter-spacing:-.02em}
-body .panel .eyebrow{font-size:10px;letter-spacing:.08em;color:#9daaa2}
-body .panel :is(.card,.table-card,.focus-panel,.investment-visual,.budget-allocation,.limits-section,.debt-analysis,.debt-form-card,.credit-card-section,.card-bills,.goals-section){box-shadow:none;border-radius:12px;background:#111714;border-color:#29362e}
-body .panel :is(.section-heading,.budget-hero,.investment-toolbar){margin-bottom:30px;background:none;border:0;box-shadow:none;padding-inline:0}
-body .panel :is(.section-heading,.budget-hero-copy) p{max-width:540px;font-size:13px;line-height:1.7;color:#a5b2aa}
+/* Application visual system. */
+:root{--bg:#0c1018;--paper:#141b27;--card:#141b27;--surface:#1b2534;--ink:#f0f4fc;--muted:#a0aec2;--line:#2a3548;--mint:#a4efcf;--green:#a4efcf;--radius:18px;--shadow:0 12px 32px #02061026}
+body{background:radial-gradient(ellipse at 85% 0,#24345145,transparent 48%),var(--bg)}
+body .shell{max-width:1560px}
+body .top{border-color:#263044;min-height:88px;margin-bottom:36px}
+body .top-context strong{color:#d9e3f3;font-size:13px}
+body .top-context span{color:#8696ae}
+body .shell>nav.tabs{background:#101722;border-right:1px solid #263044;padding-inline:16px;gap:6px}
+body .shell>nav.tabs .tab,body .shell>nav.tabs #openCreditCards{font-size:13px;min-height:48px;padding:13px 16px;font-weight:550;color:#a8b6c9;border-radius:12px}
+body .shell>nav.tabs .tab.active,body .shell>nav.tabs #openCreditCards.active{background:#a4efcf;color:#102d25;border-color:#a4efcf;box-shadow:0 4px 18px #a4efcf14}
+body .shell>nav.tabs .tab:hover:not(.active),body .shell>nav.tabs #openCreditCards:hover{background:#202b3c;color:#fff}
+body .brand h1{color:#f1f5fc}
+body .panel h2{font-size:clamp(28px,3vw,40px);font-weight:650;letter-spacing:-.045em;line-height:1.16}
+body .panel h3{font-size:19px;letter-spacing:-.025em;font-weight:600}
+body .panel :is(.section-heading,.budget-hero,.investment-toolbar){background:none;border:0;box-shadow:none;padding-inline:0;margin-bottom:28px}
+body .panel :is(.section-heading,.budget-hero-copy)>div>p,body .budget-hero-copy>p{color:var(--muted);font-size:13px;line-height:1.7;max-width:540px}
 body .panel :is(.section-heading,.budget-hero-copy) .eyebrow{display:none}
-body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics){background:transparent;border:0;box-shadow:none;gap:0;margin-block:24px 32px}
-body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div{background:none;border:0;border-right:1px solid #2d3931;border-radius:0;box-shadow:none;padding:12px 22px}
-body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div:first-child{padding-left:0}
-body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div:last-child{border-right:0}
-body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics) strong{font-size:clamp(22px,2.2vw,30px);letter-spacing:-.7px}
-body .panel :is(.routine-summary,.investment-summary)>div>span{font-size:11px;color:#a1b1a7}
-body .panel :is(.routine-step,.budget-group-count,.budget-metric svg){display:none}
-body .panel :is(.routine-section,.investment-cash,.goals-section,.credit-card-section,.card-bills){background:transparent;border:0;border-top:1px solid #2b3730;border-radius:0;padding:26px 0;margin-block:24px}
-body .panel :is(.fixed-expense-row,.salary-receipt,.credit-card-reminder,.budget-limit-card){background:transparent;border:0;border-bottom:1px solid #2b3730;border-radius:0;box-shadow:none}
-body .panel .investment-cash{gap:18px}
-body .panel .investment-cash .cash-icon{display:none}
-body .panel .investment-cash .cash-heading p{display:none}
-body .panel .quote-trust{font-size:11px}
-body .panel .budget-workspace{grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr);gap:30px}
-body .panel .budget-allocation{background:none;border:0;border-left:1px solid #2b3730;border-radius:0;box-shadow:none}
-body .panel .limits-section{background:none;border:0;padding-inline:0}
+body .panel :is(.card,.table-card,.focus-panel,.investment-visual,.budget-allocation,.limits-section,.debt-analysis,.debt-form-card,.credit-card-section,.card-bills,.goals-section,.routine-section){background:#141c29;border:1px solid #2a3548;border-radius:18px;box-shadow:var(--shadow)}
+body .panel :is(.routine-section,.credit-card-section,.card-bills,.goals-section){padding:26px;margin-block:24px}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics){display:grid;gap:12px;background:none;border:0;box-shadow:none;margin-block:24px 30px}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div{background:#172131;border:1px solid #2d3c52;border-radius:14px;box-shadow:none;padding:20px;min-width:0}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics) strong{font-size:clamp(22px,2.1vw,30px);letter-spacing:-.7px}
+body .panel :is(.routine-summary,.investment-summary) small{color:#a8b8ce}
+body .panel :is(.routine-summary,.investment-summary)>div>span{font-size:11px;color:#8d9eb6}
+body .panel :is(.routine-step,.budget-group-count){display:none}
+body .panel :is(.fixed-expense-row,.salary-receipt,.credit-card-reminder){border:0;border-bottom:1px solid #2c394d;border-radius:0;background:transparent;box-shadow:none;padding-block:20px}
+body .panel .budget-workspace{grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr);gap:20px}
+body .panel .limits-section,body .panel .budget-allocation{padding:24px}
 body .panel .debt-layout{display:flex;flex-direction:column;gap:24px}
-body .panel .debt-analysis{border:0;background:none;padding:0}
+body .panel .debt-analysis{padding:24px}
 body .panel .credit-card-layout{grid-template-columns:1fr}
-body .panel .calm-disclosure,body .panel .home-extra,body .panel .routine-extra{border:0;border-top:1px solid #2b3730;border-radius:0;background:transparent;box-shadow:none;padding:20px 0;margin:16px 0}
-body .panel .calm-disclosure>summary{cursor:pointer;color:#c7d5cc;font-size:14px;font-weight:500;padding:4px 0;line-height:1.6}
-body .panel .calm-disclosure[open]>summary{margin-bottom:24px}
-body .panel .calm-disclosure>summary:focus-visible{outline:2px solid var(--mint);outline-offset:5px}
-body .panel :is(.ex-quick,.ex-flow,.ex-recent,.ex-next){background:transparent;border:0;border-radius:0;padding:12px 0}
-body #dashboardPanel>.ex-flow{margin-top:30px}
-body .glance-metrics{gap:0;background:transparent}
-body .glance-metrics article{border:0;border-right:1px solid #304237;border-radius:0;background:none;padding:16px 24px;gap:10px}
-body .glance-metrics article:first-child{padding-left:0}
-body .glance-metrics article:last-child{border:0}
-body .glance-metrics .glance-money{background:none;border-color:#304237}
-body .glance-metrics .glance-icon{width:28px;height:28px;font-size:21px;border-radius:8px;margin-bottom:12px}
-body .glance-metrics strong{font-size:clamp(24px,2.8vw,38px)}
-body .glance-metrics .glance-money strong{color:#b5ebc9}
-body .glance-metrics article>span:last-child{color:#a1b6a9;font-size:11px}
-body .glance-plan{border:0;border-top:1px solid #2b3730;background:none;border-radius:0;padding:30px 0;margin-top:28px}
-body .ex-flow-track{height:6px}
-body .ex-workspace,body .ex-daily-overview{gap:36px}
-body .panel :is(.text-button,.secondary){box-shadow:none}
-@media(max-width:1100px){body .glance-metrics article{padding:20px}body .glance-metrics article:nth-child(odd){padding-left:0}body .glance-metrics article:nth-child(even){border-right:0}body .glance-metrics article:nth-child(-n+2){border-bottom:1px solid #304237}}
-@media(max-width:800px){body .panel .budget-workspace{grid-template-columns:1fr}body .panel .budget-allocation{border:0;border-top:1px solid #2b3730;padding:24px 0}body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics){row-gap:20px}body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div{padding:8px 12px}body .panel .investment-cash{flex-wrap:wrap}body .panel .calm-disclosure{min-width:0}body .panel .calm-disclosure>summary{min-height:44px;align-content:center}}
-@media(max-width:480px){body .glance-metrics article{padding:18px 12px}body .glance-metrics strong{font-size:clamp(20px,5.8vw,28px)}body .glance-metrics article>span:last-child{font-size:10px}body .glance-metrics .glance-icon{margin-bottom:4px}body .glance-plan{gap:24px}body .panel .routine-section-title{flex-wrap:wrap}}
+body .panel :is(.calm-disclosure,.home-extra,.routine-extra){border:1px solid #2b394e;border-radius:14px;background:#141c29;padding:18px 22px;margin-block:16px;box-shadow:none;min-width:0}
+body .panel :is(.calm-disclosure,.home-extra,.routine-extra)>summary{color:#c6d3e6;cursor:pointer;font-size:13px;font-weight:550;line-height:1.7;min-height:24px}
+body .panel :is(.calm-disclosure,.home-extra,.routine-extra)[open]>summary{margin-bottom:24px}
+body .panel :is(.calm-disclosure,.home-extra,.routine-extra)>summary::marker{color:#a4efcf}
+body .panel :is(.calm-disclosure,.home-extra,.routine-extra)>summary:focus-visible{outline:2px solid #a4efcf;outline-offset:5px}
+body .panel :is(.ex-quick,.ex-flow,.ex-recent,.ex-next){background:none;border:0;border-radius:0;padding:12px 0}
+body .panel :is(input:not([type=checkbox]):not([type=range]),select,textarea){background:#0e1623;border-color:#34435a;color:#e7eef9;border-radius:10px;min-height:44px}
+body .panel :is(input,select,textarea):focus-visible{outline:2px solid #a4efcf;outline-offset:2px}
+body .panel :is(.save,.hero-primary,.new-investment-cta){background:#a4efcf;color:#102d25;border:1px solid #a4efcf;border-radius:11px;font-weight:650;box-shadow:0 4px 14px #a4efcf10}
+body .panel :is(.save,.hero-primary,.new-investment-cta):hover{background:#c1f8e2;transform:translateY(-1px)}
+body .panel .secondary{background:#202d41;color:#d9e4f5;border:1px solid #3a4b65;border-radius:10px;box-shadow:none}
+body .panel .text-button{color:#abd9ef}
+body .panel table th{color:#91a5c2;font-size:11px;background:#111a28;border-color:#29374c}
+body .panel table td{border-color:#28364a}
+body .panel tbody tr:hover{background:#1c293c}
+body #dashboardPanel>.ex-flow{margin:26px 0 24px}
+body #dashboardPanel .dashboard-heading{margin-bottom:22px}
+body #dashboardPanel .dashboard-heading h2{margin:0}
+body .glance-metrics{display:grid;grid-template-columns:1.25fr repeat(3,minmax(0,1fr));gap:14px}
+body .glance-metrics article{position:relative;isolation:isolate;overflow:hidden;padding:24px 20px;border:1px solid #30415b;border-radius:18px;background:linear-gradient(145deg,#1c293c,#141d2c);gap:12px;box-shadow:0 8px 28px #0002}
+body .glance-metrics article:after{content:'';position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 100% 0,#79a8ef16,transparent 60%);pointer-events:none}
+body .glance-metrics .glance-money{background:linear-gradient(125deg,#baf2dd,#8bd6c5);border-color:#c2f4e0;color:#123b33}
+body .glance-metrics .glance-money:after{background:radial-gradient(ellipse at 100% 100%,#ffffff55,transparent 65%)}
+body .glance-metrics .glance-money :is(strong,small){color:#123b33}
+body .glance-metrics .glance-money>span:last-child{color:#2c5e53}
+body .glance-metrics .glance-money strong.negative{color:#9d263b!important}
+body .glance-metrics .glance-icon{width:34px;height:34px;font-size:23px;border-radius:10px;background:#ffffff12;color:#c8d7ee;margin-bottom:12px}
+body .glance-money .glance-icon{background:#174d3e18;color:#184e40}
+body .glance-in .glance-icon{background:#75d3b219;color:#9fe7c9}
+body .glance-out .glance-icon{background:#afafff19;color:#bebdff}
+body .glance-due .glance-icon{background:#edbd741c;color:#edc589}
+body .glance-metrics small{font-size:12px;color:#c1cee0}
+body .glance-metrics strong{font-size:clamp(22px,2.5vw,36px);font-weight:650;letter-spacing:-1.1px;color:#f0f4fc;overflow-wrap:anywhere}
+body .glance-metrics .glance-due strong{color:#efcd9b}
+body .glance-metrics article>span:last-child{font-size:10px;line-height:1.7;color:#9caec7;max-width:220px}
+body .glance-plan{grid-template-columns:1fr 1.45fr;gap:36px;background:#141e2d;border:1px solid #2d3e56;border-radius:18px;padding:26px 28px;margin-top:18px;box-shadow:var(--shadow)}
+body .glance-plan>div:first-child{font-size:12px;color:#afc0d9}
+body .glance-plan strong{font-size:30px;font-weight:600}
+body .glance-bars{gap:18px}
+body .glance-bars>div>span{font-size:11px;color:#b7c6dc}
+body .ex-flow-track{height:7px;background:#29394f;border-radius:20px;margin-top:10px}
+body .ex-flow-track i{background:linear-gradient(90deg,#73c7b2,#b5efcf)}
+body .glance-bars .is-out i{background:linear-gradient(90deg,#8e94db,#bebdff)}
+body .ex-workspace,body .ex-daily-overview{gap:32px}
+body .panel .investment-cash{background:linear-gradient(115deg,#1e3c3b,#172636);border:1px solid #385955;padding:24px;border-radius:18px}
+body .panel .investment-cash .cash-heading p{display:none}
+body .panel .budget-metric-available{background:#193832;border-color:#315c4f}
+body .panel .budget-limit-card{background:#182233;border-color:#2e3d55;box-shadow:none}
+body .storage-status{font-size:10px;color:#8fa4bb}
+body .foot{font-size:11px;color:#7d8fa8;border-color:#263247}
+@media(max-width:1100px){body .glance-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}body .glance-metrics article{padding:22px}body .panel .investment-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){body .shell>nav.tabs{background:#111b2bf5;backdrop-filter:blur(18px);border-top:1px solid #34445d;padding:7px 4px}body .shell>nav.tabs .tab,body .shell>nav.tabs #openCreditCards{font-size:9px;padding:8px 1px;min-height:54px;border-radius:10px}body .panel .budget-workspace{grid-template-columns:1fr}body .panel :is(.routine-section,.credit-card-section,.card-bills,.goals-section){padding:20px}body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics){gap:10px}body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div{padding:16px;overflow-wrap:anywhere}body .glance-plan{grid-template-columns:1fr;gap:24px}body .panel .investment-cash{flex-wrap:wrap}body .panel :is(.calm-disclosure,.home-extra,.routine-extra)>summary{min-height:34px;align-content:center}}
+@media(max-width:480px){body .glance-metrics{gap:10px}body .glance-metrics article{padding:18px 14px;gap:9px;border-radius:15px}body .glance-metrics strong{font-size:clamp(20px,5.5vw,28px)}body .glance-metrics .glance-icon{margin-bottom:5px;width:30px;height:30px}body .glance-metrics small{font-size:11px}body .glance-metrics article>span:last-child{font-size:10px}body .glance-plan{padding:22px 20px}body .panel .routine-section-title{flex-wrap:wrap}body .panel :is(.calm-disclosure,.home-extra,.routine-extra){padding:16px}body .panel .investment-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){body .panel .save:hover{transform:none}}
+/* Avoid duplicate summaries while account data loads. */
+body #dashboardPanel>.home-summary{display:none!important}
+body .shell>nav.tabs #openCreditCards>span:last-child{font-size:inherit;font-weight:inherit}
+body .glance-money strong.positive{color:#123b33!important}
+@media(max-width:800px){body #dashboardPanel .dashboard-heading .hero-copy{text-align:left}body #dashboardPanel .dashboard-heading{align-items:flex-start}body #dashboardPanel .dashboard-heading h2{font-size:30px}body .shell>nav.tabs #openCreditCards>span:last-child{font-size:9px}}
