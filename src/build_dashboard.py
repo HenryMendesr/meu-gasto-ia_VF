@@ -241,6 +241,18 @@ html=html.replace('Editar ganhos e fixos <span>→</span>','Ajustar ganhos <span
 html=html.replace('</style>',(ROOT/'src/experience.css').read_text(encoding='utf-8')+'\n</style>',1)
 html=html.replace('</script>',(ROOT/'src/experience.js').read_text(encoding='utf-8')+'\n</script>',1)
 
+# Keep the home overview visual; forms and detailed records are opt-in.
+html=html.replace('Como está seu mês?', 'Seu mês, em um olhar.', 1)
+html=html.replace('Veja seu mês e resolva o dia a dia aqui mesmo.', 'Entrou, saiu e o que vem pela frente.', 1)
+html=html.replace('Explore seu mês', 'Mês de referência', 1)
+flow,html=extract_block(html,'  <section class="ex-flow"','</section>')
+html=html.replace('<section id="homeWorkspace"',flow+'<details id="homeTools" class="home-extra home-tools"><summary>Registrar e conferir detalhes</summary><section id="homeWorkspace"',1)
+end=html.index('<section id="routinePanel"')
+closing=html.rfind('  </div>',0,end)
+html=html[:closing]+'</details>\n'+html[closing:]
+html=html.replace('Sem fazer contas de cabeça', 'Visão geral', 1)
+html=html.replace('Seu mês em um olhar', 'Resumo do mês', 1)
+
 icons = {
     "≡": '<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/>',
     "▰": '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/>',
