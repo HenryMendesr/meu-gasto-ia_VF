@@ -54,6 +54,28 @@ def income_basis(month, incomes, entries, prefs=None):
             'expected':value,'pending':round(value-imported_confirmed,2) if source=='imported' else 0 if confirmed else value}
 
 
+def carried_cash(month, rows, incomes, entries, prefs):
+    """Carry confirmed cash forward, using the same income source rules each month."""
+    periods = set(incomes)
+    periods.update(entry['date'][:7] for entry in entries)
+    for row in rows:
+        periods.add(row['date'][:7])
+        if row.get('finance', {}).get('paid_date'):
+            periods.add(row['finance']['paid_date'][:7])
+    for receipt in prefs.get('salary_receipts', []):
+        periods.add(receipt['month'])
+        periods.add(receipt.get('received_date', receipt['date'])[:7])
+    periods.update(entry['date'][:7] for entry in prefs.get('card_payments', []))
+    received = spent = 0
+    for period in sorted(periods):
+        if period >= month:
+            continue
+        received += income_basis(period, incomes, entries, prefs)['used']
+        spent += actual_cash(rows, prefs, period)
+    return {'opening_balance': round(received - spent, 2),
+            'previous_income': round(received, 2), 'previous_expenses': round(spent, 2)}
+
+
 def insights(month, user_id=None):
     try:from src.recurring import process_due
     except ImportError:from recurring import process_due
@@ -88,6 +110,7 @@ def insights(month, user_id=None):
     try:from src.finance_rules import projected_expenses
     except ImportError:from finance_rules import projected_expenses
     projected=round(projected_expenses(rows,month)-paid_due+paid_month,2)
+    carry = carried_cash(month, rows, incomes, imported, store.get('preferences', {}))
     wallet = investments.portfolio(user_id)
     quotes = []
     for item in wallet['investments']:
@@ -103,7 +126,11 @@ def insights(month, user_id=None):
         quotes.append({'id': item['id'], 'symbol': item['symbol'], 'source': item.get('quote_source', 'Manual'),
                        'updated_at': stamp, 'manual': manual, 'stale': age is None or age > 24*3600,
                        'price': item['current_price'] if item.get('current_price') is not None else item['average_price']})
-    return {'month': month, 'income': basis, 'cash_expenses': spent, 'pending_debts': reserved,
+    return {**carry, 'accumulated_balance': round(carry['opening_balance'] + basis['used'] - actual_cash(rows,store.get('preferences',{}),month), 2),
+            'accumulated_income': round(carry['previous_income'] + basis['used'], 2),
+            'accumulated_expenses': round(carry['previous_expenses'] + actual_cash(rows,store.get('preferences',{}),month), 2),
+            'projected_balance_with_carry': round(carry['opening_balance'] + basis['expected'] - projected, 2),
+            'month': month, 'income': basis, 'cash_expenses': spent, 'pending_debts': reserved,
             'balance': round(basis['expected'] - projected, 2),'projected_expenses':projected,'confirmed_income':basis['used'],'expected_income':basis['expected'],
             'confirmed_balance':round(basis['used']-actual_cash(rows,store.get('preferences',{}),month),2),
             'actual_expenses':actual_cash(rows,store.get('preferences',{}),month),
