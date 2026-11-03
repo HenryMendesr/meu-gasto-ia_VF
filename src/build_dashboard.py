@@ -253,6 +253,22 @@ html=html[:closing]+'</details>\n'+html[closing:]
 html=html.replace('Sem fazer contas de cabeça', 'Visão geral', 1)
 html=html.replace('Seu mês em um olhar', 'Resumo do mês', 1)
 
+# Secondary analysis stays available behind explicit, native disclosures.
+def disclose_between(source, start, end, label):
+    a=source.index(start);b=source.index(end,a)
+    return source[:a]+f'<details class="calm-disclosure"><summary>{label}</summary>'+source[a:b]+'</details>'+source[b:]
+
+html=disclose_between(html,'    <section class="investment-main">','    <section class="table-card investment-table">','Gráficos da carteira')
+html=disclose_between(html,'<section class="budget-history">','      <details class="budget-category-tools">','Histórico do planejamento e metas')
+html=html.replace('Seu futuro começa aqui.', 'Investimentos', 1)
+html=html.replace('Compromissos sob controle.', 'Dívidas', 1)
+html=html.replace('Seu mês, no seu controle.', 'Planejamento', 1)
+html=html.replace('O cartão com tudo no lugar.', 'Faturas', 1)
+html=html.replace('Acompanhamento automático por ativo. Ligue ou desligue no cadastro ou na carteira. Consulte a fonte e a data; pode haver atraso.', 'Acompanhe sua carteira e adicione investimentos.', 1)
+html=html.replace('PLANEJAMENTO / ORÇAMENTO MENSAL', 'Orçamento mensal', 1)
+html=html.replace('/app.css?v=27', '/app.css?v=28')
+html=html.replace('</style>',(ROOT/'src/calm.css').read_text(encoding='utf-8')+'\n</style>',1)
+
 icons = {
     "≡": '<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/>',
     "▰": '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/>',

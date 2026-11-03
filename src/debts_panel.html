@@ -4,7 +4,7 @@
     <div id="debtPaidSummary" class="debt-paid-summary"></div>
     <div id="debtStatusMessage" class="message" hidden></div>
     <div class="debt-layout">
-      <section class="debt-form-card"><h3 id="debtFormTitle">Novo compromisso</h3><p>Use o saldo que ainda precisa pagar. Parcelas anteriores já pagas ficam fora deste cadastro.</p>
+      <details class="debt-form-card calm-disclosure" id="debtEditor"><summary>Cadastrar ou editar compromisso</summary><h3 id="debtFormTitle">Novo compromisso</h3><p>Use o saldo que ainda precisa pagar. Parcelas anteriores já pagas ficam fora deste cadastro.</p>
         <div id="debtEditNotice" class="debt-edit-notice" hidden></div><form id="debtForm" class="debt-form">
           <label>Compromisso<select name="financing_kind" required><option value="loan">Empréstimo</option><option value="debt">Dívida</option><option value="asset">Financiamento de bem</option></select></label>
           <label><span id="debtTypeLabel">Tipo de empréstimo</span><select name="debt_type" required></select></label>
@@ -25,7 +25,7 @@
           <p id="debtCalculationHelp" class="debt-wide debt-form-help">Valores com centavos automáticos: 12345 → 123,45. Use a taxa mensal do contrato, incluindo os custos financiados no saldo. Price mantém as parcelas; SAC reduz as parcelas com o tempo. A entrada já paga não gera outro gasto.</p>
           <div class="debt-form-actions debt-wide"><button type="submit" class="save">Salvar e gerar parcelas</button><button type="button" id="cancelDebtEdit" class="secondary" hidden>Cancelar edição</button></div><div id="debtFormMessage" class="message debt-wide" hidden></div>
         </form>
-      </section>
+      </details>
       <section class="debt-analysis"><div class="detail-heading"><div><span class="eyebrow">Projeção dos contratos</span><h3>Evolução da dívida</h3></div></div><label class="debt-chart-filter">Exibir contrato<select id="debtChartFilter"><option value="">Todos os compromissos</option></select></label>
         <div id="debtChartEmpty" class="empty">Cadastre um compromisso para gerar os gráficos automaticamente.</div>
         <div id="debtChartContent" hidden>

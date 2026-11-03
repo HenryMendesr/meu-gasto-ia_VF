@@ -1,0 +1,51 @@
+/* Shared hierarchy: quiet surfaces, one emphasis per section, fewer nested boxes. */
+:root{--radius:12px;--shadow:none}
+body .shell{max-width:1500px}
+body .panel h2{font-size:clamp(27px,3vw,38px);letter-spacing:-.035em;line-height:1.2}
+body .panel h3{letter-spacing:-.02em}
+body .panel .eyebrow{font-size:10px;letter-spacing:.08em;color:#9daaa2}
+body .panel :is(.card,.table-card,.focus-panel,.investment-visual,.budget-allocation,.limits-section,.debt-analysis,.debt-form-card,.credit-card-section,.card-bills,.goals-section){box-shadow:none;border-radius:12px;background:#111714;border-color:#29362e}
+body .panel :is(.section-heading,.budget-hero,.investment-toolbar){margin-bottom:30px;background:none;border:0;box-shadow:none;padding-inline:0}
+body .panel :is(.section-heading,.budget-hero-copy) p{max-width:540px;font-size:13px;line-height:1.7;color:#a5b2aa}
+body .panel :is(.section-heading,.budget-hero-copy) .eyebrow{display:none}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics){background:transparent;border:0;box-shadow:none;gap:0;margin-block:24px 32px}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div{background:none;border:0;border-right:1px solid #2d3931;border-radius:0;box-shadow:none;padding:12px 22px}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div:first-child{padding-left:0}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div:last-child{border-right:0}
+body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics) strong{font-size:clamp(22px,2.2vw,30px);letter-spacing:-.7px}
+body .panel :is(.routine-summary,.investment-summary)>div>span{font-size:11px;color:#a1b1a7}
+body .panel :is(.routine-step,.budget-group-count,.budget-metric svg){display:none}
+body .panel :is(.routine-section,.investment-cash,.goals-section,.credit-card-section,.card-bills){background:transparent;border:0;border-top:1px solid #2b3730;border-radius:0;padding:26px 0;margin-block:24px}
+body .panel :is(.fixed-expense-row,.salary-receipt,.credit-card-reminder,.budget-limit-card){background:transparent;border:0;border-bottom:1px solid #2b3730;border-radius:0;box-shadow:none}
+body .panel .investment-cash{gap:18px}
+body .panel .investment-cash .cash-icon{display:none}
+body .panel .investment-cash .cash-heading p{display:none}
+body .panel .quote-trust{font-size:11px}
+body .panel .budget-workspace{grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr);gap:30px}
+body .panel .budget-allocation{background:none;border:0;border-left:1px solid #2b3730;border-radius:0;box-shadow:none}
+body .panel .limits-section{background:none;border:0;padding-inline:0}
+body .panel .debt-layout{display:flex;flex-direction:column;gap:24px}
+body .panel .debt-analysis{border:0;background:none;padding:0}
+body .panel .credit-card-layout{grid-template-columns:1fr}
+body .panel .calm-disclosure,body .panel .home-extra,body .panel .routine-extra{border:0;border-top:1px solid #2b3730;border-radius:0;background:transparent;box-shadow:none;padding:20px 0;margin:16px 0}
+body .panel .calm-disclosure>summary{cursor:pointer;color:#c7d5cc;font-size:14px;font-weight:500;padding:4px 0;line-height:1.6}
+body .panel .calm-disclosure[open]>summary{margin-bottom:24px}
+body .panel .calm-disclosure>summary:focus-visible{outline:2px solid var(--mint);outline-offset:5px}
+body .panel :is(.ex-quick,.ex-flow,.ex-recent,.ex-next){background:transparent;border:0;border-radius:0;padding:12px 0}
+body #dashboardPanel>.ex-flow{margin-top:30px}
+body .glance-metrics{gap:0;background:transparent}
+body .glance-metrics article{border:0;border-right:1px solid #304237;border-radius:0;background:none;padding:16px 24px;gap:10px}
+body .glance-metrics article:first-child{padding-left:0}
+body .glance-metrics article:last-child{border:0}
+body .glance-metrics .glance-money{background:none;border-color:#304237}
+body .glance-metrics .glance-icon{width:28px;height:28px;font-size:21px;border-radius:8px;margin-bottom:12px}
+body .glance-metrics strong{font-size:clamp(24px,2.8vw,38px)}
+body .glance-metrics .glance-money strong{color:#b5ebc9}
+body .glance-metrics article>span:last-child{color:#a1b6a9;font-size:11px}
+body .glance-plan{border:0;border-top:1px solid #2b3730;background:none;border-radius:0;padding:30px 0;margin-top:28px}
+body .ex-flow-track{height:6px}
+body .ex-workspace,body .ex-daily-overview{gap:36px}
+body .panel :is(.text-button,.secondary){box-shadow:none}
+@media(max-width:1100px){body .glance-metrics article{padding:20px}body .glance-metrics article:nth-child(odd){padding-left:0}body .glance-metrics article:nth-child(even){border-right:0}body .glance-metrics article:nth-child(-n+2){border-bottom:1px solid #304237}}
+@media(max-width:800px){body .panel .budget-workspace{grid-template-columns:1fr}body .panel .budget-allocation{border:0;border-top:1px solid #2b3730;padding:24px 0}body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics){row-gap:20px}body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics)>div{padding:8px 12px}body .panel .investment-cash{flex-wrap:wrap}body .panel .calm-disclosure{min-width:0}body .panel .calm-disclosure>summary{min-height:44px;align-content:center}}
+@media(max-width:480px){body .glance-metrics article{padding:18px 12px}body .glance-metrics strong{font-size:clamp(20px,5.8vw,28px)}body .glance-metrics article>span:last-child{font-size:10px}body .glance-metrics .glance-icon{margin-bottom:4px}body .glance-plan{gap:24px}body .panel .routine-section-title{flex-wrap:wrap}}
