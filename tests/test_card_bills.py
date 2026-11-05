@@ -88,9 +88,9 @@ class CardBillTests(unittest.TestCase):
         storage.set_income({'month':'2026-10','cash':3800,'voucher':0,'confirmed':True})
         data=trust.insights('2026-10')['income'];self.assertEqual(3800,data['used']);self.assertEqual(0,data['pending'])
 
-    def test_scheduled_income_preserves_forecast_and_confirmed_separately(self):
+    def test_scheduled_income_counts_due_salary_and_preserves_future_forecast(self):
         recurring.save_plan({'enabled':True,'start_month':'2026-10','source':'Empresa','payments':[{'day':15,'amount':1500},{'day':30,'amount':2500}]})
-        data=trust.insights('2026-10');self.assertEqual(0,data['confirmed_income']);self.assertEqual(4000,data['expected_income'])
+        data=trust.insights('2026-10');self.assertEqual(1500,data['confirmed_income']);self.assertEqual(4000,data['expected_income'])
         recurring.receipt_action('2026-10:1',{'action':'confirm','amount':1400})
         data=trust.insights('2026-10');self.assertEqual(1400,data['confirmed_income']);self.assertEqual(3900,data['expected_income']);self.assertEqual(2500,data['income']['pending'])
         self.assertEqual(1400,planning.monthly_report('2026-10')['income'])
@@ -138,6 +138,6 @@ class CardBillTests(unittest.TestCase):
         recurring.receipt_action('2026-09:1',{'action':'confirm','amount':1400,'received_date':'2026-10-01'})
         september=trust.insights('2026-09')['income'];october=trust.insights('2026-10')['income']
         self.assertEqual(0,september['used']);self.assertEqual(0,september['expected'])
-        self.assertEqual(1400,october['used']);self.assertEqual(2900,october['expected'])
-        transaction=next(entry for entry in planning.monthly_report('2026-10')['transactions'] if entry['kind']=='Salário confirmado')
+        self.assertEqual(2900,october['used']);self.assertEqual(2900,october['expected'])
+        transaction=next(entry for entry in planning.monthly_report('2026-10')['transactions'] if entry['kind']=='Salário confirmado' and entry['amount']==1400)
         self.assertEqual('2026-10-01',transaction['date']);self.assertEqual(1400,transaction['amount'])
