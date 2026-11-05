@@ -25,9 +25,14 @@ def audit(store, kind, subject, before, after, reason):
 def preferences(payload, user_id=None):
     if not isinstance(payload, dict):
         raise ValueError('Preferências inválidas')
-    allowed = {'onboarding_dismissed', 'analytics_consent'}
-    if any(key not in allowed or not isinstance(value, bool) for key, value in payload.items()):
+    allowed = {'onboarding_dismissed', 'analytics_consent', 'investment_education'}
+    if any(key not in allowed or (key != 'investment_education' and not isinstance(value, bool)) for key, value in payload.items()):
         raise ValueError('Preferências inválidas')
+    payload = copy.deepcopy(payload)
+    if 'investment_education' in payload:
+        try:from src.investor_education import validate_education
+        except ImportError:from investor_education import validate_education
+        payload['investment_education'] = validate_education(payload['investment_education'])
     def save(store):
         current = store.setdefault('preferences', {})
         current.update(payload)
