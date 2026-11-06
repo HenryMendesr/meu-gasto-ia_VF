@@ -76,6 +76,13 @@
 @media(prefers-reduced-motion:reduce){.ad-skeleton div{animation:none}}
 .ad-inline-error{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 17px;margin-bottom:12px;border:1px solid #635744;border-radius:10px;background:#272318;color:#d2c5a8;font-size:11px;line-height:1.7}.ad-inline-error strong{font-weight:550}.ad-inline-error span{color:#b9ac91}.ad-inline-error button{margin-left:auto}
 
+.suitability-card{margin:20px 0;padding:24px;border:1px solid var(--border,#dce2e7);border-radius:18px;background:var(--surface,#fff);color:var(--text,#263443)}
+.suitability-card p{max-width:80ch;line-height:1.6}.suitability-card h3{margin:8px 0}.suitability-card details{margin-top:18px}.suitability-card summary{cursor:pointer}.suitability-card progress{width:100%;margin-bottom:18px}.suitability-card fieldset{min-width:0;margin:18px 0;padding:18px;border:1px solid #dce2e7;border-radius:12px}.suitability-card legend{font-weight:600;padding:0 8px}.suitability-card legend small{font-weight:400}.suitability-card label{display:flex;align-items:baseline;gap:10px;margin:10px 0;padding:10px;border-radius:8px;cursor:pointer}.suitability-card label:has(input:checked){background:#edf5ff}.suitability-card input[type=radio],.suitability-card input[type=checkbox]{width:auto;flex-shrink:0}.suitability-card [hidden]{display:none!important}.suitability-card button{margin:5px 4px 5px 0}
+
+.suitability-card{border:2px solid #a6c6b7;background:linear-gradient(120deg,#edf8f1,#f3f7ff);box-shadow:0 8px 26px rgba(24,90,61,.08)}
+.suitability-intro{display:flex;align-items:center;justify-content:space-between;gap:24px}.suitability-intro h3{font-size:clamp(24px,3vw,32px);line-height:1.2}.suitability-intro p{margin:10px 0}.suitability-intro small{color:#465867}.suitability-card .suitability-cta{display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:56px;padding:16px 24px;border:0;border-radius:12px;background:#126142;color:#fff;font-size:16px;font-weight:800;line-height:1.4;box-shadow:0 5px 14px rgba(18,97,66,.22);cursor:pointer;flex-shrink:0;max-width:100%}.suitability-card .suitability-cta:hover{background:#0c4b32}.suitability-card .suitability-cta:focus-visible{outline:3px solid #235fa4;outline-offset:4px}
+@media(max-width:760px){.suitability-card{padding:20px}.suitability-intro{align-items:stretch;flex-direction:column;gap:16px}.suitability-card .suitability-cta{width:100%;margin:0;white-space:normal}}
+
 .statement-upload{max-width:920px;margin:0 auto 15px;background:linear-gradient(125deg,var(--card),var(--surface))}.statement-intro{display:flex;align-items:center;gap:13px}.statement-intro h2{margin:0 0 2px}.statement-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--mint),var(--green));color:var(--card);font-size:25px;font-weight:800;box-shadow:0 9px 22px rgba(7,133,111,.2)}.statement-upload-form{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:18px}.statement-file{display:flex;align-items:center;gap:12px;min-height:48px;padding:7px 10px;border:1px dashed #9dcec5;border-radius:12px;background:var(--card);color:var(--teal);font-size:12px;font-weight:800}.statement-file input{width:100%;min-width:0}.statement-upload-form .save{grid-column:auto;padding-inline:22px}.statement-tips{display:flex;gap:16px;flex-wrap:wrap;margin-top:13px;color:var(--green);font-size:11px;font-weight:750}.statement-review{max-width:1100px;margin:0 auto 15px}.statement-review-head,.statement-review-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.statement-review-head h2{margin:0}.statement-review-note{margin:15px 0;padding:10px 12px;border-radius:10px;background:var(--surface);color:#775f0d;font-size:12px;font-weight:700}.statement-rows{display:grid;gap:8px;max-height:540px;overflow:auto;padding-right:3px}.statement-row{display:grid;grid-template-columns:30px 105px minmax(150px,1.4fr) 105px 180px minmax(150px,1fr);gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}.statement-row.needs-review{border-color:#e4c965;background:var(--surface)}.statement-row input,.statement-row select{width:100%;min-width:0;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)}.statement-row .statement-check{width:18px;height:18px}.statement-amount{text-align:right;font-weight:800;color:var(--teal)}.statement-review-actions{margin-top:15px;padding-top:15px;border-top:1px solid var(--line)}.statement-review-actions>span{font-size:13px;font-weight:800;color:var(--teal)}.statement-review-actions .save{grid-column:auto}.statement-row-labels{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.04em}
 @media(max-width:800px){.statement-upload-form{grid-template-columns:1fr}.statement-upload-form .save{width:100%}.statement-tips{display:grid;gap:5px}.statement-review{padding:14px}.statement-row{grid-template-columns:28px 1fr 105px}.statement-row .statement-date{grid-column:2}.statement-row .statement-place{grid-column:1/-1}.statement-row .statement-category{grid-column:1/3}.statement-row .statement-description{grid-column:1/-1}.statement-review-head{align-items:flex-start}.statement-review-actions{position:sticky;bottom:82px;padding:11px;border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 8px 25px rgba(11,59,74,.14);backdrop-filter:blur(12px)}}
 .statement-row{grid-template-columns:30px 105px minmax(140px,1.3fr) 100px 110px 175px minmax(135px,1fr)}.statement-row.income{border-left:4px solid var(--mint);background:var(--surface)}.statement-row.income .statement-amount{color:var(--green)}.statement-kind{font-weight:800}.income-flow{margin-top:24px;padding:25px 22px;border-top:1px solid var(--line)}.income-flow .section-title h2{font-size:15px}.income-flow .income-fill{background:linear-gradient(90deg,var(--mint),var(--green))}
@@ -723,6 +730,28 @@ body .glance-money strong.positive{color:#123b33!important}
 
   <div id="investmentsPanel" class="panel" role="region" aria-label="Investimentos" hidden>
     <section class="portfolio-shell">
+    <section class="suitability-card" aria-labelledby="suitabilityTitle">
+      <div class="suitability-intro">
+        <div><span class="eyebrow">Comece por aqui</span>
+          <h3 id="suitabilityTitle">Primeira vez investindo?</h3>
+          <p>Descubra seu perfil de investidor e entenda que risco cabe na sua vida.</p>
+          <small>20 perguntas · cerca de 5 a 8 minutos · sem precisar saber investir</small>
+        </div>
+        <button type="button" id="startSuitability" class="save suitability-cta">Descobrir meu perfil de investidor <span aria-hidden="true">→</span></button>
+      </div>
+      <div id="suitabilityResult" role="status" aria-live="polite"></div>
+      <form id="suitabilityForm" hidden>
+        <p>Considere o dinheiro destinado ao seu principal objetivo e sua situação atual. Não há respostas melhores: responda com sinceridade.</p>
+        <p id="suitabilityProgress" aria-live="polite"></p>
+        <progress id="suitabilityMeter" max="20" value="0" aria-label="Perguntas respondidas"></progress>
+        <div id="suitabilityQuestions"></div>
+        <p><label><input type="checkbox" id="suitabilityConfirm" required> Confirmo que as respostas refletem minha situação atual e entendo que o resultado é educativo.</label></p>
+        <p id="suitabilityError" role="alert" class="negative"></p>
+        <button type="submit" class="save">Calcular e salvar meu perfil</button>
+        <button type="button" id="cancelSuitability" class="secondary">Cancelar</button>
+      </form>
+      <details><summary>Como funciona esta análise</summary><p>O perfil considera capacidade financeira, conhecimento e tolerância a risco separadamente. A dimensão mais restritiva limita o resultado; prazo curto, necessidade de resgate, ausência de reserva, dívidas caras ou perdas que comprometam o essencial limitam a classificação a conservador.</p><p>Este é um questionário educativo do app, inspirado nos eixos de suitability. Não substitui a API da sua instituição, nem determina a adequação de um produto específico. Cada instituição define perguntas e metodologia próprias. Atualize ao mudar renda, objetivos ou situação financeira.</p><p>Referências para consulta: <a href="https://conteudo.cvm.gov.br/legislacao/resolucoes/resol030.html" target="_blank" rel="noopener noreferrer">Resolução CVM 30</a> e <a href="https://www.anbima.com.br/pt_br/autorregular/codigos/distribuicao-de-produtos-de-investimento.htm" target="_blank" rel="noopener noreferrer">distribuição de produtos de investimento — ANBIMA</a>. A classificação do app não é certificada por essas entidades.</p></details>
+    </section>
     <div class="investment-toolbar section-heading">
       <div class="portfolio-heading"><span class="eyebrow">Seu patrimônio</span><h2>Investimentos</h2><p>Acompanhe sua carteira e adicione investimentos.</p><div id="quoteTrustNote" class="quote-trust"></div><div id="investmentUpdated" class="update-stamp">Ainda não atualizada</div></div>
       <div class="actions"><button id="refreshInvestments" class="secondary" type="button">Atualizar taxas e cotações</button><button id="newInvestment" class="save new-investment-cta" type="button"><span aria-hidden="true">＋</span> Adicionar investimento</button></div>
@@ -851,7 +880,7 @@ body .glance-money strong.positive{color:#123b33!important}
   <div class="foot">Seus dados financeiros são privados e separados por conta</div>
   <div id="updateBanner" class="update-banner" hidden><span>Uma nova versão do aplicativo está pronta.</span><button id="applyUpdate" type="button">Atualizar</button></div>
 </main><script>
-const INVESTMENT_DATA={"daily_summary":{"latest":{"date":"2026-11-03","operations":[],"invested":0,"sales":0,"income":0,"realized_profit":0,"realized_with_income":0,"fees":0,"cash_flow":0,"assets":[],"missing_quotes":0,"performance":null,"known_performance":0,"personal_expenses":0,"expense_rows":[]},"today":{"date":"2026-11-03","operations":[],"invested":0,"sales":0,"income":0,"realized_profit":0,"realized_with_income":0,"fees":0,"cash_flow":0,"assets":[],"missing_quotes":0,"performance":null,"known_performance":0,"personal_expenses":0,"expense_rows":[]}},"investments":[],"history":[],"history_source":"snapshots","updated_at":null,"cash_updated_at":null,"goals":[],"preferences":{},"audit_log":[],"summary":{"cash_balance":0,"total_with_cash":0,"amount_applied":0,"current_value":0,"profit_loss":0,"income_received":0,"unrealized_profit_loss":0,"realized_profit_loss":0,"return_percent":0,"monthly_estimated_gain":0}};
+const INVESTMENT_DATA={"daily_summary":{"latest":{"date":"2026-11-06","operations":[],"invested":0,"sales":0,"income":0,"realized_profit":0,"realized_with_income":0,"fees":0,"cash_flow":0,"assets":[],"missing_quotes":0,"performance":null,"known_performance":0,"personal_expenses":0,"expense_rows":[]},"today":{"date":"2026-11-06","operations":[],"invested":0,"sales":0,"income":0,"realized_profit":0,"realized_with_income":0,"fees":0,"cash_flow":0,"assets":[],"missing_quotes":0,"performance":null,"known_performance":0,"personal_expenses":0,"expense_rows":[]}},"investments":[],"history":[],"history_source":"snapshots","updated_at":null,"cash_updated_at":null,"goals":[],"preferences":{},"audit_log":[],"summary":{"cash_balance":0,"total_with_cash":0,"amount_applied":0,"current_value":0,"profit_loss":0,"income_received":0,"unrealized_profit_loss":0,"realized_profit_loss":0,"return_percent":0,"monthly_estimated_gain":0}};
 let DATA=[];
 const DEFAULT_INCOME={};
 const DEFAULT_VOUCHER={};
@@ -1191,6 +1220,271 @@ function renderDailySummary(){
  document.querySelector('#dailyExpenses').innerHTML=`<div class="daily-cash-line"><span>Movimentação líquida do caixa de investimentos</span><b class="${data.cash_flow>=0?'positive':'negative'}">${brl(data.cash_flow)}</b></div><p class="daily-note">Vendas + proventos − compras. Não inclui ajustes manuais de caixa.</p><div class="daily-cash-line"><span>Taxas das operações (já incluídas nos valores)</span><b>${brl(data.fees)}</b></div><h4>Despesas pessoais registradas</h4>${data.expense_rows.length?data.expense_rows.map(row=>`<div class="daily-cash-line"><span>${iEsc(row.label)} <small>· ${iEsc(row.payment)}</small></span><b>${brl(row.amount)}</b></div>`).join(''):'<p class="daily-empty">Nenhuma despesa pessoal registrada neste dia.</p>'}<p class="daily-note">Gastos comuns seguem a data do lançamento; dívidas entram apenas quando marcadas como pagas, na data do pagamento.</p>`;
 }
 document.querySelector('#dailySummaryPeriod').addEventListener('change',renderDailySummary);
+
+const suitabilityQuestions=[
+  {
+    "id": "objective",
+    "section": "Objetivos e prazos",
+    "title": "Qual é o principal objetivo deste dinheiro?",
+    "options": [
+      "Preservar patrimônio ou formar reserva",
+      "Comprar um bem ou realizar um projeto",
+      "Complementar renda no futuro",
+      "Crescer patrimônio aceitando perdas"
+    ],
+    "dimension": "tolerance"
+  },
+  {
+    "id": "horizon",
+    "section": "Objetivos e prazos",
+    "title": "Quando pretende começar a usar este dinheiro?",
+    "options": [
+      "Em até 1 ano",
+      "Entre 1 e 3 anos",
+      "Entre 3 e 5 anos",
+      "Depois de 5 anos"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "liquidity",
+    "section": "Objetivos e prazos",
+    "title": "Quanto deste valor pode precisar resgatar nos próximos 12 meses?",
+    "options": [
+      "Tudo ou quase tudo",
+      "Mais da metade",
+      "Uma pequena parte",
+      "Nenhuma parte prevista"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "income",
+    "section": "Situação financeira",
+    "title": "Como é sua renda para pagar as despesas essenciais?",
+    "options": [
+      "Insuficiente ou sem previsibilidade",
+      "Variável e às vezes insuficiente",
+      "Suficiente, mas variável",
+      "Suficiente e estável"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "surplus",
+    "section": "Situação financeira",
+    "title": "Após despesas e parcelas, quanto da renda costuma sobrar?",
+    "options": [
+      "Nada ou tenho déficit",
+      "Até 10%",
+      "Mais de 10% até 30%",
+      "Mais de 30%"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "reserve",
+    "section": "Situação financeira",
+    "title": "Sua reserva de emergência cobre quantos meses de despesas essenciais?",
+    "options": [
+      "Não tenho reserva",
+      "Menos de 3 meses",
+      "De 3 a menos de 6 meses",
+      "6 meses ou mais"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "debt",
+    "section": "Situação financeira",
+    "title": "Como estão suas dívidas?",
+    "options": [
+      "Atrasadas ou uso rotativo/cheque especial",
+      "Parcelas comprometem muito o orçamento",
+      "Parcelas cabem no orçamento, sem atrasos",
+      "Não tenho dívidas"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "wealth",
+    "section": "Situação financeira",
+    "title": "Que parcela do seu patrimônio financeiro este investimento representa?",
+    "options": [
+      "Mais de 75%",
+      "Mais de 50% até 75%",
+      "Mais de 25% até 50%",
+      "Até 25%"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "loss_capacity",
+    "section": "Situação financeira",
+    "title": "Uma perda de 20% neste valor afetaria suas despesas ou projetos essenciais?",
+    "options": [
+      "Impediria pagar despesas essenciais",
+      "Exigiria adiar um projeto essencial",
+      "Exigiria ajustes, sem comprometer o essencial",
+      "Não comprometeria despesas nem projetos essenciais"
+    ],
+    "dimension": "capacity"
+  },
+  {
+    "id": "experience",
+    "section": "Conhecimento e experiência",
+    "title": "Há quanto tempo investe além da poupança?",
+    "options": [
+      "Nunca investi",
+      "Há menos de 1 ano",
+      "De 1 a 3 anos",
+      "Há mais de 3 anos"
+    ],
+    "dimension": "knowledge"
+  },
+  {
+    "id": "products",
+    "section": "Conhecimento e experiência",
+    "title": "Com quais produtos você já operou e entende os riscos?",
+    "options": [
+      "Só poupança ou nenhum",
+      "Tesouro, CDB ou outros títulos de renda fixa",
+      "Também fundos, ações, FIIs ou ETFs",
+      "Também derivativos ou produtos estruturados"
+    ],
+    "dimension": "knowledge"
+  },
+  {
+    "id": "frequency",
+    "section": "Conhecimento e experiência",
+    "title": "Com que frequência tomou decisões de investimento nos últimos 2 anos?",
+    "options": [
+      "Nunca",
+      "Uma ou poucas vezes",
+      "Periodicamente, ao longo do ano",
+      "Frequentemente, acompanhando riscos e resultados"
+    ],
+    "dimension": "knowledge"
+  },
+  {
+    "id": "bond",
+    "section": "Conhecimento e experiência",
+    "title": "Um título de renda fixa vendido antes do vencimento pode dar prejuízo?",
+    "options": [
+      "Não sei",
+      "Não, renda fixa garante sempre o valor aplicado",
+      "Sim, seu preço pode cair com as taxas de mercado"
+    ],
+    "dimension": "quiz"
+  },
+  {
+    "id": "diversification",
+    "section": "Conhecimento e experiência",
+    "title": "Diversificar investimentos significa que não existe risco de perda?",
+    "options": [
+      "Não sei",
+      "Sim, elimina qualquer perda",
+      "Não, reduz concentração, mas não elimina perdas"
+    ],
+    "dimension": "quiz"
+  },
+  {
+    "id": "credit",
+    "section": "Conhecimento e experiência",
+    "title": "Uma rentabilidade alta prometida por um emissor significa o quê?",
+    "options": [
+      "Não sei",
+      "Que o retorno é seguro",
+      "Que preciso avaliar risco de crédito, liquidez e garantias"
+    ],
+    "dimension": "quiz"
+  },
+  {
+    "id": "reaction",
+    "section": "Tolerância a risco",
+    "title": "R$ 10 mil caem para R$ 8 mil em um mês. Como você provavelmente reagiria?",
+    "options": [
+      "Resgataria tudo para evitar novas perdas",
+      "Resgataria uma parte",
+      "Manteria após revisar os fundamentos",
+      "Poderia aportar mais após reavaliar os riscos"
+    ],
+    "dimension": "tolerance"
+  },
+  {
+    "id": "loss_tolerance",
+    "section": "Tolerância a risco",
+    "title": "Qual perda temporária conseguiria aceitar sem abandonar seu plano?",
+    "options": [
+      "Nenhuma perda",
+      "Até 5%",
+      "Mais de 5% até 20%",
+      "Mais de 20%, sabendo que pode não recuperar"
+    ],
+    "dimension": "tolerance"
+  },
+  {
+    "id": "tradeoff",
+    "section": "Tolerância a risco",
+    "title": "Qual relação entre risco e retorno combina mais com você?",
+    "options": [
+      "Priorizar estabilidade, mesmo com retorno menor",
+      "Aceitar pequenas oscilações por algum retorno adicional",
+      "Aceitar oscilações relevantes por crescimento no longo prazo",
+      "Aceitar perdas elevadas por maior potencial de retorno"
+    ],
+    "dimension": "tolerance"
+  },
+  {
+    "id": "illiquidity",
+    "section": "Tolerância a risco",
+    "title": "Como se sente ao manter parte do dinheiro indisponível para resgate?",
+    "options": [
+      "Preciso poder resgatar tudo a qualquer momento",
+      "Aceito prazos curtos, com pouca oscilação",
+      "Aceito alguns anos para parte do patrimônio",
+      "Aceito prazos longos para parte do patrimônio"
+    ],
+    "dimension": "tolerance"
+  },
+  {
+    "id": "past_loss",
+    "section": "Tolerância a risco",
+    "title": "Como agiu na maior perda que já teve?",
+    "options": [
+      "Nunca passei por uma perda e não sei como reagiria",
+      "Vendi por desconforto com a queda",
+      "Revisei e mantive o que seguia adequado",
+      "Revisei e investi mais, respeitando meus limites"
+    ],
+    "dimension": "tolerance"
+  }
+]
+;
+const suitabilityForm=document.querySelector('#suitabilityForm');
+function renderSuitability(){
+ const result=portfolio.preferences?.investor_profile,box=document.querySelector('#suitabilityResult');
+ if(!result){box.textContent='';document.querySelector('#startSuitability').innerHTML='Descobrir meu perfil de investidor <span aria-hidden="true">→</span>';return}
+ const labels={capacity:'Capacidade financeira',knowledge:'Conhecimento e experiência',tolerance:'Tolerância a risco'};
+ const age=Date.now()-new Date(result.completed_at).getTime(),review=result.version!==1||!Number.isFinite(age)||age>365*86400000;
+ box.innerHTML=`<h4>Seu perfil educativo: ${iEsc(result.profile)}</h4><p>Respondido em ${iEsc(formatStamp(result.completed_at))}. ${review?'Reavalie seu perfil: a análise tem mais de um ano ou mudou de versão.':'Reavalie sempre que sua situação mudar.'}</p><ul>${Object.entries(labels).map(([key,label])=>`<li>${label}: ${iEsc(result.scores?.[key])}/100</li>`).join('')}</ul><p>Índices internos do app; não representam probabilidade de acerto ou retorno.</p><ul>${(result.reasons||[]).map(reason=>`<li>${iEsc(reason)}</li>`).join('')}</ul><p>${iEsc({Conservador:'Priorize preservação e liquidez compatíveis com seu objetivo. Mesmo renda fixa tem riscos.',Moderado:'Você sinaliza espaço para oscilações, respeitando prazos, liquidez e diversificação.',Arrojado:'Você sinaliza capacidade e disposição para perdas relevantes. Isso não torna qualquer produto adequado.'}[result.profile]||'')}</p>`;
+ document.querySelector('#startSuitability').textContent='Refazer análise de perfil';
+}
+function suitabilityProgress(){const count=suitabilityQuestions.filter(q=>suitabilityForm.querySelector(`input[name="${q.id}"]:checked`)).length;document.querySelector('#suitabilityProgress').textContent=`${count} de ${suitabilityQuestions.length} perguntas respondidas`;document.querySelector('#suitabilityMeter').value=count}
+document.querySelector('#startSuitability').onclick=()=>{
+ const old=portfolio.preferences?.investor_profile,answers=old?.version===1?old.answers||{}:{};
+ document.querySelector('#suitabilityQuestions').innerHTML=suitabilityQuestions.map((q,i)=>`<fieldset><legend><small>${iEsc(q.section)} · ${i+1}/${suitabilityQuestions.length}</small><br>${iEsc(q.title)}</legend>${q.options.map((option,value)=>`<label><input type="radio" name="${q.id}" value="${value}" required ${answers[q.id]===value?'checked':''}> <span>${iEsc(option)}</span></label>`).join('')}</fieldset>`).join('');
+ suitabilityForm.hidden=false;document.querySelector('#suitabilityConfirm').checked=false;document.querySelector('#suitabilityError').textContent='';suitabilityProgress();suitabilityForm.querySelector('input').focus();
+};
+suitabilityForm.addEventListener('change',suitabilityProgress);
+document.querySelector('#cancelSuitability').onclick=()=>{suitabilityForm.hidden=true;document.querySelector('#startSuitability').focus()};
+suitabilityForm.onsubmit=async event=>{event.preventDefault();const button=suitabilityForm.querySelector('[type="submit"]'),error=document.querySelector('#suitabilityError');error.textContent='';if(!canWrite){error.textContent=localOnlyMessage();return}button.disabled=true;try{
+ const answers=Object.fromEntries(suitabilityQuestions.map(q=>[q.id,Number(new FormData(suitabilityForm).get(q.id))]));
+ const result=await trustRequest('/api/preferences',{investor_profile:{version:1,answers}});
+ portfolio.preferences=result.preferences;ACCOUNT_PREFERENCES=result.preferences;suitabilityForm.hidden=true;renderSuitability();document.querySelector('#startSuitability').focus();
+ }catch(e){error.textContent=e.message}finally{button.disabled=false}};
+document.addEventListener('finance-updated',renderSuitability);
+renderSuitability();
 
 let statementItems=[],statementAnalysis={};
 const statementEsc=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));

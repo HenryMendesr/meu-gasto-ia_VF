@@ -1,0 +1,22 @@
+    <section class="suitability-card" aria-labelledby="suitabilityTitle">
+      <div class="suitability-intro">
+        <div><span class="eyebrow">Comece por aqui</span>
+          <h3 id="suitabilityTitle">Primeira vez investindo?</h3>
+          <p>Descubra seu perfil de investidor e entenda que risco cabe na sua vida.</p>
+          <small>20 perguntas · cerca de 5 a 8 minutos · sem precisar saber investir</small>
+        </div>
+        <button type="button" id="startSuitability" class="save suitability-cta">Descobrir meu perfil de investidor <span aria-hidden="true">→</span></button>
+      </div>
+      <div id="suitabilityResult" role="status" aria-live="polite"></div>
+      <form id="suitabilityForm" hidden>
+        <p>Considere o dinheiro destinado ao seu principal objetivo e sua situação atual. Não há respostas melhores: responda com sinceridade.</p>
+        <p id="suitabilityProgress" aria-live="polite"></p>
+        <progress id="suitabilityMeter" max="20" value="0" aria-label="Perguntas respondidas"></progress>
+        <div id="suitabilityQuestions"></div>
+        <p><label><input type="checkbox" id="suitabilityConfirm" required> Confirmo que as respostas refletem minha situação atual e entendo que o resultado é educativo.</label></p>
+        <p id="suitabilityError" role="alert" class="negative"></p>
+        <button type="submit" class="save">Calcular e salvar meu perfil</button>
+        <button type="button" id="cancelSuitability" class="secondary">Cancelar</button>
+      </form>
+      <details><summary>Como funciona esta análise</summary><p>O perfil considera capacidade financeira, conhecimento e tolerância a risco separadamente. A dimensão mais restritiva limita o resultado; prazo curto, necessidade de resgate, ausência de reserva, dívidas caras ou perdas que comprometam o essencial limitam a classificação a conservador.</p><p>Este é um questionário educativo do app, inspirado nos eixos de suitability. Não substitui a API da sua instituição, nem determina a adequação de um produto específico. Cada instituição define perguntas e metodologia próprias. Atualize ao mudar renda, objetivos ou situação financeira.</p><p>Referências para consulta: <a href="https://conteudo.cvm.gov.br/legislacao/resolucoes/resol030.html" target="_blank" rel="noopener noreferrer">Resolução CVM 30</a> e <a href="https://www.anbima.com.br/pt_br/autorregular/codigos/distribuicao-de-produtos-de-investimento.htm" target="_blank" rel="noopener noreferrer">distribuição de produtos de investimento — ANBIMA</a>. A classificação do app não é certificada por essas entidades.</p></details>
+    </section>

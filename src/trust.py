@@ -25,12 +25,22 @@ def audit(store, kind, subject, before, after, reason):
 def preferences(payload, user_id=None):
     if not isinstance(payload, dict):
         raise ValueError('Preferências inválidas')
+    profile = None
+    if 'investor_profile' in payload:
+        try:
+            from src import suitability
+        except ImportError:
+            import suitability
+        profile = suitability.evaluate(payload['investor_profile'])
+        profile['completed_at'] = investments.now_iso()
     allowed = {'onboarding_dismissed', 'analytics_consent'}
-    if any(key not in allowed or not isinstance(value, bool) for key, value in payload.items()):
+    if any(key not in allowed or not isinstance(value, bool) for key, value in payload.items() if key != 'investor_profile'):
         raise ValueError('Preferências inválidas')
     def save(store):
         current = store.setdefault('preferences', {})
-        current.update(payload)
+        current.update({key: value for key, value in payload.items() if key != 'investor_profile'})
+        if profile is not None:
+            current['investor_profile'] = profile
         if payload.get('analytics_consent') is False:
             store.pop('usage_metrics', None)
         return current
