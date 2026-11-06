@@ -105,3 +105,46 @@ class AutomaticQuoteTests(unittest.TestCase):
         with patch.object(investments,'fetch_quote',side_effect=self.quote) as fetch:
             investments.refresh_investments(quote_fetcher=fetch,automatic=True)
         self.assertEqual(2,fetch.call_count)
+
+class FractionalAndFallbackTests(unittest.TestCase):
+    def test_fractional_ticker_uses_standard_quote_without_changing_trade(self):
+        with patch.object(investments, 'brapi_data', return_value={'currency':'BRL','regularMarketPrice':30,'regularMarketTime':stamp('2026-10-29')}) as fetch:
+            result=investments.fetch_quote(' petr4f ')
+        fetch.assert_called_once_with('PETR4')
+        self.assertEqual('Brapi',result['source'])
+        normalized=investments.normalize_payload({'type':'Ações','symbol':'petr4f','quantity':1,'average_price':29,'purchase_date':'2026-10-01'})
+        self.assertEqual('PETR4F',normalized['symbol'])
+        self.assertEqual(1,normalized['quantity'])
+
+    def test_fractional_history_and_yahoo_use_standard_symbol(self):
+        with patch.object(investments,'fetch_json',return_value={'chart':{'result':[{}]}}) as fetch:
+            investments.yahoo_chart('PETR4F')
+        self.assertIn('/PETR4.SA?',fetch.call_args.args[0])
+        self.assertEqual('BTC-BRL',investments.quote_symbol('BTC-BRL'))
+        self.assertEqual('HGLG11',investments.quote_symbol('HGLG11'))
+
+    def test_third_provider_takes_over_and_parses_trading_day(self):
+        data={'Global Quote':{'01. symbol':'PETR4.SAO','05. price':'30','08. previous close':'29','07. latest trading day':'2026-10-29'}}
+        with patch.dict(os.environ,{'ALPHAVANTAGE_API_KEY':'secret&key'}),patch.object(investments,'fetch_json',side_effect=[ValueError(),ValueError(),ValueError(),data]) as fetch:
+            result=investments.fetch_quote('PETR4F')
+        self.assertEqual(4,fetch.call_count)
+        self.assertEqual('Alpha Vantage',result['source'])
+        self.assertEqual('BRL',result['currency'])
+        self.assertEqual('2026-10-29',result['quote_date'])
+        self.assertEqual(30,result['price'])
+        self.assertAlmostEqual(100/29,result['daily_change_percent'],places=4)
+        self.assertIn('apikey=secret%26key',fetch.call_args.args[0])
+        self.assertNotIn('secret',str(result))
+
+    def test_bad_or_rate_limited_third_provider_is_rejected(self):
+        for data in ({'Note':'Limit reached'},{'Global Quote':{}},{'Global Quote':{'01. symbol':'AAPL','05. price':'30','07. latest trading day':'2026-10-29'}}):
+            with self.subTest(data=data),patch.dict(os.environ,{'ALPHAVANTAGE_API_KEY':'secret'}),patch.object(investments,'fetch_json',return_value=data):
+                with self.assertRaises(ValueError) as error:
+                    investments.alpha_vantage_quote('PETR4')
+                self.assertNotIn('secret',str(error.exception))
+
+    def test_missing_key_skips_network_and_reports_configuration(self):
+        with patch.dict(os.environ,{'ALPHAVANTAGE_API_KEY':''}),patch.object(investments,'fetch_json') as fetch:
+            with self.assertRaisesRegex(ValueError,'ALPHAVANTAGE_API_KEY'):
+                investments.alpha_vantage_quote('PETR4')
+            fetch.assert_not_called()

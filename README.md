@@ -273,3 +273,13 @@ O resumo usa barras para comparar ganhos previstos e saídas, explicita o que ai
 **O que vem agora** reúne vencimentos e recebimentos do mês, permitindo confirmar salário, pagar parcelas, marcar contas fixas e registrar pagamentos de faturas sem navegar para outra aba. As ações usam as mesmas confirmações e registros existentes; não executam pagamentos bancários nem criam outra despesa para a baixa. As três primeiras pendências ficam visíveis e o restante pode ser expandido na mesma tela. Contas fixas também podem ser adicionadas diretamente dali.
 
 A navegação principal mostra **Início**, **Ganhos e fixos**, **Registrar**, **Planejar**, **Investir**, **Dívidas** e **Cartões**, com ícones e nomes clicáveis. Gráficos e limites ficam em Planejar; voucher e conferências complementares, em Ganhos e fixos. Relatório mensal e histórico completo continuam acessíveis no Início, enquanto as informações comuns aparecem sem precisar abrir essas áreas. A experiência foi verificada em navegador com dados de teste; o efeito sobre entendimento e abandono ainda precisa ser medido no piloto com pessoas reais.
+
+### Cotações: mercado fracionário e terceira fonte
+
+Códigos fracionários como `PETR4F` permanecem no cadastro e nas operações. Na consulta de preço e histórico, o app usa o ticker do lote padrão (`PETR4`) como referência e informa isso na carteira: o preço do fracionário pode diferir. Não é necessário excluir ou recadastrar a posição.
+
+Para cotações brasileiras, a ordem automática é **Brapi → Yahoo Finance (dois servidores) → Alpha Vantage**. A terceira fonte usa `GLOBAL_QUOTE` com o símbolo brasileiro terminado em `.SAO`, quando o provedor cobre o ativo. Cadastre `ALPHAVANTAGE_API_KEY` em **Vercel → Settings → Environment Variables**, no ambiente de produção, e faça novo deploy. A chave fica somente no servidor. A Brapi continua usando `BRAPI_TOKEN`. Não compartilhe essas chaves no chat ou em código.
+
+Chaves, cobertura, frequência permitida e eventual contratação de plano dependem dos provedores. As consultas podem fornecer dados atrasados; não são streaming nem garantia de tempo real. A terceira fonte é para a cotação; o histórico continua usando Yahoo/Brapi. Se todas falharem, o app mantém a cotação anterior e sinaliza a falha; sem cotação anterior, mostra pendência.
+
+A integração Alpha Vantage foi verificada com respostas simuladas (sucesso, limite, resposta inválida, chave ausente e símbolo divergente). A política de rede desta sessão não permite uma consulta real ao provedor. Validar cobertura e disponibilidade com a chave do plano na Vercel.

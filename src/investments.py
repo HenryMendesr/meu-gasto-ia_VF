@@ -238,7 +238,15 @@ def require_brl(info, symbol):
         raise ValueError('Cotação estrangeira não convertida. Informe uma cotação manual em reais ou use um código negociado em BRL')
 
 
+def quote_symbol(symbol):
+    """Use the standard lot quote as a reference, preserving the recorded trade ticker."""
+    symbol = re.sub(r'\s+', '', str(symbol)).upper()
+    match = re.fullmatch(r'([A-Z]{4}\d{1,2})F', symbol)
+    return match.group(1) if match else symbol
+
+
 def yahoo_chart(symbol, period='5d', interval='1d'):
+    symbol=quote_symbol(symbol)
     ticker=symbol+YAHOO_SUFFIX if re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol) else symbol
     for host in ('query1.finance.yahoo.com','query2.finance.yahoo.com'):
         try:
@@ -251,6 +259,7 @@ def yahoo_chart(symbol, period='5d', interval='1d'):
 
 
 def brapi_data(symbol, history=None):
+    symbol=quote_symbol(symbol)
     token=os.environ.get('BRAPI_TOKEN','').strip()
     params=[]
     if token:params.append('token='+quote(token,safe=''))
@@ -275,8 +284,32 @@ def quote_values(result,source):
             'source':source,'quote_date':day,'previous_close':previous,'updated_at':now_iso()}
 
 
+def alpha_vantage_quote(symbol):
+    symbol=quote_symbol(symbol)
+    token=os.environ.get('ALPHAVANTAGE_API_KEY','').strip()
+    if not token:
+        raise ValueError('Terceira fonte não configurada: cadastre ALPHAVANTAGE_API_KEY na Vercel')
+    ticker=symbol+'.SAO'
+    try:
+        data=fetch_json('https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol='
+                        +quote(ticker,safe='')+'&apikey='+quote(token,safe=''),timeout=4)
+        result=data['Global Quote']
+        if result.get('01. symbol','').upper()!=ticker:
+            raise ValueError()
+        day=date.fromisoformat(result['07. latest trading day'])
+        if day>investment_today():raise ValueError()
+        return quote_values({'regularMarketPrice':result['05. price'],
+                             'regularMarketPreviousClose':result.get('08. previous close'),
+                             'regularMarketTime':day.isoformat()+'T18:00:00Z',
+                             'currency':'BRL'},'Alpha Vantage')
+    except (ValueError,KeyError,TypeError,IndexError) as exc:
+        raise ValueError('Alpha Vantage indisponível para este ativo; confira a chave, cobertura e limites do plano') from exc
+
+
 def fetch_quote(symbol: str) -> dict:
+    symbol=quote_symbol(symbol)
     errors=[]
+    brazilian=bool(re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol))
     if re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol):
         try:return quote_values(brapi_data(symbol),'Brapi')
         except ValueError as exc:errors.append(str(exc))
@@ -289,11 +322,16 @@ def fetch_quote(symbol: str) -> dict:
         if earlier:meta['previousClose']=number(earlier[-1],'Fechamento anterior',minimum=.00000001)
         # chartPreviousClose may be the start of the requested range, not yesterday.
         return quote_values(meta,'Yahoo Finance')
-    except (ValueError,KeyError,TypeError,IndexError) as exc:
-        raise ValueError('Não foi possível atualizar '+symbol+'. '+(' '.join(errors) or 'Yahoo Finance indisponível')) from exc
+    except (ValueError,KeyError,TypeError,IndexError):
+        errors.append('Yahoo Finance indisponível para este ativo')
+    if brazilian:
+        try:return alpha_vantage_quote(symbol)
+        except ValueError as exc:errors.append(str(exc))
+    raise ValueError('Não foi possível atualizar '+symbol+'. '+' '.join(errors))
 
 
 def fetch_market_history(symbol: str, period: str = "1y") -> dict:
+    symbol=quote_symbol(symbol)
     ranges = {"1m": ("1mo", "1d"), "3m": ("3mo", "1d"), "6m": ("6mo", "1d"),
               "1y": ("1y", "1d"), "5y": ("5y", "1wk"), "all": ("max", "1d")}
     if period not in ranges:
