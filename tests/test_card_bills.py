@@ -90,6 +90,9 @@ class CardBillTests(unittest.TestCase):
 
     def test_scheduled_income_preserves_forecast_and_confirmed_separately(self):
         recurring.save_plan({'enabled':True,'start_month':'2026-10','source':'Empresa','payments':[{'day':15,'amount':1500},{'day':30,'amount':2500}]})
+        # The day-15 installment posts automatically; an explicit delay makes it pending.
+        data=trust.insights('2026-10');self.assertEqual(1500,data['confirmed_income']);self.assertEqual(4000,data['expected_income'])
+        recurring.receipt_action('2026-10:1',{'action':'delay'})
         data=trust.insights('2026-10');self.assertEqual(0,data['confirmed_income']);self.assertEqual(4000,data['expected_income'])
         recurring.receipt_action('2026-10:1',{'action':'confirm','amount':1400})
         data=trust.insights('2026-10');self.assertEqual(1400,data['confirmed_income']);self.assertEqual(3900,data['expected_income']);self.assertEqual(2500,data['income']['pending'])
@@ -136,6 +139,10 @@ class CardBillTests(unittest.TestCase):
     def test_salary_received_in_another_month_is_counted_on_actual_date(self):
         recurring.save_plan({'enabled':True,'start_month':'2026-09','source':'Empresa','payments':[{'day':15,'amount':1500}]})
         recurring.receipt_action('2026-09:1',{'action':'confirm','amount':1400,'received_date':'2026-10-01'})
+        # October's own installment is already due, independently of the late September receipt.
+        october=trust.insights('2026-10')['income']
+        self.assertEqual(2900,october['used']);self.assertEqual(2900,october['expected'])
+        recurring.receipt_action('2026-10:1',{'action':'delay'})
         september=trust.insights('2026-09')['income'];october=trust.insights('2026-10')['income']
         self.assertEqual(0,september['used']);self.assertEqual(0,september['expected'])
         self.assertEqual(1400,october['used']);self.assertEqual(2900,october['expected'])

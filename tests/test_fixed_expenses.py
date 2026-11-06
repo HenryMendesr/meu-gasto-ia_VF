@@ -90,7 +90,9 @@ class FixedExpenseTests(unittest.TestCase):
         recurring.save_plan({'enabled':True,'source':'Empresa','start_month':'2026-10','payments':[{'day':15,'amount':1500},{'day':30,'amount':2000}]})
         insights=trust.insights('2026-10')
         self.assertEqual(3500,insights['expected_income']);self.assertEqual(2600,insights['balance'])
-        self.assertEqual(0,insights['confirmed_income'])
+        # Day 15 has passed; day 30 remains forecast on the fixed October 29 clock.
+        self.assertEqual(1500,insights['confirmed_income'])
+        self.assertEqual(2000,insights['income']['pending'])
 
     def test_new_routes_return_same_fixed_rows_as_bootstrap(self):
         with patch.object(index,'protected',return_value=None),TestClient(index.app) as client:
