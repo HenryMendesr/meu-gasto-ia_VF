@@ -230,34 +230,55 @@ html=html.replace('</style>',(ROOT/'src/routine_panel.css').read_text(encoding='
 html=html.replace('</script>',(ROOT/'src/routine_panel.js').read_text(encoding='utf-8')+'\n</script>',1)
 html=html.replace('/app.css?v=26','/app.css?v=27')
 
-# A daily workspace and a small, optional first-use path sit directly on the home screen.
+# Overview contains visual summaries only; preserve existing editors in their own panels.
+import re
+
+def take_element(source, marker):
+    start=source.index(marker)
+    tag=re.match(r'<([a-z]+)',source[start:])[1]
+    depth=0
+    for match in re.finditer(r'</?'+tag+r'\b[^>]*>',source[start:]):
+        depth += -1 if match.group().startswith('</') else 1
+        if depth==0:
+            end=start+match.end()
+            return source[start:end],source[:start]+source[end:]
+    raise ValueError('Unclosed overview block: '+marker)
+
+def move_to_panel(source, marker, panel):
+    block,source=take_element(source,marker)
+    opening=re.search(r'<(?:div|section) id="'+panel+r'"[^>]*>',source)
+    return source[:opening.end()]+block+source[opening.end():]
+
+html=move_to_panel(html,'<div class="dashboard-details">','entryPanel')
+html=move_to_panel(html,'<details id="monthlyReport"','entryPanel')
+html=move_to_panel(html,'<section class="home-summary"','routinePanel')
+html=move_to_panel(html,'<section class="card trust-card" id="dailyTasks">','routinePanel')
+# Each remaining disclosure wraps one of the old home sections.
+for marker,panel in [('<summary>Ver recebimentos previstos e voucher</summary>','routinePanel'),('<summary>Ver próximos vencimentos</summary>','debtsPanel')]:
+    start=html.rfind('<details',0,html.index(marker))
+    opening=html[start:html.index('>',start)+1]
+    # Use the exact position because multiple disclosures share the same opening tag.
+    prefix=html[:start];block,suffix=take_element(html[start:],opening)
+    html=prefix+suffix
+    target=re.search(r'<(?:div|section) id="'+panel+r'"[^>]*>',html)
+    html=html[:target.end()]+block+html[target.end():]
+html=move_to_panel(html,'<div id="budgetList"','budgetsPanel')
+_,html=take_element(html,'<div class="hero-actions">')
+_,html=take_element(html,'<p class="home-note">')
+html=html.replace('<button class="text-button" type="button" data-open-panel="budgetsPanel">Ajustar limites</button>','',1)
+# Charts are immediately visible instead of hidden behind a disclosure.
+html=html.replace('<details class="home-extra"><summary>Ver gráficos e limites</summary>','',1)
+a=html.index('<section class="dashboard-visuals">');b=html.index('</section>',a)+len('</section>')
+html=html[:b]+html[b:].replace('</details>','',1)
 experience=(ROOT/'src/experience.html').read_text(encoding='utf-8')
-html=html.replace('<section class="home-summary"',experience+'<section class="home-summary"',1)
-# Put the summary before the daily workspace; the guide remains first.
-a=html.index('<section class="home-summary"');b=html.index('</section>',a)+len('</section>')
-summary=html[a:b];html=html[:a]+html[b:]
-html=html.replace('<section id="homeWorkspace"',summary+'<section id="homeWorkspace"',1)
-# Keep the exhaustive task list available without duplicating the direct home actions.
-a=html.index('<section class="card trust-card" id="dailyTasks">');b=html.index('</section>',a)+len('</section>')
-html=html[:a]+'<details class="home-extra"><summary>Outras pendências e conferências</summary>'+html[a:b]+'</details>'+html[b:]
+html=html.replace('<section class="dashboard-visuals">',experience+'<section class="dashboard-visuals">',1)
+html=html.replace('Como está seu mês?', 'Seu mês, em um olhar.', 1)
+html=html.replace('Acompanhe as entradas e saídas. Seus cadastros ficam em Ganhos e fixos.','Seus resultados em gráficos e números.',1)
+html=html.replace('Explore seu mês','Mês de referência',1)
 html=html.replace('<span>Lançar</span></button>','<span>Registrar</span></button>',1)
-html=html.replace('Acompanhe as entradas e saídas. Seus cadastros ficam em Ganhos e fixos.','Veja seu mês e resolva o dia a dia aqui mesmo.',1)
-html=html.replace('Editar ganhos e fixos <span>→</span>','Ajustar ganhos <span>→</span>',1)
 html=html.replace('</style>',(ROOT/'src/experience.css').read_text(encoding='utf-8')+'\n</style>',1)
 html=html.replace('</script>',(ROOT/'src/experience.js').read_text(encoding='utf-8')+'\n</script>',1)
 html=html.replace('</script>',(ROOT/'src/investment_simulator.js').read_text(encoding='utf-8')+'\n'+(ROOT/'src/investor_education.js').read_text(encoding='utf-8')+'\n</script>',1)
-
-# Keep the home overview visual; forms and detailed records are opt-in.
-html=html.replace('Como está seu mês?', 'Seu mês, em um olhar.', 1)
-html=html.replace('Veja seu mês e resolva o dia a dia aqui mesmo.', 'Entrou, saiu e o que vem pela frente.', 1)
-html=html.replace('Explore seu mês', 'Mês de referência', 1)
-flow,html=extract_block(html,'  <section class="ex-flow"','</section>')
-html=html.replace('<section id="homeWorkspace"',flow+'<details id="homeTools" class="home-extra home-tools"><summary>Registrar e conferir detalhes</summary><section id="homeWorkspace"',1)
-end=html.index('<section id="routinePanel"')
-closing=html.rfind('  </div>',0,end)
-html=html[:closing]+'</details>\n'+html[closing:]
-html=html.replace('Sem fazer contas de cabeça', 'Visão geral', 1)
-html=html.replace('Seu mês em um olhar', 'Resumo do mês', 1)
 
 # Secondary analysis stays available behind explicit, native disclosures.
 def disclose_between(source, start, end, label):
