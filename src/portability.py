@@ -125,6 +125,10 @@ def _validate(payload):
     if not isinstance(prefs,dict):raise ValueError('Preferências inválidas')
     for key in ('onboarding_dismissed','analytics_consent'):
         if key in prefs and not isinstance(prefs[key],bool):raise ValueError('Preferência inválida')
+    if 'investment_education' in prefs:
+        try:from src.investor_education import validate_education
+        except ImportError:from investor_education import validate_education
+        prefs['investment_education'] = validate_education(prefs['investment_education'])
     for key in ('income_modes','category_rules'):
         if not isinstance(prefs.get(key,{}),dict):raise ValueError('Preferência inválida')
     for key,value in prefs.get('category_rules',{}).items():

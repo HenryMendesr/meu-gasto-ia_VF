@@ -33,9 +33,14 @@ def preferences(payload, user_id=None):
             import suitability
         profile = suitability.evaluate(payload['investor_profile'])
         profile['completed_at'] = investments.now_iso()
-    allowed = {'onboarding_dismissed', 'analytics_consent', 'investor_profile_started'}
-    if any(key not in allowed or not isinstance(value, bool) for key, value in payload.items() if key != 'investor_profile'):
+    allowed = {'onboarding_dismissed', 'analytics_consent', 'investor_profile_started', 'investment_education'}
+    if any(key not in allowed or (key != 'investment_education' and not isinstance(value, bool)) for key, value in payload.items() if key != 'investor_profile'):
         raise ValueError('Preferências inválidas')
+    payload = copy.deepcopy(payload)
+    if 'investment_education' in payload:
+        try:from src.investor_education import validate_education
+        except ImportError:from investor_education import validate_education
+        payload['investment_education'] = validate_education(payload['investment_education'])
     def save(store):
         current = store.setdefault('preferences', {})
         current.update({key: value for key, value in payload.items() if key != 'investor_profile'})

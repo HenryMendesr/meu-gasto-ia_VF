@@ -82,6 +82,25 @@
 .suitability-profile-badge{color:var(--mint);font-weight:650;font-size:15px}.suitability-card.is-compact{padding:0;border:0;background:transparent;border-radius:0}.is-compact .suitability-welcome,.is-compact>.suitability-method{display:none}.is-compact .suitability-intro{justify-content:flex-start;flex-wrap:wrap;gap:12px}.suitability-card.is-compact .suitability-cta{min-height:42px;padding:10px 14px;font-size:13px}.is-compact #suitabilityForm,.is-compact .suitability-result-details[open],.investment-guide[open]{padding:20px;background:var(--paper);border:1px solid var(--line);border-radius:14px}.investment-guide>summary{display:inline-flex;align-items:center;min-height:42px;padding:10px 14px;list-style:none;font-size:13px}.investment-guide>summary::-webkit-details-marker{display:none}.investment-guide>summary::after{content:'＋';margin-left:12px}.investment-guide[open]>summary::after{content:'−'}.investment-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}.investment-guide article{padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}.investment-guide article p{font-size:13px}.investment-guide article strong{color:var(--ink)}
 @media(max-width:760px){.suitability-card{padding:20px}.suitability-intro{align-items:stretch;flex-direction:column;gap:16px}.suitability-card .suitability-cta{width:100%;margin:0;white-space:normal}.is-compact .suitability-intro{flex-direction:row;align-items:center}.suitability-card.is-compact .suitability-cta{width:auto}.investment-guide-grid{grid-template-columns:1fr}}
 
+.education-banner{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:0 0 24px;padding:22px 24px;border:1px solid #75e0b238;border-radius:18px;background:linear-gradient(115deg,#183b2c70,var(--paper) 75%)}
+.education-banner h3{font-size:17px;margin:5px 0 6px}.education-banner p{margin:0;color:var(--muted);max-width:540px;font-size:13px}.education-banner .actions{display:flex;gap:10px;flex-wrap:wrap}
+body.education-open{overflow:hidden}
+dialog.education-dialog{color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:0;width:min(880px,calc(100vw - 32px));max-width:none;max-height:90dvh;box-shadow:0 32px 100px #0009;overflow:hidden}
+dialog.education-dialog[open]{display:flex;flex-direction:column}dialog.education-dialog::backdrop{background:#030806c9;backdrop-filter:blur(6px)}
+.education-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:26px 30px 20px;flex-shrink:0}.education-header h2{font-size:25px;margin:6px 0 0;letter-spacing:-.035em}.education-dialog .icon-button{background:var(--surface);color:var(--ink);width:40px;height:40px;padding:0;font-size:24px;flex-shrink:0}
+.education-nav{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:0 24px 12px;flex-shrink:0}.education-nav button{flex:1;border:0;border-radius:9px;background:transparent;color:var(--muted);padding:11px 8px;font-size:12px;font-weight:600}.education-nav button[aria-current=page]{background:#75e0b216;color:var(--green)}
+.education-body{padding:28px 30px;overflow-y:auto;overscroll-behavior:contain}.education-body p{color:var(--muted);line-height:1.7}.education-body h3{font-size:28px;letter-spacing:-.035em;margin:12px 0 16px}.education-intro{max-width:660px;margin:0 auto;padding:12px 0 20px}.education-intro .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.education-symbol{display:grid;place-items:center;width:64px;height:64px;border-radius:20px;background:#75e0b21a;color:var(--green);font-size:32px;margin-bottom:26px}.education-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0 14px}.education-choices button{display:grid;gap:4px;text-align:left;padding:20px}.education-choices small{font-weight:400}.education-dialog .secondary{background:var(--surface);color:var(--ink)}
+.education-note{border-left:2px solid #75e0b25c;background:#75e0b207;padding:14px 18px;margin:20px 0;color:var(--muted);font-size:12px;line-height:1.7}.education-note p:last-child{margin-bottom:0}.education-lead{font-size:15px}.education-dialog .quote-meta{font-size:12px}
+.education-error{margin:0;padding:16px 30px;border-top:1px solid var(--line);font-size:13px;max-height:140px;overflow:auto;flex-shrink:0}
+.education-progress{display:flex;justify-content:space-between;align-items:center;gap:24px;color:var(--muted);font-size:12px;margin:4px 0 28px}.education-progress progress{appearance:none;width:140px;height:5px;border:0;border-radius:20px;overflow:hidden;background:var(--surface);accent-color:var(--green)}.education-progress progress::-webkit-progress-bar{background:var(--surface)}.education-progress progress::-webkit-progress-value{background:var(--green)}.education-progress progress::-moz-progress-bar{background:var(--green)}
+.education-body fieldset{border:0;padding:0;margin:0;min-width:0}.education-body legend{font-size:23px;font-weight:650;line-height:1.4;margin-bottom:24px;padding:0}.education-options{display:grid;gap:12px}.education-options label{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);cursor:pointer}.education-options label:has(input:checked){border-color:var(--green);background:#75e0b20b}.education-options input{width:18px;height:18px;accent-color:var(--green);margin:0;flex-shrink:0}.education-step-actions{display:flex;align-items:center;justify-content:space-between;margin:28px 0 4px;gap:14px}
+.education-lessons{display:grid;gap:10px}.education-lesson{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}.education-lesson summary{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px;cursor:pointer;list-style:none}.education-lesson summary::-webkit-details-marker{display:none}.education-lesson summary strong{font-size:16px;display:block}.education-lesson summary small{display:block;max-width:590px;color:var(--muted);font-weight:400;margin-top:5px;font-size:12px}.education-lesson[open] summary{border-bottom:1px solid var(--line)}.education-lesson[open] summary>span:last-child{transform:rotate(45deg)}.education-lesson-body{padding:8px 20px 20px}.education-lesson dl{display:grid;gap:18px}.education-lesson dt{font-size:12px;color:var(--green);font-weight:650;margin-bottom:4px}.education-lesson dd{color:var(--muted);font-size:13px;line-height:1.7;margin:0}
+.education-sim-form{display:grid;grid-template-columns:1fr 1fr;gap:18px 20px;margin-top:22px}.education-sim-form label{display:grid;gap:8px;font-size:12px;color:var(--muted);align-content:start}.education-sim-form input,.education-sim-form select{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:12px;font-size:14px;min-height:46px}.education-wide{grid-column:1/-1}.education-sim-form p{margin:0}.education-sim-form button{margin-top:4px}.simulation-heading{border-top:1px solid var(--line);padding-top:28px;margin-top:28px}.simulation-heading h3{margin-bottom:8px}.simulation-heading p{font-size:12px}
+.simulation-totals{display:grid;grid-template-columns:1fr 1fr;gap:18px}.simulation-totals>div{display:grid;gap:6px}.simulation-totals small,.simulation-totals span{color:var(--muted);font-size:12px}.simulation-totals strong{font-size:21px;font-weight:600;overflow-wrap:anywhere}.simulation-totals .simulation-total{grid-column:1/-1;border:1px solid #75e0b23d;background:#75e0b20b;border-radius:16px;padding:24px}.simulation-total strong{font-size:36px;color:var(--green);letter-spacing:-.04em}.simulation-chart{margin:30px 0 20px}.simulation-chart figcaption{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:600;font-size:13px}.simulation-chart figcaption span{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;font-weight:400}.simulation-chart i{width:14px;height:3px;display:inline-block;background:#75e0b2}.simulation-chart i.chart-invested{background:#a4b2cc;margin-left:8px}.simulation-chart svg{width:100%;height:auto;color:var(--muted);margin-top:12px}.simulation-table summary{cursor:pointer;font-size:13px;color:var(--green);padding:14px 0}.simulation-table .scroll{max-height:340px;overflow:auto}.simulation-table table{width:100%;font-size:12px;white-space:nowrap}.simulation-table caption{text-align:left;color:var(--muted);padding:8px}.simulation-table th,.simulation-table td{padding:10px;text-align:right}.simulation-table th:first-child,.simulation-table td:first-child{text-align:left}
+@media(max-width:700px){.education-banner{align-items:flex-start;flex-direction:column;padding:20px;gap:18px}.education-banner .actions{width:100%}.education-banner .actions button{flex:1}.education-header{padding:20px 18px 16px}.education-header h2{font-size:21px}.education-nav{padding:0 10px 10px}.education-nav button{font-size:11px;padding:10px 6px}.education-body{padding:22px 18px}.education-body h3{font-size:24px}.education-choices{grid-template-columns:1fr}.education-choices button{padding:16px}.education-body legend{font-size:21px}.education-options label{padding:15px}.education-sim-form{gap:16px 12px}.education-sim-form label{font-size:11px}.simulation-total strong{font-size:29px}.simulation-totals strong{font-size:19px}.simulation-totals .simulation-total strong{font-size:29px}.education-error{padding:14px 18px}.education-lesson summary{padding:16px}.education-lesson-body{padding:8px 16px 16px}}
+@media(prefers-reduced-motion:reduce){.education-dialog *{scroll-behavior:auto!important}}
+
 .statement-upload{max-width:920px;margin:0 auto 15px;background:linear-gradient(125deg,var(--card),var(--surface))}.statement-intro{display:flex;align-items:center;gap:13px}.statement-intro h2{margin:0 0 2px}.statement-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--mint),var(--green));color:var(--card);font-size:25px;font-weight:800;box-shadow:0 9px 22px rgba(7,133,111,.2)}.statement-upload-form{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:18px}.statement-file{display:flex;align-items:center;gap:12px;min-height:48px;padding:7px 10px;border:1px dashed #9dcec5;border-radius:12px;background:var(--card);color:var(--teal);font-size:12px;font-weight:800}.statement-file input{width:100%;min-width:0}.statement-upload-form .save{grid-column:auto;padding-inline:22px}.statement-tips{display:flex;gap:16px;flex-wrap:wrap;margin-top:13px;color:var(--green);font-size:11px;font-weight:750}.statement-review{max-width:1100px;margin:0 auto 15px}.statement-review-head,.statement-review-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.statement-review-head h2{margin:0}.statement-review-note{margin:15px 0;padding:10px 12px;border-radius:10px;background:var(--surface);color:#775f0d;font-size:12px;font-weight:700}.statement-rows{display:grid;gap:8px;max-height:540px;overflow:auto;padding-right:3px}.statement-row{display:grid;grid-template-columns:30px 105px minmax(150px,1.4fr) 105px 180px minmax(150px,1fr);gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}.statement-row.needs-review{border-color:#e4c965;background:var(--surface)}.statement-row input,.statement-row select{width:100%;min-width:0;padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)}.statement-row .statement-check{width:18px;height:18px}.statement-amount{text-align:right;font-weight:800;color:var(--teal)}.statement-review-actions{margin-top:15px;padding-top:15px;border-top:1px solid var(--line)}.statement-review-actions>span{font-size:13px;font-weight:800;color:var(--teal)}.statement-review-actions .save{grid-column:auto}.statement-row-labels{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.04em}
 @media(max-width:800px){.statement-upload-form{grid-template-columns:1fr}.statement-upload-form .save{width:100%}.statement-tips{display:grid;gap:5px}.statement-review{padding:14px}.statement-row{grid-template-columns:28px 1fr 105px}.statement-row .statement-date{grid-column:2}.statement-row .statement-place{grid-column:1/-1}.statement-row .statement-category{grid-column:1/3}.statement-row .statement-description{grid-column:1/-1}.statement-review-head{align-items:flex-start}.statement-review-actions{position:sticky;bottom:82px;padding:11px;border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 8px 25px rgba(11,59,74,.14);backdrop-filter:blur(12px)}}
 .statement-row{grid-template-columns:30px 105px minmax(140px,1.3fr) 100px 110px 175px minmax(135px,1fr)}.statement-row.income{border-left:4px solid var(--mint);background:var(--surface)}.statement-row.income .statement-amount{color:var(--green)}.statement-kind{font-weight:800}.income-flow{margin-top:24px;padding:25px 22px;border-top:1px solid var(--line)}.income-flow .section-title h2{font-size:15px}.income-flow .income-fill{background:linear-gradient(90deg,var(--mint),var(--green))}
@@ -768,6 +787,7 @@ body .glance-money strong.positive{color:#123b33!important}
       <div class="portfolio-heading"><span class="eyebrow">Seu patrimônio</span><h2>Investimentos</h2><p>Acompanhe sua carteira e adicione investimentos.</p><div id="quoteTrustNote" class="quote-trust"></div><div id="investmentUpdated" class="update-stamp">Ainda não atualizada</div></div>
       <div class="actions"><button id="refreshInvestments" class="secondary" type="button">Atualizar taxas e cotações</button><button id="newInvestment" class="save new-investment-cta" type="button"><span aria-hidden="true">＋</span> Adicionar investimento</button></div>
     </div>
+    <section class="education-banner" aria-label="Aprenda e simule investimentos"><div><span class="eyebrow">Seu próximo passo</span><h3>Invista primeiro em conhecimento.</h3><p id="educationBannerText">Entenda seu perfil, conheça as opções e veja como seu dinheiro pode crescer.</p></div><div class="actions"><button id="openInvestorGuide" class="secondary" type="button">Guia de investimentos</button><button id="openInvestmentSimulator" class="save" type="button">Simular investimento ↗</button></div></section>
 <section class="daily-summary" aria-labelledby="dailySummaryTitle">
  <div class="daily-heading"><div><span class="eyebrow">Seu dia em perspectiva</span><h3 id="dailySummaryTitle">Resumo das operações</h3><p id="dailySummaryDate"></p></div><label>Período<select id="dailySummaryPeriod"><option value="latest">Último dia com operações</option><option value="today">Hoje</option></select></label></div>
  <div id="dailySummaryMetrics" class="daily-metrics"></div>
@@ -828,6 +848,17 @@ body .glance-money strong.positive{color:#123b33!important}
 <div id="cashModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="cashModalTitle" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2 id="cashModalTitle">Caixa disponível</h2><button id="closeCashModal" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="cashForm" class="entry-grid"><label class="wide">Saldo disponível para investir (R$)<input name="amount" type="text" inputmode="decimal" data-cash-money placeholder="0,00" maxlength="18" required></label><p class="wide quote-meta">Informe o saldo total atual do seu caixa. Novos investimentos descontam o valor aplicado automaticamente. Vendas e proventos entram automaticamente. Ajuste manualmente apenas depósitos, retiradas ou correções de saldo. O caixa fica separado dos ativos e não altera sua rentabilidade.</p><button type="submit" class="save">Salvar caixa</button><div id="cashMessage" class="message error" hidden></div></form></section></div>
 
 <div id="investmentOperationModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="investmentOperationTitle" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2 id="investmentOperationTitle">Movimentar ativo</h2><button id="closeInvestmentOperation" type="button" class="icon-button" aria-label="Fechar">×</button></div><form id="investmentOperationForm" class="entry-grid"><input name="id" type="hidden"><input name="request_id" type="hidden"><label class="wide">Data<input name="date" type="date" required></label><label class="buy-operation">Quantidade<input name="quantity" type="number" min="0.00000001" step="any"></label><label class="buy-operation">Preço por unidade (R$)<input name="unit_price" type="number" min="0.00000001" step="any"></label><label class="buy-operation wide">Taxas da compra (R$)<input name="fees" type="number" min="0" step="0.01" value="0"></label><label class="income-operation wide">Tipo de provento<select name="income_kind"><option>Dividendos</option><option>JCP</option><option>Rendimento de FII</option><option>Outros proventos</option></select></label><label class="income-operation wide">Valor líquido recebido (R$)<input name="amount" type="text" inputmode="decimal" placeholder="0,00" data-operation-money maxlength="18"></label><div id="investmentOperationPreview" class="investment-cash-preview wide" aria-live="polite"></div><p id="investmentOperationHelp" class="quote-meta wide"></p><div id="investmentOperationMessage" class="message error" hidden></div><button class="save" type="submit">Registrar operação</button></form></section></div>
+
+<dialog id="investorEducation" class="education-dialog" aria-labelledby="educationTitle">
+  <header class="education-header"><div><span class="eyebrow">Aprender para decidir</span><h2 id="educationTitle">Seu jeito de investir</h2></div><button id="closeEducation" class="icon-button" type="button" aria-label="Fechar guia de investimentos">×</button></header>
+  <nav class="education-nav" aria-label="Guia de investimentos" hidden>
+    <button type="button" data-education-view="profile">Meu perfil</button>
+    <button type="button" data-education-view="guide">Conhecer investimentos</button>
+    <button type="button" data-education-view="simulator">Simular investimento</button>
+  </nav>
+  <div id="educationBody" class="education-body"></div>
+  <p id="educationError" class="education-error negative" role="alert" hidden></p>
+</dialog>
 
   <div id="debtsPanel" class="panel" role="region" aria-label="Dívidas" hidden>
     <header class="section-heading"><div><span class="eyebrow">Seus compromissos</span><h2>Dívidas</h2><p>Seus empréstimos, dívidas e financiamentos em uma visão clara.</p></div><button type="button" class="secondary" id="newDebtButton">＋ Novo compromisso</button></header>
@@ -892,7 +923,7 @@ body .glance-money strong.positive{color:#123b33!important}
   <div class="foot">Seus dados financeiros são privados e separados por conta</div>
   <div id="updateBanner" class="update-banner" hidden><span>Uma nova versão do aplicativo está pronta.</span><button id="applyUpdate" type="button">Atualizar</button></div>
 </main><script>
-const INVESTMENT_DATA={"daily_summary":{"latest":{"date":"2026-11-06","operations":[],"invested":0,"sales":0,"income":0,"realized_profit":0,"realized_with_income":0,"fees":0,"cash_flow":0,"assets":[],"missing_quotes":0,"performance":null,"known_performance":0,"personal_expenses":0,"expense_rows":[]},"today":{"date":"2026-11-06","operations":[],"invested":0,"sales":0,"income":0,"realized_profit":0,"realized_with_income":0,"fees":0,"cash_flow":0,"assets":[],"missing_quotes":0,"performance":null,"known_performance":0,"personal_expenses":0,"expense_rows":[]}},"investments":[],"history":[],"history_source":"snapshots","updated_at":null,"cash_updated_at":null,"goals":[],"preferences":{},"audit_log":[],"summary":{"cash_balance":0,"total_with_cash":0,"amount_applied":0,"current_value":0,"profit_loss":0,"income_received":0,"unrealized_profit_loss":0,"realized_profit_loss":0,"return_percent":0,"monthly_estimated_gain":0}};
+const INVESTMENT_DATA={"investments":[],"history":[],"updated_at":null,"summary":{"amount_applied":0,"current_value":0,"profit_loss":0,"return_percent":0}};
 let DATA=[];
 const DEFAULT_INCOME={};
 const DEFAULT_VOUCHER={};
@@ -929,7 +960,7 @@ function render(){const all=DATA.filter(x=>x.date.startsWith(month.value));const
 [month,category].forEach(el=>el.addEventListener('change',render));search.addEventListener('input',render);
 const storageStatus=document.querySelector('#storageStatus'),incomeMessage=document.querySelector('#incomeMessage'),saveIncomeButton=document.querySelector('#saveIncomeButton');
 function localOnlyMessage(){return 'Sem conexão com o servidor do aplicativo. Confira se ele está aberto e se este dispositivo está conectado à sua rede privada.'}
-async function loadBootstrap(){const response=await fetch('/api/bootstrap',{cache:'no-store'});if(response.status===401){location.href='/login';return}const result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível carregar os dados');DATA=result.expenses||[];INCOME_ENTRIES=result.income_entries||[];Object.keys(incomeByMonth).forEach(k=>delete incomeByMonth[k]);Object.keys(voucherByMonth).forEach(k=>delete voucherByMonth[k]);Object.keys(incomeDetails).forEach(k=>delete incomeDetails[k]);Object.keys(BUDGETS).forEach(k=>delete BUDGETS[k]);Object.entries(result.incomes||{}).forEach(([k,v])=>{incomeByMonth[k]=v.cash;voucherByMonth[k]=v.voucher;incomeDetails[k]=v});Object.assign(BUDGETS,result.budgets||{});if(result.categories)ALL_CATEGORIES=result.categories;portfolio=result.portfolio||portfolio;ACCOUNT_PREFERENCES=portfolio.preferences||{};const userBadge=document.querySelector('#userBadge');if(result.user?.name){userBadge.textContent=result.user.name;userBadge.hidden=false}populateFilters();refreshCategoryOptions();render();renderDebtEstimates();renderBudgetPanel();renderInvestments();renderDebtsPanel();if(typeof renderTrust==='function')renderTrust()}
+async function loadBootstrap(){const response=await fetch('/api/bootstrap',{cache:'no-store'});if(response.status===401){location.href='/login';return}const result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível carregar os dados');DATA=result.expenses||[];INCOME_ENTRIES=result.income_entries||[];Object.keys(incomeByMonth).forEach(k=>delete incomeByMonth[k]);Object.keys(voucherByMonth).forEach(k=>delete voucherByMonth[k]);Object.keys(incomeDetails).forEach(k=>delete incomeDetails[k]);Object.keys(BUDGETS).forEach(k=>delete BUDGETS[k]);Object.entries(result.incomes||{}).forEach(([k,v])=>{incomeByMonth[k]=v.cash;voucherByMonth[k]=v.voucher;incomeDetails[k]=v});Object.assign(BUDGETS,result.budgets||{});if(result.categories)ALL_CATEGORIES=result.categories;portfolio=result.portfolio||portfolio;ACCOUNT_PREFERENCES=portfolio.preferences||{};document.dispatchEvent(new Event('bootstrap-loaded'));const userBadge=document.querySelector('#userBadge');if(result.user?.name){userBadge.textContent=result.user.name;userBadge.hidden=false}populateFilters();refreshCategoryOptions();render();renderDebtEstimates();renderBudgetPanel();renderInvestments();renderDebtsPanel();if(typeof renderTrust==='function')renderTrust()}
 async function checkStorage(){try{const response=await fetch('/api/health',{cache:'no-store'});if(response.status===401){location.href='/login';return}const result=await response.json();if(!response.ok||!result.ok)throw new Error();canWrite=true;document.querySelector('.online-chip').innerHTML='<i></i> Online';storageStatus.textContent='Conectado';storageStatus.classList.remove('readonly');await loadBootstrap()}catch(error){canWrite=false;document.querySelector('.online-chip').textContent='Sem conexão';storageStatus.textContent=localOnlyMessage();storageStatus.classList.add('readonly')}}
 async function persistIncome(){incomeMessage.hidden=true;if(!canWrite){incomeMessage.textContent=localOnlyMessage();incomeMessage.className='message error';incomeMessage.hidden=false;return}saveIncomeButton.disabled=true;const payload={month:month.value,cash:Math.max(0,+incomeInput.value||0),voucher:Math.max(0,+voucherInput.value||0),payday:paydayInput.value?+paydayInput.value:null,source:incomeSourceInput.value.trim(),income_mode:document.querySelector('#incomeMode').value,confirmed:document.querySelector('#incomeConfirmed').checked};try{const response=await fetch('/api/incomes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),result=await response.json();if(!response.ok)throw new Error(result.error||'Não foi possível salvar os valores');incomeByMonth[month.value]=payload.cash;voucherByMonth[month.value]=payload.voucher;incomeDetails[month.value]=payload;ACCOUNT_PREFERENCES.income_modes??={};ACCOUNT_PREFERENCES.income_modes[month.value]=payload.income_mode;ACCOUNT_PREFERENCES.income_confirmed??={};ACCOUNT_PREFERENCES.income_confirmed[month.value]=payload.confirmed;incomeMessage.textContent='Renda e recebimento salvos.';incomeMessage.className='message ok';incomeMessage.hidden=false;render();document.dispatchEvent(new Event('finance-updated'))}catch(error){incomeMessage.textContent=error.message||'Não foi possível salvar os valores.';incomeMessage.className='message error';incomeMessage.hidden=false}finally{saveIncomeButton.disabled=false}}
 saveIncomeButton.addEventListener('click',persistIncome);render();
@@ -2039,5 +2070,247 @@ document.querySelector('#homeNextNote').onclick=event=>{if(event.target.closest(
 const cardsNavigation=document.querySelector('#openCreditCards');
 document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{cardsNavigation.classList.remove('active');cardsNavigation.removeAttribute('aria-current')}));
 cardsNavigation.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(tab=>{tab.classList.remove('active');tab.removeAttribute('aria-current')});cardsNavigation.classList.add('active');cardsNavigation.setAttribute('aria-current','page')});
+
+// Pure calculations shared by the interface and the numerical regression checks.
+const InvestmentSimulator = (() => {
+  const products = {
+    cdb: {name: 'CDB', modes: ['fixed', 'cdi', 'ipca'], exempt: false},
+    lci: {name: 'LCI', modes: ['fixed', 'cdi', 'ipca'], exempt: true},
+    lca: {name: 'LCA', modes: ['fixed', 'cdi', 'ipca'], exempt: true},
+    treasury_fixed: {name: 'Tesouro Prefixado', modes: ['fixed'], exempt: false},
+    treasury_selic: {name: 'Tesouro Selic', modes: ['selic'], exempt: false},
+    treasury_ipca: {name: 'Tesouro IPCA+', modes: ['ipca'], exempt: false},
+    debenture: {name: 'Debênture comum', modes: ['fixed', 'cdi', 'ipca'], exempt: false},
+    incentivized: {name: 'Debênture incentivada', modes: ['fixed', 'ipca'], exempt: true},
+  };
+  const iofRates = [100,96,93,90,86,83,80,76,73,70,66,63,60,56,53,50,46,43,40,36,33,30,26,23,20,16,13,10,6,3];
+  function monthDate(start, offset) {
+    const first = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + offset, 1));
+    const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+    first.setUTCDate(Math.min(start.getUTCDate(), last));
+    return first;
+  }
+  function calculate(input) {
+    const {product, mode, initial, monthly, months, rate, reference = 0, startDate} = input;
+    const selected = products[product];
+    if (!selected || !selected.modes.includes(mode)) throw Error('Escolha um investimento e uma rentabilidade compatível.');
+    if (![initial, monthly, rate, reference].every(Number.isFinite) || initial < 0 || monthly < 0 || initial > 100000000 || monthly > 10000000 || initial + monthly <= 0)
+      throw Error('Informe valores válidos: até R$ 100 milhões iniciais e R$ 10 milhões mensais.');
+    if (!Number.isInteger(months) || months < 1 || months > 600) throw Error('Escolha um prazo de 1 a 600 meses (50 anos).');
+    if (rate < 0 || rate > (mode === 'cdi' ? 300 : 100) || reference < 0 || reference > 100)
+      throw Error('Informe taxas entre 0 e 100%; para o percentual do CDI, até 300%.');
+    const start = new Date(startDate + 'T00:00:00Z');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !Number.isFinite(start.getTime()) || start.toISOString().slice(0,10) !== startDate || start.getUTCFullYear() < 1900 || start.getUTCFullYear() > 2200)
+      throw Error('Data inicial inválida.');
+    // CDI participation applies to the equivalent daily rate (252 business days).
+    const annualFactor = mode === 'cdi' ? (1 + ((1 + reference / 100) ** (1 / 252) - 1) * rate / 100) ** 252
+      : mode === 'ipca' ? (1 + reference / 100) * (1 + rate / 100) : 1 + rate / 100;
+    const lots = [{amount: initial, date: start}];
+    const points = [{month: 0, date: startDate, invested: initial, gross: initial, net: initial, tax: 0, gain: 0}];
+    for (let month = 1; month <= months; month++) {
+      const at = monthDate(start, month);
+      // Contributions arrive at the end of each month, including the last month.
+      lots.push({amount: monthly, date: at});
+      let gross = 0, tax = 0;
+      for (const lot of lots) {
+        const days = Math.round((at - lot.date) / 86400000);
+        const balance = lot.amount * annualFactor ** (days / 365);
+        const gain = Math.max(0, balance - lot.amount);
+        const iof = selected.exempt || days >= 30 ? 0 : gain * iofRates[days] / 100;
+        const irRate = days <= 180 ? .225 : days <= 360 ? .20 : days <= 720 ? .175 : .15;
+        tax += selected.exempt ? 0 : iof + (gain - iof) * irRate;
+        gross += balance;
+      }
+      const invested = initial + monthly * month;
+      if (!Number.isFinite(gross) || gross > 1e15) throw Error('O resultado ficou muito alto. Reduza a taxa, os valores ou o prazo.');
+      points.push({month, date: at.toISOString().slice(0,10), invested, gross, tax, net: gross - tax, gain: gross - invested});
+    }
+    return {...points.at(-1), annualRate: (annualFactor - 1) * 100, points};
+  }
+  return {products, calculate};
+})();
+if (typeof module !== 'undefined') module.exports = InvestmentSimulator;
+
+(() => {
+  const dialog = document.querySelector('#investorEducation');
+  const body = document.querySelector('#educationBody');
+  const errorBox = document.querySelector('#educationError');
+  const nav = dialog.querySelector('nav');
+  const panel = document.querySelector('#investmentsPanel');
+  const profiles = {
+    conservative: ['Conservador', 'Você prioriza segurança, previsibilidade e acesso ao dinheiro. Comece entendendo liquidez, reserva de emergência e risco de crédito antes de comparar taxas.'],
+    moderate: ['Moderado', 'Você busca um equilíbrio entre segurança e crescimento, e aceita alguma oscilação. Separe o dinheiro de curto prazo dos objetivos que podem esperar e entenda os riscos de cada produto.'],
+    aggressive: ['Arrojado', 'Você aceita oscilações e tem um horizonte mais longo para buscar crescimento. Isso não elimina riscos: diversificação, reserva de emergência e limites de exposição continuam importantes.'],
+  };
+  const questions = [
+    ['goal', 'Qual é o principal objetivo desse dinheiro?', ['Montar uma reserva para imprevistos', 'Realizar uma compra ou um projeto', 'Construir patrimônio no longo prazo']],
+    ['horizon', 'Quando você pretende usar esse dinheiro?', ['Em até 1 ano', 'Entre 1 e 5 anos', 'Daqui a mais de 5 anos']],
+    ['liquidity', 'Você pode precisar resgatar antes do prazo?', ['Sim, preciso ter acesso a qualquer momento', 'Talvez precise de uma parte', 'Posso deixar esse valor até o vencimento']],
+    ['loss', 'Como reagiria se o investimento caísse 10%?', ['Ficaria desconfortável e buscaria sair', 'Reavaliaria antes de decidir', 'Aceitaria a oscilação dentro do meu plano']],
+    ['knowledge', 'Qual é sua experiência com investimentos?', ['Estou aprendendo sobre juros e riscos', 'Já conheço renda fixa e suas condições', 'Já investi em produtos com oscilações']],
+  ];
+  const lessons = {
+    cdb: ['Você empresta dinheiro a um banco e recebe juros em troca.', 'Pode pagar uma taxa fixa, uma parte do CDI ou inflação mais juros. Os juros se acumulam sobre o saldo quando reinvestidos.', 'O risco depende do banco emissor. Há cobertura do FGC dentro dos limites e condições: até R$ 250 mil por CPF/CNPJ por instituição ou conglomerado, incluindo juros, com teto global de R$ 1 milhão a cada 4 anos.', 'Alguns têm liquidez diária; outros só permitem resgate no vencimento. Confira a oferta.', 'IR regressivo sobre os rendimentos e IOF em resgates antes de 30 dias.'],
+    lci: ['Você aplica em um título bancário ligado ao financiamento imobiliário.', 'A remuneração pode ser prefixada, ligada ao CDI ou à inflação. Compare o rendimento líquido e a carência.', 'Risco do banco emissor, com FGC nos mesmos limites dos CDBs. A garantia não significa acesso imediato ao dinheiro.', 'Pode haver carência e bloqueio até o vencimento. Não presuma liquidez diária.', 'Rendimentos isentos de IR para pessoa física nas regras consideradas nesta simulação.'],
+    lca: ['Você aplica em um título bancário ligado ao financiamento do agronegócio.', 'O banco paga juros conforme a taxa contratada. O retorno depende do indexador, do prazo e das condições da emissão.', 'Risco do banco emissor, com FGC nos mesmos limites dos CDBs. Leia as condições da instituição.', 'Pode haver carência e resgate apenas no vencimento.', 'Rendimentos isentos de IR para pessoa física nas regras consideradas nesta simulação.'],
+    treasury_fixed: ['Você empresta ao Governo Federal e contrata uma taxa de juros.', 'A taxa prefixada permite projetar o valor bruto ao vencimento. A inflação pode reduzir seu poder de compra.', 'Risco soberano, sem FGC. O preço pode cair se você vender antes do vencimento.', 'Há recompra conforme as regras e horários do Tesouro, pelo preço de mercado do momento.', 'IR regressivo e IOF antes de 30 dias. Pode haver custódia e outras taxas.'],
+    treasury_selic: ['É um título público que acompanha a taxa Selic.', 'O saldo acompanha a Selic ao longo do tempo. A taxa futura pode mudar; o simulador usa a referência que você informar.', 'Risco soberano, sem FGC. Costuma oscilar menos que outros títulos públicos, mas não é livre de oscilação.', 'Resgate conforme as regras e horários do Tesouro. O valor de venda depende do mercado.', 'IR regressivo e IOF antes de 30 dias. Pode haver custódia e outras taxas.'],
+    treasury_ipca: ['É um título público com rendimento ligado à inflação mais uma taxa real.', 'Combina a variação do IPCA com juros contratados. A projeção depende da inflação futura e de manter o título até o vencimento.', 'Risco soberano, sem FGC. Pode oscilar bastante antes do vencimento, especialmente em prazos longos.', 'Venda antecipada pelo preço de mercado, que pode ser inferior ao valor aplicado.', 'IR regressivo sobre o ganho nominal, incluindo a correção pela inflação. Pode haver custódia.'],
+    debenture: ['Você empresta dinheiro a uma empresa para financiar suas atividades.', 'A empresa paga a remuneração prevista na escritura. Pode haver juros periódicos e amortizações, conforme a emissão.', 'Há risco de inadimplência da empresa e de perda do capital. Não tem FGC. Uma taxa alta pode refletir maior risco.', 'A venda antecipada depende de comprador e do preço de mercado. Pode ser difícil sair.', 'Na debênture comum, há IR regressivo sobre os rendimentos e pode haver IOF em prazo inferior a 30 dias.'],
+    incentivized: ['É uma debênture elegível a incentivo fiscal, normalmente ligada a projetos de infraestrutura.', 'O retorno segue as condições da emissão, frequentemente inflação mais juros. Confira pagamentos periódicos e amortizações.', 'Risco da empresa e do projeto, sem FGC. A isenção de imposto não torna o investimento mais seguro.', 'Em geral exige planejamento até o vencimento. Venda antecipada pode ter pouca liquidez e perda de valor.', 'Isenção de IR para pessoa física quando a emissão atende aos requisitos legais do incentivo.'],
+  };
+  let view = '', saving = false, promptShown = false, preferencesReady = false, quizStep = 0, answers = {};
+  let returnFocus = null;
+  const state = () => ACCOUNT_PREFERENCES.investment_education;
+  const error = message => {errorBox.textContent = message; errorBox.hidden = !message;};
+  function updateBanner() {
+    const label = portfolio.preferences?.investor_profile?.profile;
+    document.querySelector('#educationBannerText').textContent = label ? `Seu perfil inicial: ${label.toLowerCase()}. Explore as opções e simule seus próximos passos.` : 'Entenda seu perfil, conheça as opções e veja como seu dinheiro pode crescer.';
+  }
+  async function save(value) {
+    if (!canWrite) throw Error(localOnlyMessage());
+    const result = await saveTrustPreferences({investment_education: value});
+    portfolio.preferences = {...portfolio.preferences, investment_education: result.preferences.investment_education};
+    updateBanner();
+  }
+  async function action(task) {
+    if (saving) return;
+    saving = true; error(''); dialog.setAttribute('aria-busy', 'true');
+    dialog.querySelectorAll('button').forEach(button => button.disabled = true);
+    try {await task();} catch (e) {error(e.message);} finally {
+      saving = false; dialog.removeAttribute('aria-busy');
+      dialog.querySelectorAll('button').forEach(button => button.disabled = false);
+    }
+  }
+  function open(next = 'profile') {
+    if (!dialog.open) {returnFocus = document.activeElement; dialog.showModal(); document.body.classList.add('education-open');}
+    render(next);
+  }
+  function close() {
+    if (saving) return;
+    if (view === 'welcome' && !state()) {action(async () => {await save({experience: 'skipped'}); dialog.close();});}
+    else dialog.close();
+  }
+  dialog.addEventListener('close', () => {document.body.classList.remove('education-open'); returnFocus?.focus({preventScroll: true});});
+  dialog.addEventListener('cancel', event => {event.preventDefault(); close();});
+  document.querySelector('#closeEducation').onclick = close;
+  // Avoid accidental dismissal while answering questions or entering a simulation.
+  function render(next) {
+    if (next === 'profile' || next === 'quiz') {
+      if (dialog.open) dialog.close();
+      document.querySelector('#startSuitability').click();
+      return;
+    }
+    view = next; error(''); nav.hidden = next === 'welcome';
+    const titles = {welcome: 'Você já sabe investir?', profile: 'Seu jeito de investir', quiz: 'Vamos conhecer seu perfil', guide: 'Conheça os investimentos', simulator: 'Veja seu dinheiro no futuro'};
+    document.querySelector('#educationTitle').textContent = titles[next];
+    nav.querySelectorAll('button').forEach(button => {
+      const active = button.dataset.educationView === next || (next === 'quiz' && button.dataset.educationView === 'profile');
+      button.setAttribute('aria-current', active ? 'page' : 'false');
+    });
+    if (next === 'welcome') {
+      body.innerHTML = '<div class="education-intro"><span class="education-symbol" aria-hidden="true">↗</span><h3>Um primeiro passo para investir com confiança.</h3><p>Se estiver começando, algumas perguntas ajudam você a entender seu perfil. Depois, conheça os investimentos e faça suas próprias simulações.</p><div class="education-choices"><button class="save" data-experience="beginner" type="button"><strong>Estou começando</strong><small>Quero descobrir meu perfil</small></button><button class="secondary" data-experience="experienced" type="button"><strong>Já tenho experiência</strong><small>Quero ir para minha carteira</small></button></div><button type="button" class="text-button" data-experience="skipped">Agora não</button><p class="quote-meta">Você pode voltar pelo botão Meu perfil e guia de investimentos.</p></div>';
+    } else if (next === 'profile') {
+      const profile = profiles[state()?.profile];
+      body.innerHTML = `<div class="education-intro"><span class="eyebrow">${profile ? 'Seu perfil inicial' : 'Autoconhecimento antes da taxa'}</span><h3>${profile ? profile[0] : 'Qual é o seu jeito de investir?'}</h3><p>${profile ? profile[1] : 'Responda cinco perguntas sobre seus objetivos, prazo e relação com o risco. Você pode refazer quando sua situação mudar.'}</p><p class="education-note">Orientação educativa inicial. Este questionário não substitui uma avaliação completa de adequação ao seu perfil nem recomenda um produto específico.</p><div class="actions"><button class="save" type="button" data-start-quiz>${profile ? 'Refazer perguntas' : 'Descobrir meu perfil'}</button><button class="secondary" type="button" data-education-view="guide">Conhecer investimentos →</button></div></div>`;
+    } else if (next === 'quiz') renderQuiz();
+    else if (next === 'guide') renderGuide();
+    else if (next === 'simulator') renderSimulator();
+    body.scrollTop = 0;
+    // Keep screen-reader and keyboard focus with the newly displayed content.
+    const heading = body.querySelector('h3,legend');
+    if (heading) {heading.tabIndex = -1; heading.focus({preventScroll: true});}
+  }
+  function startQuiz() {quizStep = 0; answers = {...(state()?.answers || {})}; render('quiz');}
+  function renderQuiz() {
+    const [key, title, options] = questions[quizStep];
+    body.innerHTML = `<form id="educationQuiz"><div class="education-progress"><span>Pergunta ${quizStep + 1} de ${questions.length}</span><progress value="${quizStep + 1}" max="5" aria-label="Progresso do questionário"></progress></div><fieldset><legend>${title}</legend><div class="education-options">${options.map((text, index) => `<label><input type="radio" name="answer" value="${index}" required ${answers[key] === index ? 'checked' : ''}><span>${text}</span></label>`).join('')}</div></fieldset><div class="education-step-actions"><button type="button" class="secondary" data-quiz-back>${quizStep ? '← Voltar' : 'Cancelar'}</button><button type="submit" class="save">${quizStep === 4 ? 'Ver meu perfil' : 'Continuar →'}</button></div></form>`;
+    body.querySelector('[data-quiz-back]').onclick = () => {
+      const checked = body.querySelector('input:checked'); if (checked) answers[key] = Number(checked.value);
+      if (quizStep) {quizStep--; render('quiz');} else render('profile');
+    };
+    body.querySelector('form').onsubmit = event => {
+      event.preventDefault(); answers[key] = Number(new FormData(event.target).get('answer'));
+      if (quizStep < 4) {quizStep++; render('quiz');}
+      else action(async () => {await save({experience: state()?.experience === 'experienced' ? 'experienced' : 'beginner', answers}); render('profile');});
+    };
+  }
+  function renderGuide() {
+    body.innerHTML = `<p class="education-lead">O melhor ponto de partida é entender como funciona. Compare prazo, risco e rendimento líquido antes de decidir.</p><p class="education-note">São modalidades existentes no Brasil. As taxas e a disponibilidade variam por instituição e emissão; este guia não lista ofertas à venda.</p><div class="education-lessons">${Object.entries(InvestmentSimulator.products).map(([key, product]) => {
+      const lesson = lessons[key];
+      return `<details class="education-lesson"><summary><span><strong>${product.name}</strong><small>${lesson[0]}</small></span><span aria-hidden="true">＋</span></summary><div class="education-lesson-body"><dl>${['Como ganha dinheiro', 'Riscos e garantias', 'Quando posso resgatar?', 'Impostos'].map((label, i) => `<div><dt>${label}</dt><dd>${lesson[i+1]}</dd></div>`).join('')}</dl><button class="secondary" type="button" data-simulate-product="${key}">Simular ${product.name} →</button></div></details>`;
+    }).join('')}</div><p class="quote-meta">Juros compostos são juros sobre o saldo que já inclui rendimentos anteriores. Aportes aumentam o capital; não são lucro. Regras tributárias podem mudar.</p>`;
+  }
+  function renderSimulator(product = 'cdb') {
+    body.innerHTML = `<p class="education-lead">Escolha uma modalidade e use a taxa da oferta que você encontrou para explorar um cenário.</p><form id="educationSimulation" class="education-sim-form"><label class="education-wide">Investimento<select name="product">${Object.entries(InvestmentSimulator.products).map(([key, p]) => `<option value="${key}" ${key === product ? 'selected' : ''}>${p.name}</option>`).join('')}</select></label><label>Rentabilidade<select name="mode"></select></label><label><span id="simulationRateLabel">Taxa ao ano (%)</span><input name="rate" type="text" inputmode="decimal" value="12" required maxlength="8"></label><label id="simulationReferenceField" hidden><span id="simulationReferenceLabel">Índice de referência ao ano (%)</span><input name="reference" type="text" inputmode="decimal" maxlength="8"></label><label>Valor inicial (R$)<input name="initial" type="text" inputmode="decimal" value="1.000,00" maxlength="18" required data-simulation-money></label><label>Aporte mensal (R$)<input name="monthly" type="text" inputmode="decimal" value="200,00" maxlength="18" required data-simulation-money></label><label>Prazo<input name="duration" type="number" min="1" max="600" step="1" value="36" required></label><label>Unidade do prazo<select name="unit"><option value="months">Meses</option><option value="years">Anos</option></select></label><p id="simulationProductNote" class="education-wide quote-meta"></p><div class="education-wide"><button type="submit" class="save">Calcular simulação →</button></div></form><div id="simulationResult" hidden></div><p class="education-note">Simulação educativa para pessoa física, sem garantia de retorno. Taxas digitadas por você; não são cotações ou ofertas atuais. Nenhum valor é aplicado ou retirado da sua carteira.</p>`;
+    const form = body.querySelector('form');
+    form.elements.product.onchange = () => setModes();
+    form.elements.mode.onchange = () => setRateFields(true);
+    form.elements.unit.onchange = () => {form.elements.duration.max = form.elements.unit.value === 'years' ? '50' : '600';};
+    form.querySelectorAll('[data-simulation-money]').forEach(input => input.addEventListener('input', () => maskMoney(input)));
+    form.addEventListener('input', () => {body.querySelector('#simulationResult').hidden = true; error('');});
+    form.addEventListener('change', () => {body.querySelector('#simulationResult').hidden = true; error('');});
+    function setModes() {
+      const previous = form.elements.mode.value;
+      const product = InvestmentSimulator.products[form.elements.product.value];
+      const names = {fixed: 'Prefixada', cdi: 'Percentual do CDI', ipca: 'IPCA + juros', selic: 'Selic de referência'};
+      form.elements.mode.innerHTML = product.modes.map(mode => `<option value="${mode}">${names[mode]}</option>`).join('');
+      if (product.modes.includes(previous)) form.elements.mode.value = previous;
+      setRateFields(true);
+      document.querySelector('#simulationProductNote').textContent = product.exempt ? 'Cenário de isenção de IR para pessoa física, sujeito às condições legais da emissão. Confira a carência e o vencimento do produto.' : 'Estimativa de IR regressivo e IOF calculada separadamente por aporte. Confira o vencimento e as condições da oferta.';
+    }
+    function setRateFields(reset) {
+      const mode = form.elements.mode.value, indexed = ['cdi', 'ipca'].includes(mode);
+      document.querySelector('#simulationRateLabel').textContent = mode === 'cdi' ? 'Percentual do CDI (%)' : mode === 'ipca' ? 'Juros acima do IPCA (% ao ano)' : mode === 'selic' ? 'Selic estimada (% ao ano)' : 'Taxa prefixada (% ao ano)';
+      document.querySelector('#simulationReferenceField').hidden = !indexed;
+      document.querySelector('#simulationReferenceLabel').textContent = mode === 'cdi' ? 'CDI estimado (% ao ano)' : 'IPCA estimado (% ao ano)';
+      form.elements.reference.disabled = !indexed; form.elements.reference.required = indexed;
+      if (reset) {form.elements.rate.value = mode === 'cdi' ? '100' : ''; form.elements.reference.value = '';}
+    }
+    setModes();
+    form.onsubmit = event => {
+      event.preventDefault(); error('');
+      const decimal = value => /^\d+(?:[.,]\d+)?$/.test(value.trim()) ? Number(value.trim().replace(',', '.')) : NaN;
+      try {
+        const result = InvestmentSimulator.calculate({product: form.elements.product.value, mode: form.elements.mode.value, initial: moneyValue(form.elements.initial.value), monthly: moneyValue(form.elements.monthly.value), rate: decimal(form.elements.rate.value), reference: form.elements.reference.disabled ? 0 : decimal(form.elements.reference.value), months: Number(form.elements.duration.value) * (form.elements.unit.value === 'years' ? 12 : 1), startDate: localDateValue()});
+        renderSimulationResult(result, form.elements.product.value, form.elements.mode.value);
+      } catch (e) {error(e.message);}
+    };
+  }
+  function renderSimulationResult(result, product, mode) {
+    const output = body.querySelector('#simulationResult');
+    const money = value => brl(value);
+    const chartTop = Math.max(result.gross, result.invested, 1);
+    const coords = key => result.points.map((p, i) => `${60 + i / result.month * 580},${210 - p[key] / chartTop * 160}`).join(' ');
+    const gross = coords('gross'), invested = coords('invested');
+    const indexed = mode !== 'fixed';
+    output.innerHTML = `<div class="simulation-heading"><span class="eyebrow">${InvestmentSimulator.products[product].name} · ${result.month} meses</span><h3>Seu cenário estimado</h3><p>Taxa bruta equivalente: ${percent(result.annualRate)} ao ano${indexed ? ' com os índices informados constantes' : ''}.</p></div><div class="simulation-totals"><div class="simulation-total"><small>Total líquido estimado</small><strong>${money(result.net)}</strong><span>Após impostos estimados, antes de taxas</span></div><div><small>Dinheiro que você aportou</small><strong>${money(result.invested)}</strong></div><div><small>Rendimento bruto</small><strong>${money(result.gain)}</strong></div><div><small>IR + IOF estimados</small><strong>${money(result.tax)}</strong></div><div><small>Total bruto</small><strong>${money(result.gross)}</strong></div><div><small>Rendimento líquido estimado</small><strong>${money(result.net - result.invested)}</strong></div></div><figure class="simulation-chart"><figcaption>Evolução do patrimônio <span><i class="chart-gross"></i> Total bruto <i class="chart-invested"></i> Aportes</span></figcaption><svg viewBox="0 0 680 250" role="img" aria-label="Evolução estimada: ${money(result.invested)} em aportes e ${money(result.gross)} de total bruto ao fim de ${result.month} meses. Consulte os valores na tabela mensal abaixo."><line x1="60" y1="210" x2="640" y2="210" stroke="currentColor" opacity=".2"/><text x="60" y="28" fill="currentColor" font-size="12">${money(chartTop)}</text><polyline points="${invested}" fill="none" stroke="#a4b2cc" stroke-width="2" stroke-dasharray="5 5"/><polyline points="${gross}" fill="none" stroke="#75e0b2" stroke-width="3"/><text x="60" y="237" fill="currentColor" font-size="12">Hoje</text><text x="640" y="237" text-anchor="end" fill="currentColor" font-size="12">${result.month} meses</text></svg></figure><details class="simulation-table"><summary>Ver evolução mês a mês</summary><div class="scroll"><table><caption>Projeção de aportes e rendimentos por mês</caption><thead><tr><th>Mês</th><th>Aportado</th><th>Total bruto</th><th>Impostos estimados</th><th>Total líquido</th></tr></thead><tbody>${result.points.map(p => `<tr><td>${p.month}</td><td>${money(p.invested)}</td><td>${money(p.gross)}</td><td>${money(p.tax)}</td><td>${money(p.net)}</td></tr>`).join('')}</tbody></table></div></details><div class="education-note"><strong>Como calculamos</strong><p>Juros compostos desde hoje, proporcionais aos dias corridos (ano de 365 dias). Aporte ao fim de cada mês; o último ainda não rende. Cada aporte tem seu próprio prazo para IR e IOF. A taxa informada é mantida em todas as aplicações.</p><p>${mode === 'cdi' ? 'CDI convertido para taxa diária em base de 252 dias úteis, com aplicação do percentual contratado e conversão para projeção em dias corridos. ' : mode === 'ipca' ? 'IPCA e juros reais são compostos por multiplicação, não por soma. ' : ''}${indexed ? 'CDI, Selic e inflação futuros são incertos: esta simulação mantém as referências constantes. ' : ''}Não inclui custódia, tarifas, pagamentos periódicos de juros, amortizações ou oscilação do preço na venda antecipada. Valores nominais, sem descontar a inflação.</p><p>Aportes mensais representam novas aplicações: taxas, disponibilidade, aplicação mínima, carência e vencimento precisam ser conferidos na instituição. A projeção não garante resgate na data escolhida.</p></div>`;
+    output.hidden = false;
+    output.tabIndex = -1; output.focus({preventScroll: true}); output.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+  dialog.addEventListener('click', event => {
+    const viewButton = event.target.closest('[data-education-view]');
+    const choice = event.target.closest('[data-experience]');
+    const simulate = event.target.closest('[data-simulate-product]');
+    if (saving) return;
+    if (viewButton) render(viewButton.dataset.educationView);
+    if (event.target.closest('[data-start-quiz]')) startQuiz();
+    if (simulate) {render('simulator'); renderSimulator(simulate.dataset.simulateProduct); body.querySelector('select').focus();}
+    if (choice) action(async () => {
+      await save({experience: choice.dataset.experience});
+      if (choice.dataset.experience === 'beginner') startQuiz(); else dialog.close();
+    });
+  });
+  document.querySelector('#openInvestorGuide').onclick = () => open('guide');
+  document.querySelector('#openInvestmentSimulator').onclick = () => open('simulator');
+  function onPanel() {
+    updateBanner();
+    // The inline investor profile card handles first-use onboarding.
+  }
+  new MutationObserver(onPanel).observe(panel, {attributes: true, attributeFilter: ['hidden']});
+  document.addEventListener('bootstrap-loaded', () => {preferencesReady = true; onPanel();});
+  document.addEventListener('insights-updated', () => queueMicrotask(updateBanner));
+  onPanel();
+})();
 
 </script></body></html>

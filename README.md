@@ -4,6 +4,8 @@ PWA multiusuário para controlar gastos, renda, voucher, limites mensais e inves
 
 ## Publicação na Vercel
 
+As alterações de desenvolvimento ficam na branch `work`. Integre-as à `main` para publicação; confira em **Vercel → Settings → Environments → Production → Branch Tracking** (ou **Settings → Git**, conforme a interface) se a branch de produção está definida como `main`. Um push somente na `work` não atualiza a produção quando ela acompanha a `main`.
+
 Importe este repositório na Vercel e mantenha as configurações automáticas. Antes do primeiro deploy, cadastre em **Settings → Environment Variables**:
 
 - `DATABASE_URL`: conexão com pooling fornecida pelo Neon.
@@ -40,6 +42,10 @@ Quando não houver conexão, o aplicativo mostra uma tela clara de indisponibili
 Novas versões são baixadas em segundo plano. Quando um service worker novo estiver pronto, o aplicativo oferece o botão **Atualizar** e só recarrega depois da confirmação.
 
 ## Investimentos
+
+Na primeira visita à aba **Investir**, o guia pergunta se a pessoa já sabe investir. Quem está começando pode responder cinco perguntas sobre objetivo, prazo, necessidade de resgate, reação a perdas e experiência. O resultado educativo (conservador, moderado ou arrojado) e a escolha de dispensar o guia ficam salvos nas preferências da conta, inclusive no backup. O botão **Meu perfil e guia de investimentos** permite refazer as respostas e consultar explicações sobre CDB, LCI, LCA, Tesouro Prefixado, Tesouro Selic, Tesouro IPCA+ e debêntures comuns ou incentivadas, com riscos, liquidez, garantias e impostos. O questionário não substitui uma avaliação completa de adequação ao perfil.
+
+O botão **Simular investimento** aceita valor inicial, aporte mensal ao fim do mês, prazo em meses ou anos e taxa anual informada pela pessoa. Há cenários prefixados, percentuais do CDI, IPCA mais juros e Selic, conforme a modalidade. São modalidades reais, sem catálogo de ofertas ou cotações atuais. O resultado separa capital aportado, rendimento bruto, IR/IOF estimados por aporte, rendimento líquido e total acumulado, com gráfico e tabela mensal. A projeção usa juros compostos por dias corridos e índices constantes; o percentual do CDI é aplicado à taxa diária equivalente em base de 252 dias úteis. Considera isenção para pessoa física em LCI, LCA e debêntures incentivadas elegíveis. Não inclui custódia, tarifas, pagamentos periódicos, amortizações, inflação descontada ou preço de venda antecipada; as condições reais de cada nova aplicação precisam ser conferidas na instituição. Simulações não movimentam a carteira.
 
 A aba **Investir** aceita renda fixa, ações, fundos imobiliários, ETFs, criptomoedas e outros ativos. Os saldos de renda fixa são recalculados pela API ao abrir a carteira, voltar à aba e a cada minuto enquanto a aba está visível, sem precisar atualizar cotações. O formulário mostra uma prévia antes de salvar.
 
