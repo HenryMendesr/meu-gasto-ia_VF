@@ -283,3 +283,9 @@ Para cotações brasileiras, a ordem automática é **Brapi → Yahoo Finance (d
 Chaves, cobertura, frequência permitida e eventual contratação de plano dependem dos provedores. As consultas podem fornecer dados atrasados; não são streaming nem garantia de tempo real. A terceira fonte é para a cotação; o histórico continua usando Yahoo/Brapi. Se todas falharem, o app mantém a cotação anterior e sinaliza a falha; sem cotação anterior, mostra pendência.
 
 A integração Alpha Vantage foi verificada com respostas simuladas (sucesso, limite, resposta inválida, chave ausente e símbolo divergente). A política de rede desta sessão não permite uma consulta real ao provedor. Validar cobertura e disponibilidade com a chave do plano na Vercel.
+
+### Escolher a fonte por ativo
+
+Em **Novo investimento** ou **Editar → Fonte da cotação**, escolha Automático, Brapi, Yahoo Finance ou Alpha Vantage. A preferência é salva por posição e aparece na carteira. Cadastros anteriores continuam em Automático. Esse modo mantém a ordem de tentativas; uma fonte específica não usa outro provedor se falhar. O app mantém o último preço e informa a falha. Ao alterar a fonte, a próxima consulta automática não fica bloqueada pelo intervalo da fonte anterior. Com o acompanhamento desligado, use **Atualizar taxas e cotações** para consultar.
+
+A escolha vale para o preço atual: histórico continua com Yahoo/Brapi, e a interface informa essa distinção. Brapi e Alpha Vantage são opções para códigos brasileiros; Yahoo/Automático também atendem os demais códigos compatíveis. A seleção não configura chaves nem contrata planos: os requisitos de acesso dos provedores continuam aplicáveis.

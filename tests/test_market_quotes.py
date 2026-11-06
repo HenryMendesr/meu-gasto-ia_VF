@@ -148,3 +148,40 @@ class FractionalAndFallbackTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'ALPHAVANTAGE_API_KEY'):
                 investments.alpha_vantage_quote('PETR4')
             fetch.assert_not_called()
+
+class ProviderSelectionTests(unittest.TestCase):
+    def test_explicit_source_does_not_fall_back(self):
+        for provider, method in [('brapi','brapi_data'),('yahoo','yahoo_quote'),('alpha_vantage','alpha_vantage_quote')]:
+            with self.subTest(provider=provider),patch.object(investments,'brapi_data',side_effect=ValueError('Brapi off')) as brapi,patch.object(investments,'yahoo_quote',side_effect=ValueError('Yahoo off')) as yahoo,patch.object(investments,'alpha_vantage_quote',side_effect=ValueError('Alpha off')) as alpha:
+                with self.assertRaises(ValueError):investments.fetch_quote('PETR4F',provider=provider)
+                self.assertEqual([int(provider==key) for key in ['brapi','yahoo','alpha_vantage']],[brapi.call_count,yahoo.call_count,alpha.call_count])
+
+    def test_selection_validated_and_legacy_defaults_to_auto(self):
+        payload={'type':'Ações','symbol':'PETR4F','quantity':1,'average_price':29,'purchase_date':'2026-10-01'}
+        self.assertEqual('auto',investments.normalize_payload(payload)['quote_provider'])
+        for provider in ('invalid',None,[],True):
+            with self.subTest(provider=provider),self.assertRaises(ValueError):
+                investments.normalize_payload({**payload,'quote_provider':provider})
+        with self.assertRaises(ValueError):
+            investments.normalize_payload({**payload,'symbol':'BTC-BRL','quote_provider':'brapi'})
+        old=investments.normalize_payload({**payload,'quote_provider':'yahoo','current_price':30})
+        new=investments.normalize_payload({**payload,'quote_provider':'brapi','current_price':30},old)
+        self.assertIsNone(new['quote_updated_at'])
+        self.assertIsNone(new['quote_checked_at'])
+        self.assertEqual(30,new['current_price'])
+
+    def test_same_ticker_uses_each_selected_source_and_preserves_last_quote_on_failure(self):
+        with tempfile.TemporaryDirectory() as folder,patch.object(storage,'DATABASE',Path(folder)/'db.sqlite'),patch.object(storage,'BACKUPS',Path(folder)/'backups'):
+            investments.set_cash_balance({'amount':1000})
+            payload={'type':'Ações','symbol':'PETR4F','quantity':1,'average_price':29,'purchase_date':'2026-10-01'}
+            first=investments.create_investment({**payload,'quote_provider':'brapi'})
+            second=investments.create_investment({**payload,'quote_provider':'yahoo'})
+            def fetch(symbol,provider='auto'):
+                return {'currency':'BRL','price':30 if provider=='brapi' else 31,'source':provider,'updated_at':investments.now_iso()}
+            result=investments.refresh_investments(quote_fetcher=fetch)
+            items={i['id']:i for i in result['investments']}
+            self.assertEqual(30,items[first['id']]['current_price'])
+            self.assertEqual(31,items[second['id']]['current_price'])
+            result=investments.refresh_investments(quote_fetcher=lambda *args,**kwargs:(_ for _ in ()).throw(ValueError('Fonte indisponível')))
+            self.assertEqual(2,len(result['errors']))
+            self.assertEqual([30,31],sorted(i['current_price'] for i in result['investments']))

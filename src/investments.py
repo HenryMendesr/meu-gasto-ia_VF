@@ -32,6 +32,7 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 VARIABLE_TYPES = {"Ações", "Fundos imobiliários", "ETFs", "Criptomoedas", "Outros"}
+QUOTE_PROVIDERS = {'auto', 'brapi', 'yahoo', 'alpha_vantage'}
 ALL_TYPES = VARIABLE_TYPES | {"Renda fixa"}
 YAHOO_SUFFIX = ".SA"
 
@@ -134,7 +135,13 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
         symbol = re.sub(r"\s+", "", str(payload.get("symbol", "")).upper())
         if not re.fullmatch(r"[A-Z0-9.\-]{2,20}", symbol):
             raise ValueError("Código do ativo inválido")
+        provider=payload.get('quote_provider',(existing or {}).get('quote_provider','auto'))
+        if not isinstance(provider,str) or provider not in QUOTE_PROVIDERS:
+            raise ValueError('Fonte de cotação inválida')
+        if provider in {'brapi','alpha_vantage'} and not re.fullmatch(r'[A-Z]{4}\d{1,2}',quote_symbol(symbol)):
+            raise ValueError('Esta fonte atende códigos brasileiros. Use Yahoo Finance ou Automático para este ativo')
         common.update({
+            'quote_provider':provider,
             "symbol": symbol,
             "quantity": number(payload.get("quantity"), "Quantidade", minimum=0.00000001),
             "average_price": number(payload.get("average_price"), "Preço médio", minimum=0.00000001),
@@ -205,6 +212,10 @@ def normalize_payload(payload: dict, existing: dict | None = None) -> dict:
         for field in ("buys", "sales", "incomes", "operation_corrected"):
             if field in existing:
                 common[field] = existing[field]
+    if existing and common.get('quote_provider','auto') != existing.get('quote_provider','auto'):
+        common['quote_checked_at']=None
+        common['quote_updated_at']=None
+        common['quote_error']=None
     return common
 
 
@@ -306,27 +317,33 @@ def alpha_vantage_quote(symbol):
         raise ValueError('Alpha Vantage indisponível para este ativo; confira a chave, cobertura e limites do plano') from exc
 
 
-def fetch_quote(symbol: str) -> dict:
+def yahoo_quote(symbol):
+    result=yahoo_chart(symbol)
+    meta=dict(result['meta']);market_day=market_date(meta.get('regularMarketTime'))
+    closes=result.get('indicators',{}).get('quote',[{}])[0].get('close',[])
+    earlier=[close for stamp,close in zip(result.get('timestamp',[]),closes)
+             if close is not None and market_date(stamp) and market_day and market_date(stamp)<market_day]
+    if earlier:meta['previousClose']=number(earlier[-1],'Fechamento anterior',minimum=.00000001)
+    # chartPreviousClose may be the start of the requested range, not yesterday.
+    return quote_values(meta,'Yahoo Finance')
+
+
+def fetch_quote(symbol: str, provider='auto') -> dict:
     symbol=quote_symbol(symbol)
-    errors=[]
+    if not isinstance(provider,str) or provider not in QUOTE_PROVIDERS:raise ValueError('Fonte de cotação inválida')
     brazilian=bool(re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol))
-    if re.fullmatch(r'[A-Z]{4}\d{1,2}',symbol):
-        try:return quote_values(brapi_data(symbol),'Brapi')
-        except ValueError as exc:errors.append(str(exc))
-    try:
-        result=yahoo_chart(symbol)
-        meta=dict(result['meta']);market_day=market_date(meta.get('regularMarketTime'))
-        closes=result.get('indicators',{}).get('quote',[{}])[0].get('close',[])
-        earlier=[close for stamp,close in zip(result.get('timestamp',[]),closes)
-                 if close is not None and market_date(stamp) and market_day and market_date(stamp)<market_day]
-        if earlier:meta['previousClose']=number(earlier[-1],'Fechamento anterior',minimum=.00000001)
-        # chartPreviousClose may be the start of the requested range, not yesterday.
-        return quote_values(meta,'Yahoo Finance')
-    except (ValueError,KeyError,TypeError,IndexError):
-        errors.append('Yahoo Finance indisponível para este ativo')
-    if brazilian:
-        try:return alpha_vantage_quote(symbol)
-        except ValueError as exc:errors.append(str(exc))
+    if provider in {'brapi','alpha_vantage'} and not brazilian:
+        raise ValueError('Esta fonte atende códigos brasileiros; selecione Yahoo Finance ou Automático')
+    sources={'brapi':lambda:quote_values(brapi_data(symbol),'Brapi'),
+             'yahoo':lambda:yahoo_quote(symbol),
+             'alpha_vantage':lambda:alpha_vantage_quote(symbol)}
+    selected=(['brapi','yahoo','alpha_vantage'] if brazilian else ['yahoo']) if provider=='auto' else [provider]
+    errors=[]
+    for key in selected:
+        try:return sources[key]()
+        except (ValueError,KeyError,TypeError,IndexError) as exc:
+            labels={'brapi':'Brapi','yahoo':'Yahoo Finance','alpha_vantage':'Alpha Vantage'}
+            errors.append(str(exc) if isinstance(exc,ValueError) else labels[key]+' retornou uma resposta inválida')
     raise ValueError('Não foi possível atualizar '+symbol+'. '+' '.join(errors))
 
 
@@ -857,32 +874,35 @@ def delete_investment(item_id: str, user_id: int | None = None) -> None:
 def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Callable = fetch_cdi_rate,
                         user_id: int | None = None, automatic=False) -> dict:
     store=load_store(user_id);errors=[];updates={};attempted=now_iso()
-    identities={i['id']:(i['type'],i.get('symbol'),i.get('profitability_type'),i.get('current_price'),i.get('quote_updated_at'),i.get('auto_tracking',True)) for i in store['investments']}
+    identities={i['id']:(i['type'],i.get('symbol'),i.get('profitability_type'),i.get('current_price'),i.get('quote_updated_at'),i.get('auto_tracking',True),i.get('quote_provider','auto')) for i in store['investments']}
     def recent(stamp,seconds):
         try:return 0<=(datetime.now(timezone.utc)-datetime.fromisoformat(stamp.replace('Z','+00:00'))).total_seconds()<seconds
         except (ValueError,TypeError,AttributeError):return False
     due=[i for i in store['investments'] if i['type'] in VARIABLE_TYPES and ops.position(i)['quantity']>0
          and (not automatic or i.get('auto_tracking',True) and not recent(i.get('quote_checked_at'),60) and not recent(i.get('quote_updated_at'),300))]
-    symbols=list(dict.fromkeys(i['symbol'] for i in due))[:8]
-    def fetch(symbol):
+    symbols=list(dict.fromkeys((i['symbol'],i.get('quote_provider','auto')) for i in due))[:8]
+    def fetch(key):
+        symbol,provider=key
         try:
-            info=quote_fetcher(symbol);require_brl(info,symbol)
+            info=quote_fetcher(symbol) if provider=='auto' else quote_fetcher(symbol,provider=provider)
+            require_brl(info,symbol)
             price=number(info.get('price'),'Cotação',minimum=.00000001)
             change=number(info.get('daily_change_percent'),'Variação diária',required=False,minimum=-100)
             previous=number(info.get('previous_close'),'Fechamento anterior',required=False,minimum=.00000001)
-            return symbol,{'current_price':price,'daily_change_percent':change,'previous_close':previous,
+            return key,{'current_price':price,'daily_change_percent':change,'previous_close':previous,
                 'quote_source':info['source'],'quote_updated_at':info['updated_at'],'quote_date':info.get('quote_date'),
                 'quote_checked_at':attempted,'quote_error':None},None
         except (ValueError,KeyError,TypeError,IndexError) as exc:
             message=str(exc) if isinstance(exc,ValueError) else 'Resposta inválida da fonte de cotações'
-            return symbol,{'quote_checked_at':attempted,'quote_error':message},message
+            return key,{'quote_checked_at':attempted,'quote_error':message},message
     quotes={}
     if symbols:
         with ThreadPoolExecutor(max_workers=8) as executor:
             quotes={symbol:(info,error) for symbol,info,error in executor.map(fetch,symbols)}
     for item in due:
-        if item['symbol'] not in quotes:continue
-        info,error=quotes[item['symbol']];updates[item['id']]=info
+        key=(item['symbol'],item.get('quote_provider','auto'))
+        if key not in quotes:continue
+        info,error=quotes[key];updates[item['id']]=info
         if error:errors.append({'id':item['id'],'name':item['symbol'],'error':error})
     cdi_items=[i for i in store['investments'] if i.get('profitability_type')=='CDI' and (not automatic or i.get('auto_tracking',True) and not recent(i.get('rate_checked_at'),300))]
     if cdi_items:
@@ -897,13 +917,13 @@ def refresh_investments(quote_fetcher: Callable = fetch_quote, cdi_fetcher: Call
         def merge(current):
             changed=False
             for item in current['investments']:
-                identity=(item['type'],item.get('symbol'),item.get('profitability_type'),item.get('current_price'),item.get('quote_updated_at'),item.get('auto_tracking',True))
+                identity=(item['type'],item.get('symbol'),item.get('profitability_type'),item.get('current_price'),item.get('quote_updated_at'),item.get('auto_tracking',True),item.get('quote_provider','auto'))
                 if identities.get(item['id'])==identity and item['id'] in updates:
                     item.update(updates[item['id']]);changed=True
             if changed:
                 current['updated_at']=attempted;record_snapshot(current)
         mutate_store(merge,user_id)
-    result=portfolio(user_id);result['errors']=errors;result['pending_quotes']=max(0,len(set(i['symbol'] for i in due))-len(symbols))
+    result=portfolio(user_id);result['errors']=errors;result['pending_quotes']=max(0,len(set((i['symbol'],i.get('quote_provider','auto')) for i in due))-len(symbols))
     return result
 
 

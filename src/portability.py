@@ -184,6 +184,7 @@ def _validate(payload):
     for item in portfolio['investments']:
         if not isinstance(item,dict) or not re.fullmatch('[a-f0-9]{32}',str(item.get('id',''))) or item['id'] in ids:raise ValueError('Ativo inválido ou duplicado no backup')
         ids.add(item['id'])
+        if not isinstance(item.get('quote_provider','auto'),str) or item.get('quote_provider','auto') not in {'auto','brapi','yahoo','alpha_vantage'}:raise ValueError('Fonte de cotação inválida')
         if 'auto_tracking' in item and not isinstance(item['auto_tracking'],bool):raise ValueError('Acompanhamento automático inválido')
         if item.get('cash_funded_amount') is not None:item['cash_funded_amount']=amount(item['cash_funded_amount'])
         if item.get('operation_corrected') is not None and not isinstance(item['operation_corrected'],bool):raise ValueError('Operação inválida')
