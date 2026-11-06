@@ -1,10 +1,11 @@
     <section class="suitability-card" aria-labelledby="suitabilityTitle">
       <div class="suitability-intro">
-        <div><span class="eyebrow">Comece por aqui</span>
+        <div class="suitability-welcome"><span class="eyebrow">Comece por aqui</span>
           <h3 id="suitabilityTitle">Primeira vez investindo?</h3>
           <p>Descubra seu perfil de investidor e entenda que risco cabe na sua vida.</p>
           <small>20 perguntas · cerca de 5 a 8 minutos · sem precisar saber investir</small>
         </div>
+        <span id="suitabilityProfileBadge" class="suitability-profile-badge" hidden></span>
         <button type="button" id="startSuitability" class="save suitability-cta">Descobrir meu perfil de investidor <span aria-hidden="true">→</span></button>
       </div>
       <div id="suitabilityResult" role="status" aria-live="polite"></div>
@@ -18,5 +19,17 @@
         <button type="submit" class="save">Calcular e salvar meu perfil</button>
         <button type="button" id="cancelSuitability" class="secondary">Cancelar</button>
       </form>
-      <details><summary>Como funciona esta análise</summary><p>O perfil considera capacidade financeira, conhecimento e tolerância a risco separadamente. A dimensão mais restritiva limita o resultado; prazo curto, necessidade de resgate, ausência de reserva, dívidas caras ou perdas que comprometam o essencial limitam a classificação a conservador.</p><p>Este é um questionário educativo do app, inspirado nos eixos de suitability. Não substitui a API da sua instituição, nem determina a adequação de um produto específico. Cada instituição define perguntas e metodologia próprias. Atualize ao mudar renda, objetivos ou situação financeira.</p><p>Referências para consulta: <a href="https://conteudo.cvm.gov.br/legislacao/resolucoes/resol030.html" target="_blank" rel="noopener noreferrer">Resolução CVM 30</a> e <a href="https://www.anbima.com.br/pt_br/autorregular/codigos/distribuicao-de-produtos-de-investimento.htm" target="_blank" rel="noopener noreferrer">distribuição de produtos de investimento — ANBIMA</a>. A classificação do app não é certificada por essas entidades.</p></details>
+      <details class="investment-guide">
+        <summary class="secondary">Entenda os investimentos</summary>
+        <p>Conheça os tipos disponíveis no app. Compare riscos, prazo, custos e liquidez antes de investir; seu perfil não torna todos os produtos de uma categoria adequados.</p>
+        <div class="investment-guide-grid">
+          <article><h4>Renda fixa</h4><p>Você empresta dinheiro ao governo, a bancos ou a empresas. A remuneração pode ser prefixada ou acompanhar índices como CDI e IPCA.</p><p><strong>Tesouro Direto:</strong> títulos públicos; o preço pode cair antes do vencimento. Tesouro Selic, IPCA+ e Prefixado têm comportamentos e prazos diferentes.</p><p><strong>CDB, LCI e LCA:</strong> títulos bancários. Verifique carência, resgate e risco do emissor. Alguns contam com FGC, sujeito às regras e limites da garantia; isso não assegura resgate imediato.</p><p><strong>Debêntures, CRI e CRA:</strong> dívida privada, com risco de crédito e de liquidez; não têm cobertura do FGC. Renda fixa também pode gerar perdas.</p></article>
+          <article><h4>Ações</h4><p>Pequenas participações em empresas. O resultado depende do preço de compra e venda e de eventuais dividendos, que não são garantidos.</p><p><strong>Atenção:</strong> preços podem cair bastante; há risco do negócio e de concentração. Não há proteção do FGC.</p></article>
+          <article><h4>Fundos imobiliários (FIIs)</h4><p>Cotas de fundos que investem em imóveis ou em títulos ligados ao setor imobiliário. Podem distribuir rendimentos, que variam e não são garantidos.</p><p><strong>Atenção:</strong> vacância, inadimplência, juros e crédito podem afetar cotas e renda. A saída geralmente depende de vender as cotas no mercado. Sem FGC.</p></article>
+          <article><h4>ETFs</h4><p>Fundos negociados em bolsa que buscam acompanhar um índice. Podem investir em ações, renda fixa ou outros mercados, conforme o regulamento.</p><p><strong>Atenção:</strong> diversificação não elimina perdas. Considere taxas, liquidez, composição do índice e eventual risco cambial. Sem FGC.</p></article>
+          <article><h4>Criptomoedas</h4><p>Ativos digitais cujos preços podem variar intensamente. Entenda como funcionam a negociação, as chaves e a custódia antes de comprar.</p><p><strong>Atenção:</strong> além de perdas elevadas, existem riscos de fraude, falhas de plataformas e perda de acesso. Não há FGC nem retorno garantido.</p></article>
+          <article><h4>Outros investimentos</h4><p>Categoria para ativos que não se encaixam nas anteriores. As características dependem do produto: não significa que ele seja simples ou tenha baixo risco.</p><p><strong>Atenção:</strong> consulte o regulamento ou contrato, emissor, custos, tributação, possibilidade de perda e condições de saída. Fundos em geral podem ter prazos de cotização e resgate diferentes.</p></article>
+        </div>
+      </details>
+      <details class="suitability-method"><summary>Como funciona esta análise</summary><p>O perfil considera capacidade financeira, conhecimento e tolerância a risco separadamente. A dimensão mais restritiva limita o resultado; prazo curto, necessidade de resgate, ausência de reserva, dívidas caras ou perdas que comprometam o essencial limitam a classificação a conservador.</p><p>Este é um questionário educativo do app, inspirado nos eixos de suitability. Não substitui a API da sua instituição, nem determina a adequação de um produto específico. Cada instituição define perguntas e metodologia próprias. Atualize ao mudar renda, objetivos ou situação financeira.</p><p>Referências para consulta: <a href="https://conteudo.cvm.gov.br/legislacao/resolucoes/resol030.html" target="_blank" rel="noopener noreferrer">Resolução CVM 30</a> e <a href="https://www.anbima.com.br/pt_br/autorregular/codigos/distribuicao-de-produtos-de-investimento.htm" target="_blank" rel="noopener noreferrer">distribuição de produtos de investimento — ANBIMA</a>. A classificação do app não é certificada por essas entidades.</p></details>
     </section>

@@ -24,3 +24,7 @@ O servidor valida todas as respostas e recalcula o resultado; classificação en
 ## Validação
 
 `python -m unittest tests.test_suitability` cobre classificação, limites financeiros, conhecimento, respostas inválidas e recálculo no servidor com preservação de outras preferências. Gerar a interface com `python src/build_dashboard.py` após alterar perguntas, HTML, CSS ou JavaScript.
+
+## Apresentação após o primeiro uso
+
+O primeiro clique compacta o convite imediatamente e salva `investor_profile_started` nas preferências da conta. Se a gravação falhar, o formulário continua disponível e informa a falha; a preferência pode não persistir no próximo acesso. Sem análise concluída, o app mantém o botão para descobrir o perfil. Com análise concluída, mostra o perfil ao lado do botão de refazer e recolhe a explicação detalhada. O guia “Entenda os investimentos” explica as seis categorias cadastráveis, sem indicar compra.

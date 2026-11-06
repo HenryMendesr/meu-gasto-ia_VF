@@ -50,3 +50,12 @@ class SuitabilityTests(unittest.TestCase):
         self.assertIn('completed_at', result['investor_profile'])
         with self.assertRaises(ValueError):
             trust.preferences({'unexpected': True})
+
+    def test_first_click_preference_persists_without_replacing_profile(self):
+        store = {'preferences': {'investor_profile': {'profile': 'Moderado'}}}
+        with patch.object(trust.investments, 'mutate_store', side_effect=lambda callback, uid: callback(store)):
+            result = trust.preferences({'investor_profile_started': True}, 'user-a')
+        self.assertTrue(result['investor_profile_started'])
+        self.assertEqual('Moderado', result['investor_profile']['profile'])
+        with self.assertRaises(ValueError):
+            trust.preferences({'investor_profile_started': 'true'})

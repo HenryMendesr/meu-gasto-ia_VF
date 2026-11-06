@@ -33,7 +33,7 @@ def preferences(payload, user_id=None):
             import suitability
         profile = suitability.evaluate(payload['investor_profile'])
         profile['completed_at'] = investments.now_iso()
-    allowed = {'onboarding_dismissed', 'analytics_consent'}
+    allowed = {'onboarding_dismissed', 'analytics_consent', 'investor_profile_started'}
     if any(key not in allowed or not isinstance(value, bool) for key, value in payload.items() if key != 'investor_profile'):
         raise ValueError('Preferências inválidas')
     def save(store):
