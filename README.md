@@ -163,7 +163,7 @@ A interface usa um tema escuro com navegação lateral no computador e inferior 
 
 - **Cores:** todas as cores vêm dos tokens em `:root` no início de `public/app.css` (superfícies, texto, verde para entradas e resultados positivos, vermelho para saídas e perdas, âmbar para atenção). Os demais arquivos CSS usam apenas `var(--token)`; para mudar a paleta, altere só esses tokens.
 - **Camada visual:** `src/theme.css` é carregado por último e padroniza cartões, botões, campos, tabelas, seções recolhíveis e a navegação.
-- **Início:** `src/overview.html`, `src/overview.css` e `src/overview.js` formam o painel somente leitura (sobra do mês, ritmo de gastos, limites, categorias, últimos seis meses, investimentos e compromissos). Os blocos antigos do Início continuam ocultos no HTML porque outros painéis ainda usam seus IDs.
+- **Início:** `src/overview.html`, `src/overview.css` e `src/overview.js` formam o painel somente leitura (sobra do mês, ritmo de gastos, limites, categorias, últimos seis meses, investimentos e compromissos).
 - **Ordem das abas:** `src/focus_layout.py` coloca primeiro os números e gráficos de cada aba, move guias, resumo do dia e históricos para seções recolhíveis e monta a aba Cartões (`src/cards_overview.*`).
 
 Ao alterar a interface, regenere `templates/index.html` com `SANITIZE_BUILD=1 python3 src/build_dashboard.py`.

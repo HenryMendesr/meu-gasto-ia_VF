@@ -9,7 +9,7 @@ html,body{background:var(--bg)}
 body{font-family:var(--font);font-size:14px;line-height:1.5;color:var(--ink);letter-spacing:-.005em;
   background:radial-gradient(1200px 600px at 85% -10%,color-mix(in srgb,var(--blue) 7%,transparent),transparent 60%),radial-gradient(900px 500px at 20% -15%,color-mix(in srgb,var(--green) 6%,transparent),transparent 60%),var(--bg);background-attachment:fixed}
 body h1,body h2,body h3,body h4{color:var(--ink);letter-spacing:-.02em}
-body .eyebrow,body .ex-eyebrow{color:var(--muted);font-size:11px;font-weight:650;letter-spacing:.08em}
+body .eyebrow{color:var(--muted);font-size:11px;font-weight:650;letter-spacing:.08em}
 body .quiet,body .sub,body .quote-meta{color:var(--muted)}
 ::selection{background:color-mix(in srgb,var(--green) 35%,transparent)}
 :focus-visible{outline:2px solid var(--green);outline-offset:2px}
@@ -41,8 +41,7 @@ body .top-actions .logout button{white-space:nowrap}
 /* ---- Panels: headings and rhythm ------------------------------------------ */
 body .panel{max-width:1240px;margin-inline:auto}
 body .panel>.section-heading,body .panel .section-heading{margin:8px 0 20px}
-body .panel :is(.section-heading,.investment-heading,.debts-heading,.budget-heading) h2,
-body .panel>header h2{font-size:clamp(26px,3vw,34px);font-weight:750;line-height:1.1;letter-spacing:-.03em;margin:2px 0 6px}
+body .panel :is(.section-heading,.investment-heading,.debts-heading,.budget-heading) h2,body .panel>header h2{font-size:clamp(26px,3vw,34px);font-weight:750;line-height:1.1;letter-spacing:-.03em;margin:2px 0 6px}
 body .panel :is(.section-heading,header) p{color:var(--muted);max-width:60ch}
 body .panel h3{font-size:16px;font-weight:650}
 
@@ -59,8 +58,8 @@ body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summar
 
 /* ---- Buttons --------------------------------------------------------------- */
 body :is(button,.button){font-family:inherit}
-body .save,body .hero-primary,body .auth-form button,body .primary{min-height:42px;padding:10px 18px;border:0;border-radius:11px;background:linear-gradient(180deg,color-mix(in srgb,var(--green) 92%,#fff),var(--green));color:var(--on-accent);font-weight:700;box-shadow:0 1px 0 #ffffff40 inset,0 6px 18px color-mix(in srgb,var(--green) 22%,transparent);transition:filter .15s,transform .15s}
-body .save:hover,body .hero-primary:hover,body .primary:hover{filter:brightness(1.06);background:linear-gradient(180deg,color-mix(in srgb,var(--green) 92%,#fff),var(--green))}
+body .save,body .auth-form button{min-height:42px;padding:10px 18px;border:0;border-radius:11px;background:linear-gradient(180deg,color-mix(in srgb,var(--green) 92%,#fff),var(--green));color:var(--on-accent);font-weight:700;box-shadow:0 1px 0 #ffffff40 inset,0 6px 18px color-mix(in srgb,var(--green) 22%,transparent);transition:filter .15s,transform .15s}
+body .save:hover{filter:brightness(1.06);background:linear-gradient(180deg,color-mix(in srgb,var(--green) 92%,#fff),var(--green))}
 body .save:active{transform:translateY(1px)}
 body :is(.secondary,.icon-button){min-height:38px;padding:8px 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);color:var(--ink);font-weight:600;transition:background .15s,border-color .15s}
 body :is(.secondary,.icon-button):hover{background:var(--surface-3);border-color:color-mix(in srgb,var(--ink) 25%,var(--line-strong))}
@@ -106,7 +105,7 @@ body .positive{color:var(--green)!important}
 body :is(.negative,.danger-text){color:var(--red)!important}
 
 /* ---- Panel specifics --------------------------------------------------------- */
-body #budgetsPanel>#budgetList{display:none}
+
 body #quoteTrustNote{display:none}
 body .panel .investment-toolbar .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 body .panel details.calm-disclosure.portfolio-charts{padding:0;border:0;background:none;box-shadow:none}

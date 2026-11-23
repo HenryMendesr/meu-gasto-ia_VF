@@ -43,7 +43,7 @@
 .ov-chart svg{display:block;width:100%;height:auto}
 .ov-axis{fill:var(--muted);font-size:11px}
 .ov-base{stroke:var(--line-strong);stroke-width:1}
-.ov-ideal{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 5}
+
 .ov-line{fill:none;stroke:var(--green);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .ov-line.is-over{stroke:var(--red)}
 .ov-dot{fill:var(--ink);stroke:var(--surface);stroke-width:3}
