@@ -24,6 +24,3 @@ document.addEventListener('insights-updated',renderExperience);
 month.addEventListener('change',()=>{experienceBills=[];renderExperience();refreshExperienceBills()});
 document.querySelector('.home-summary').hidden=true;
 document.body.classList.add('has-daily-workspace');
-const cardsNavigation=document.querySelector('#openCreditCards');
-document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{cardsNavigation.classList.remove('active');cardsNavigation.removeAttribute('aria-current')}));
-cardsNavigation.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(tab=>{tab.classList.remove('active');tab.removeAttribute('aria-current')});cardsNavigation.classList.add('active');cardsNavigation.setAttribute('aria-current','page')});

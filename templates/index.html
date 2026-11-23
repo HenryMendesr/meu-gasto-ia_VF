@@ -423,6 +423,24 @@ body:has(#budgetsPanel:not([hidden])) .global-period { display: none; }
  .budget-card-stats strong { font-size: 14px; }
  .budget-page .limit-foot,.budget-group-details summary { font-size: 11px; }
 }
+/* Plano padrão: a share of income per group, with the rest left to save. */
+.budget-plan{display:grid;gap:14px;margin:0 0 18px;padding:20px 22px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,var(--surface-2),var(--surface))}
+.budget-plan-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.budget-plan-head h3{margin:2px 0 4px;font-size:17px}
+.budget-plan-head p{margin:0;max-width:62ch;color:var(--muted);font-size:13px}
+.budget-plan-actions{display:flex;flex-wrap:wrap;gap:8px}
+.budget-plan-bar{display:flex;gap:3px;height:14px;overflow:hidden;border-radius:999px;background:var(--surface-3)}
+.budget-plan-bar i{display:block;height:100%;min-width:3px;transition:width .3s ease}
+.budget-plan-bar .budget-plan-free{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--green) 55%,transparent) 0 6px,color-mix(in srgb,var(--green) 25%,transparent) 6px 12px)}
+.budget-plan-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.budget-plan-legend>div{display:grid;grid-template-columns:10px 1fr auto;column-gap:8px;align-items:center;padding:10px 12px;border-radius:var(--radius-sm);background:var(--surface-3)}
+.budget-plan-legend i{width:10px;height:10px;border-radius:3px}
+.budget-plan-legend span{font-size:13px;font-weight:600;color:var(--ink-2)}
+.budget-plan-legend b{font-size:15px}
+.budget-plan-legend small{grid-column:2/4;color:var(--muted);font-size:11px}
+.budget-plan-save i{background:repeating-linear-gradient(135deg,var(--green) 0 3px,transparent 3px 6px)}
+.budget-plan-save b{color:var(--green)}
+.budget-recommended{display:block;margin:2px 0;color:var(--muted);font-size:11px;font-weight:600}
 
 /* Keep installment fields usable even before the external theme has loaded. */
 #creditOptions{grid-column:1/-1;padding:18px;border:1px solid var(--ink);border-radius:14px;background:var(--surface)}#creditOptions>label{display:grid;gap:8px}#installmentFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}#installmentFields label{display:grid;gap:8px;min-width:0;grid-column:auto}#installmentFields input,#creditOptions select{display:block;width:100%;min-width:0;min-height:46px;border:1px solid var(--ink-2);border-radius:10px;padding:11px 12px;background:var(--card);color:var(--ink);font-size:14px}#installmentPreview{padding:14px;border-radius:10px;background:var(--ink);white-space:normal;overflow-wrap:anywhere}#installmentFields[hidden],#creditOptions[hidden]{display:none!important}
@@ -905,14 +923,65 @@ body .foot{max-width:1240px;margin:40px auto 0;border-top:1px solid var(--line);
   body .shell>nav.tabs :is(.tab,#openCreditCards)>span:last-child{overflow:hidden;text-overflow:ellipsis;max-width:100%}
   body .top-actions :is(.account-button,.logout button){padding:6px 10px;font-size:12px}
   body .panel :is(.card,.routine-section,.goals-section,.debt-chart,.daily-summary,.budget-allocation,.budget-editor,.credit-card-section,.card-bills,.salary-schedule){padding:16px}
+  body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics) strong{font-size:19px;white-space:nowrap;overflow-wrap:normal}
 }
+
+/* Cartões */
+.cards-heading{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
+.cards-heading .actions{display:flex;flex-wrap:wrap;gap:8px}
+.cards-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.cards-kpis>div{display:grid;gap:4px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,var(--surface-2),var(--surface));box-shadow:var(--shadow)}
+.cards-kpis small{color:var(--muted);font-size:12px;font-weight:550}
+.cards-kpis strong{font-size:clamp(19px,2vw,24px);font-weight:740;letter-spacing:-.02em}
+.cards-kpis span{color:var(--muted);font-size:11px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:20px}
+.card-tile{position:relative;display:grid;gap:14px;align-content:start;padding:18px;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,var(--surface-2),var(--surface));box-shadow:var(--shadow)}
+.card-tile::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--card-color)}
+.card-face{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:-4px -4px 0;padding:14px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--card-color) 32%,var(--surface-3)),color-mix(in srgb,var(--card-color) 8%,var(--surface)))}
+.card-face strong{display:block;font-size:16px;font-weight:720}
+.card-face small{color:var(--ink-2);font-size:12px}
+.card-status{flex:none;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--bg) 45%,transparent);font-size:11px;font-weight:700;color:var(--ink-2)}
+.card-status.is-good{color:var(--green)}.card-status.is-bad{color:var(--red)}
+.card-bill{display:grid;gap:2px}
+.card-bill small{color:var(--muted);font-size:12px}
+.card-bill strong{font-size:26px;font-weight:760;letter-spacing:-.025em;line-height:1.15}
+.card-bill span{color:var(--muted);font-size:12px}
+.card-meter{display:grid;gap:5px}
+.card-meter>div:first-child{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.card-meter span{color:var(--ink-2);font-weight:600}
+.card-meter b{font-weight:700}.card-meter em{color:var(--muted);font-style:normal;font-weight:500}
+.card-meter small{color:var(--muted);font-size:11px}
+.card-meter-track{height:8px;overflow:hidden;border-radius:999px;background:var(--surface-3)}
+.card-meter-track i{display:block;height:100%;border-radius:inherit;background:var(--green);transition:width .4s ease}
+.card-meter.is-warn .card-meter-track i{background:var(--amber)}.card-meter.is-warn small{color:var(--amber)}
+.card-meter.is-over .card-meter-track i{background:var(--red)}.card-meter.is-over small{color:var(--red)}
+.card-meter.is-unset b{color:var(--muted);font-weight:600}
+.card-chart{display:grid;gap:6px;padding-top:10px;border-top:1px solid var(--line)}
+.card-chart>span{color:var(--muted);font-size:12px;font-weight:600}
+.card-chart svg{display:block;width:100%;height:auto}
+.card-chart rect{fill:var(--card-color);opacity:.85}
+.card-chart rect.is-over{fill:var(--red)}
+.card-chart text{fill:var(--muted);font-size:10px}
+.card-cap{stroke:var(--amber);stroke-width:1.5;stroke-dasharray:5 4}
+.card-chart .card-cap-label{fill:var(--amber);font-weight:700}
+.card-actions{display:flex;flex-wrap:wrap;gap:8px}
+.card-actions .secondary{min-height:34px;padding:6px 12px;font-size:12px}
+.cards-empty{display:grid;justify-items:start;gap:8px;grid-column:1/-1;padding:24px;border:1px dashed var(--line-strong);border-radius:var(--radius);color:var(--muted)}
+.cards-empty strong{color:var(--ink);font-size:16px}
+#cardsPanel .card-bills{margin-bottom:20px}
+#cardsPanel .bill-period{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
+#cardsPanel .card-bills #newCardPurchase{display:none}
+.card-hint{display:block;margin-top:6px;color:var(--muted);font-size:12px;line-height:1.45}
+.card-hint.is-warn{color:var(--amber);font-weight:600}
+@media (max-width:900px){.cards-kpis{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.cards-grid{grid-template-columns:1fr}.cards-kpis{gap:10px}.card-chart text{font-size:12px}}
 
 </style>
   <link rel="stylesheet" href="/app.css?v=30">
 </head>
 <body><a class="skip-link" href="#mainContent">Ir para o conteúdo</a><div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div><div id="offlineNotice" class="offline-notice" hidden>Você está sem conexão. Consultas e alterações ficam disponíveis quando o servidor voltar.</div><main id="mainContent" class="shell">
   <header class="top"><div class="brand"><img class="mark" src="/icons/icon-192.png" alt=""><div><span class="brand-kicker">FINANÇAS PESSOAIS</span><h1>Minha Carteira</h1></div></div><div class="top-context"><span id="welcomeMessage">Resumo financeiro</span><strong id="todayLabel"></strong></div><div class="top-actions"><button id="openAccount" class="account-button" type="button">Minha conta</button><span class="online-chip"><i></i> Conectando</span><div id="userBadge" class="user-badge" hidden></div><button id="installApp" class="install-button" type="button" hidden>Instalar app</button><form class="logout" method="post" action="/logout"><button type="submit" aria-label="Sair da conta">Sair <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 5H5v14h4M10 12h11M17 8l4 4-4 4"/></svg></button></form></div></header>
-  <nav class="tabs" aria-label="Navegação principal"><button class="tab active" aria-current="page" data-panel="dashboardPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span>Início</span></button><button class="tab" data-panel="routinePanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg></span><span>Ganhos e fixos</span></button><button class="tab" data-panel="entryPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span>Registrar</span></button><button class="tab" data-panel="budgetsPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16M8 15h3M8 18h6"/></svg></span><span>Planejar</span></button><button class="tab" data-panel="investmentsPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-10M15 5h6v6M3 21h18"/></svg></span><span>Investir</span></button><button class="tab" data-panel="debtsPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z M9 7h6M9 11h6M9 15h3"/></svg></span><span>Dívidas</span></button><button id="openCreditCards" class="sidebar-card-link" type="button" aria-label="Cartões"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg></span><span>Cartões</span></button></nav>
+  <nav class="tabs" aria-label="Navegação principal"><button class="tab active" aria-current="page" data-panel="dashboardPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span>Início</span></button><button class="tab" data-panel="routinePanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/></svg></span><span>Ganhos e fixos</span></button><button class="tab" data-panel="entryPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span>Registrar</span></button><button class="tab" data-panel="budgetsPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16M8 15h3M8 18h6"/></svg></span><span>Planejar</span></button><button class="tab" data-panel="investmentsPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-10M15 5h6v6M3 21h18"/></svg></span><span>Investir</span></button><button class="tab" data-panel="debtsPanel"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z M9 7h6M9 11h6M9 15h3"/></svg></span><span>Dívidas</span></button><button id="openCreditCards" class="tab" data-panel="cardsPanel" type="button"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg></span><span>Cartões</span></button></nav>
 
   <div id="dashboardPanel" class="panel" role="region" aria-label="Visão geral"><div class="ov" id="overview" aria-live="polite">
   <header class="ov-head">
@@ -1058,6 +1127,14 @@ body .foot{max-width:1240px;margin:40px auto 0;border-top:1px solid var(--line);
         <div class="budget-metric budget-metric-available"><span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
       </section>
       <div id="limitsMessage" class="message" role="status" hidden></div>
+      <section id="budgetPlan" class="budget-plan" aria-labelledby="budgetPlanTitle">
+        <div class="budget-plan-head">
+          <div><span class="eyebrow">Plano padrão</span><h3 id="budgetPlanTitle">Para onde vai cada real da renda</h3><p id="budgetPlanNote"></p></div>
+          <div class="budget-plan-actions"><button id="budgetPlanFollow" class="secondary" type="button" hidden>Usar o plano neste mês</button><button id="budgetPlanReset" class="secondary" type="button">Voltar à recomendação</button></div>
+        </div>
+        <div id="budgetPlanBar" class="budget-plan-bar" role="img"></div>
+        <div id="budgetPlanLegend" class="budget-plan-legend"></div>
+      </section>
       <div class="budget-workspace">
         <section class="limits-section" aria-label="Ajustar limites por grupo">
           <div class="section-title">
@@ -1325,7 +1402,7 @@ body .foot{max-width:1240px;margin:40px auto 0;border-top:1px solid var(--line);
         </div>
           <details class="debt-schedule"><summary>Calendário e pagamentos</summary><div class="scroll"><table><thead><tr><th>Vencimento</th><th>Credor</th><th>Principal</th><th>Juros</th><th>Parcela</th><th>Status</th><th>Ação</th></tr></thead><tbody id="debtScheduleRows"></tbody></table></div><div id="debtPaymentCards" class="debt-payment-cards"></div></details>
       </section>
-    </div><section class="debt-contracts"><div class="section-title"><h3>Compromissos cadastrados</h3><span id="debtContractCount"></span></div><div id="debtContractList"></div></section><section class="credit-card-section card" aria-labelledby="creditCardsTitle"><div class="detail-heading"><div><h3 id="creditCardsTitle">Meus cartões de crédito</h3><p>Cadastre o nome do cartão e o dia de vencimento da fatura.</p></div></div><div class="credit-card-layout"><details class="calm-disclosure" id="cardEditor"><summary>Cadastrar ou editar cartão</summary><form id="creditCardForm"><input name="id" type="hidden"><label>Qual cartão?<input name="name" maxlength="80" placeholder="Ex.: Nubank, Itaú, cartão principal" required></label><label>Dia de vencimento<input name="due_day" type="number" min="1" max="31" step="1" placeholder="Ex.: 10" required></label><label>Dia do fechamento<input name="closing_day" type="number" min="1" max="31" step="1" placeholder="Ex.: 25" required></label><label>Limite (R$, opcional)<input name="limit" type="number" min="0" max="10000000" step="0.01" placeholder="Ex.: 5000"></label><div class="credit-card-actions"><button type="submit" class="save">Salvar cartão</button><button id="cancelCreditCardEdit" class="secondary" type="button" hidden>Cancelar edição</button></div><div id="creditCardMessage" class="message" role="status" hidden></div><p class="quote-meta">Informe fechamento e vencimento para distribuir as compras nas faturas. Não informe número, senha ou código de segurança. O limite restante é estimado pelas compras e pagamentos registrados. Não executamos pagamentos.</p></form></details><div id="creditCardList"></div></div></section><section class="card-bills" aria-labelledby="cardBillsTitle"><div class="detail-heading"><div><span class="eyebrow">Compras e faturas</span><h3 id="cardBillsTitle">Faturas</h3><p>Compras compõem a fatura. Só o pagamento confirmado sai do caixa do dia a dia.</p></div><button id="newCardPurchase" class="save" type="button">＋ Registrar compra no cartão</button></div><div class="bill-period"><label>Mês de vencimento<input id="cardBillMonth" type="month"></label><button id="linkExistingCardExpense" class="secondary" type="button">Vincular gasto já registrado</button></div><div id="cardBillMetrics" class="bill-metrics"></div><p class="quote-meta">No dia do fechamento, a compra vai para a próxima fatura. Você pode ajustar a primeira fatura ao cadastrar. Alterações no cartão valem para novas compras; parcelas antigas mantêm as datas. Valores dependem dos lançamentos e não são consultados no banco.</p><div id="cardBillList"></div><div id="cardBillMessage" class="message" role="status" hidden></div></section><details class="home-extra"><summary>Ver próximos vencimentos</summary><section class="card trust-due"><div><h3>Próximos vencimentos</h3><p class="quiet">Dívidas pendentes. Marque o pagamento em Dívidas.</p></div><div><div id="trustUpcoming" class="trust-upcoming"></div><div id="creditUpcoming" class="credit-upcoming" hidden></div></div></section></details>
+    </div><section class="debt-contracts"><div class="section-title"><h3>Compromissos cadastrados</h3><span id="debtContractCount"></span></div><div id="debtContractList"></div></section><details class="home-extra"><summary>Ver próximos vencimentos</summary><section class="card trust-due"><div><h3>Próximos vencimentos</h3><p class="quiet">Dívidas pendentes. Marque o pagamento em Dívidas.</p></div><div><div id="trustUpcoming" class="trust-upcoming"></div><div id="creditUpcoming" class="credit-upcoming" hidden></div></div></section></details>
 
 
 
@@ -1335,6 +1412,13 @@ body .foot{max-width:1240px;margin:40px auto 0;border-top:1px solid var(--line);
 
 
   </div>
+<div id="cardsPanel" class="panel" role="region" aria-label="Cartões" hidden><header class="section-heading cards-heading">
+  <div><span class="eyebrow">Cartões de crédito</span><h2>Cartões</h2><p>Fatura, meta de gasto e parcelas de cada cartão. Compras lançadas no crédito com um cartão escolhido entram aqui sozinhas.</p></div>
+  <div class="actions"><button id="cardsAddCard" class="secondary" type="button">＋ Novo cartão</button><button id="cardsNewPurchase" class="save" type="button">＋ Compra no cartão</button></div>
+</header>
+<section id="cardsKpis" class="cards-kpis" aria-label="Resumo dos cartões"></section>
+<div id="cardsGrid" class="cards-grid" aria-live="polite"></div>
+<section class="card-bills" aria-labelledby="cardBillsTitle"><div class="detail-heading"><div><span class="eyebrow">Compras e faturas</span><h3 id="cardBillsTitle">Faturas e compras</h3><p>Compras compõem a fatura. Só o pagamento confirmado sai do caixa do dia a dia.</p></div><button id="newCardPurchase" class="save" type="button">＋ Registrar compra no cartão</button></div><div class="bill-period"><label>Mês de vencimento<input id="cardBillMonth" type="month"></label><button id="linkExistingCardExpense" class="secondary" type="button">Vincular gasto já registrado</button></div><div id="cardBillMetrics" class="bill-metrics"></div><p class="quote-meta">No dia do fechamento, a compra vai para a próxima fatura. Você pode ajustar a primeira fatura ao cadastrar. Alterações no cartão valem para novas compras; parcelas antigas mantêm as datas. Valores dependem dos lançamentos e não são consultados no banco.</p><div id="cardBillList"></div><div id="cardBillMessage" class="message" role="status" hidden></div></section><section class="credit-card-section card" aria-labelledby="creditCardsTitle"><div class="detail-heading"><div><h3 id="creditCardsTitle">Meus cartões de crédito</h3><p>Nome, fechamento, vencimento e as metas de cada cartão.</p></div></div><div class="credit-card-layout"><details class="calm-disclosure" id="cardEditor"><summary>Cadastrar ou editar cartão</summary><form id="creditCardForm"><input name="id" type="hidden"><label>Qual cartão?<input name="name" maxlength="80" placeholder="Ex.: Nubank, Itaú, cartão principal" required></label><label>Dia de vencimento<input name="due_day" type="number" min="1" max="31" step="1" placeholder="Ex.: 10" required></label><label>Dia do fechamento<input name="closing_day" type="number" min="1" max="31" step="1" placeholder="Ex.: 25" required></label><label>Limite (R$, opcional)<input name="limit" type="number" min="0" max="10000000" step="0.01" placeholder="Ex.: 5000"></label><label>Meta de gasto por fatura (R$, opcional)<input name="spending_goal" type="number" min="0" max="10000000" step="0.01" placeholder="Ex.: 1500"></label><label>Máximo em parcelas por mês (R$, opcional)<input name="installment_cap" type="number" min="0" max="10000000" step="0.01" placeholder="Ex.: 600"></label><div class="credit-card-actions"><button type="submit" class="save">Salvar cartão</button><button id="cancelCreditCardEdit" class="secondary" type="button" hidden>Cancelar edição</button></div><div id="creditCardMessage" class="message" role="status" hidden></div><p class="quote-meta">Informe fechamento e vencimento para distribuir as compras nas faturas. Não informe número, senha ou código de segurança. O limite restante é estimado pelas compras e pagamentos registrados. Não executamos pagamentos.</p></form></details><div id="creditCardList"></div></div></section></div>
 
 <div id="debtPaymentModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="debtPaymentTitle" hidden><section class="modal-card compact-modal"><div class="modal-head"><h2 id="debtPaymentTitle">Registrar pagamento</h2><button id="closeDebtPayment" class="icon-button" type="button" aria-label="Fechar">×</button></div><form id="debtPaymentForm" class="entry-grid"><input name="id" type="hidden"><p id="debtPaymentDescription" class="wide"></p><label class="wide">Data em que pagou<input name="paid_date" type="date" required></label><p class="wide quote-meta">Marca a parcela existente como paga. Não cria outro gasto e não movimenta o caixa dos investimentos.</p><div id="debtPaymentMessage" class="message error" hidden></div><button class="save" type="submit">Confirmar pagamento</button></form></section></div>
 
@@ -2008,7 +2092,7 @@ const budgetMonth=document.querySelector('#budgetMonth'),limitsList=document.que
 const budgetDrafts=new Map();
 let budgetSaving=false;
 let budgetSaveError='';
-const BUDGET_GROUPS=[{"id": "@budget:fixed", "label": "Custos fixos", "description": "Moradia, mercado, carro, transporte, saúde e contas.", "categories": ["Mercado", "Transporte", "Moradia", "Saúde", "Contas"], "aliases": ["Carro", "Automóvel", "Gasolina", "Combustível", "Aluguel", "Farmácia", "Internet", "Luz", "Água", "Custos fixos"]}, {"id": "@budget:comfort", "label": "Conforto", "description": "Alimentação fora, compras e assinaturas.", "categories": ["Alimentação", "Compras", "Assinaturas"], "aliases": []}, {"id": "@budget:leisure", "label": "Lazer e experiências", "description": "Lazer, viagens e presentes.", "categories": ["Lazer", "Viagem", "Presentes"], "aliases": []}, {"id": "@budget:learning", "label": "Conhecimento", "description": "Educação, cursos e estudos.", "categories": ["Educação"], "aliases": ["Cursos"]}, {"id": "@budget:other", "label": "Outros", "description": "Outros gastos e categorias personalizadas.", "categories": ["Outros"], "aliases": []}];
+const BUDGET_GROUPS=[{"id": "@budget:fixed", "recommended": 50, "label": "Custos fixos", "description": "Moradia, mercado, carro, transporte, saúde e contas.", "categories": ["Mercado", "Transporte", "Moradia", "Saúde", "Contas"], "aliases": ["Carro", "Automóvel", "Gasolina", "Combustível", "Aluguel", "Farmácia", "Internet", "Luz", "Água", "Custos fixos"]}, {"id": "@budget:comfort", "recommended": 15, "label": "Conforto", "description": "Alimentação fora, compras e assinaturas.", "categories": ["Alimentação", "Compras", "Assinaturas"], "aliases": []}, {"id": "@budget:leisure", "recommended": 10, "label": "Lazer e experiências", "description": "Lazer, viagens e presentes.", "categories": ["Lazer", "Viagem", "Presentes"], "aliases": []}, {"id": "@budget:learning", "recommended": 5, "label": "Conhecimento", "description": "Educação, cursos e estudos.", "categories": ["Educação"], "aliases": ["Cursos"]}, {"id": "@budget:other", "recommended": 5, "label": "Outros", "description": "Outros gastos e categorias personalizadas.", "categories": ["Outros"], "aliases": []}];
 const budgetGroupLabel=id=>BUDGET_GROUPS.find(group=>group.id===id)?.label||id;
 const BUDGET_GROUP_IDS=new Set(BUDGET_GROUPS.map(group=>group.id));
 const normalizedBudgetCategory=name=>name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -2021,7 +2105,12 @@ const BUDGET_GROUP_ICONS={
  '@budget:other':'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>'
 };
 function budgetGroupIcon(id){return `<span class="budget-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${BUDGET_GROUP_ICONS[id]||''}</svg></span>`}
+const BUDGET_RECOMMENDED=Object.fromEntries(BUDGET_GROUPS.map(group=>[group.id,group.recommended]));
+function budgetPlan(){const plan=ACCOUNT_PREFERENCES.budget_plan;return plan&&BUDGET_GROUPS.every(group=>typeof plan[group.id]==='number')?plan:BUDGET_RECOMMENDED}
+// A month without saved limits follows the account plan: a share of that month's income per group.
+function budgetFollowsPlan(key){return !Object.keys(BUDGETS[key]||{}).length}
 function savedBudgetGroups(key){
+ if(budgetFollowsPlan(key)){const income=budgetIncomeFor(key),plan=budgetPlan();return Object.fromEntries(BUDGET_GROUPS.map(group=>[group.id,Math.round(income*plan[group.id])/100]))}
  const raw=BUDGETS[key]||{},values=Object.fromEntries(BUDGET_GROUPS.map(group=>[group.id,0]));
  Object.entries(raw).forEach(([name,value])=>{if(!BUDGET_GROUP_IDS.has(name))values[budgetGroupFor(name)]+=+value||0});
  BUDGET_GROUPS.forEach(group=>{if(Object.hasOwn(raw,group.id))values[group.id]=+raw[group.id]||0;values[group.id]=Math.round(values[group.id]*100)/100});return values;
@@ -2039,7 +2128,22 @@ function fillBudgetMonths(){
  budgetMonth.innerHTML='';[...values].sort().reverse().forEach(value=>budgetMonth.add(new Option(monthLabel(value)+(budgetDrafts.has(value)?' · em edição':''),value)));
  budgetMonth.value=values.has(selected)?selected:[...values].sort().reverse()[0];budgetMonth.disabled=budgetSaving;
 }
+function paintBudgetPlan(){
+ const key=budgetMonth.value,income=budgetIncomeFor(key),follows=budgetFollowsPlan(key),values=budgetValues(key);
+ const shares=BUDGET_GROUPS.map((group,index)=>({id:group.id,label:group.label,color:BUDGET_COLORS[index%BUDGET_COLORS.length],recommended:group.recommended,
+  pct:income?(+values[group.id]||0)/income*100:budgetPlan()[group.id]}));
+ const used=shares.reduce((sum,item)=>sum+item.pct,0),free=Math.max(0,100-used),scale=Math.max(100,used);
+ document.querySelector('#budgetPlanBar').innerHTML=shares.filter(item=>item.pct>0).map(item=>`<i style="width:${item.pct/scale*100}%;background:${item.color}" title="${esc(item.label)}: ${budgetPercent(item.pct)}"></i>`).join('')+(free>0?`<i class="budget-plan-free" style="width:${free/scale*100}%" title="Guardar ou investir: ${budgetPercent(free)}"></i>`:'');
+ document.querySelector('#budgetPlanBar').setAttribute('aria-label','Plano: '+shares.map(item=>`${item.label} ${budgetPercent(item.pct)}`).join(', ')+`, guardar ou investir ${budgetPercent(free)}`);
+ document.querySelector('#budgetPlanLegend').innerHTML=shares.map(item=>`<div><i style="background:${item.color}"></i><span>${esc(item.label)}</span><b>${budgetPercent(item.pct)}</b><small>${Math.abs(item.pct-item.recommended)<.05?'recomendado':'recomendado '+item.recommended+'%'}</small></div>`).join('')+`<div class="budget-plan-save"><i></i><span>Guardar ou investir</span><b>${budgetPercent(free)}</b><small>${used>100?'renda toda comprometida':'o que sobra'}</small></div>`;
+ const note=document.querySelector('#budgetPlanNote');
+ note.textContent=!income?'Cadastre sua renda em Ganhos e fixos: os limites do plano passam a ser calculados sozinhos todo mês.':follows?`Este mês segue o seu plano, calculado sobre ${brl(income)} de renda. Ajuste os grupos abaixo e salve para mudar o plano de todos os meses.`:'Este mês tem limites próprios, em reais. Os outros meses continuam seguindo o plano.';
+ document.querySelector('#budgetPlanFollow').hidden=follows||budgetSaving;
+ const recommended=BUDGET_GROUPS.every(group=>Math.abs((income?(+values[group.id]||0)/income*100:budgetPlan()[group.id])-group.recommended)<.05);
+ document.querySelector('#budgetPlanReset').disabled=budgetSaving||!income||recommended;
+}
 function paintBudgetOverview(){
+ paintBudgetPlan();
  const key=budgetMonth.value,configured=budgetValues(key),totals=categoryTotals(key),income=budgetIncomeFor(key),categories=budgetCategories(key);
  const total=Object.values(configured).reduce((sum,value)=>sum+(+value||0),0),used=Object.entries(totals).filter(([name])=>configured[name]>0).reduce((sum,[,value])=>sum+value,0);
  document.querySelector('#budgetIncome').textContent=brl(income);
@@ -2084,12 +2188,12 @@ function paintBudgetRow(row,limit,source){
 }
 function renderBudgetPanel(){
  fillBudgetMonths();const key=budgetMonth.value,configured=budgetValues(key),income=budgetIncomeFor(key),totals=categoryTotals(key),categories=budgetCategories(key),unit=document.querySelector('#budgetUnit');
- unit.querySelector('[value="percent"]').disabled=!income;if(!income)unit.value='money';unit.disabled=budgetSaving;const percent=unit.value==='percent';
+ unit.querySelector('[value="percent"]').disabled=!income;if(!income)unit.value='money';else if(!unit.dataset.chosen)unit.value='percent';unit.disabled=budgetSaving;const percent=unit.value==='percent';
  document.querySelector('#budgetEditHint').textContent=income?'O gráfico acompanha seus ajustes. Salve quando estiver do seu jeito.':'Arraste para ajustar em reais. Para usar percentuais, cadastre sua renda em Ganhos e fixos.';
  limitsList.innerHTML=categories.map((name,index)=>{
   const group=BUDGET_GROUPS.find(group=>group.id===name),label=group.label;
   const limit=+configured[name]||0,scale=budgetSliderScale(limit,income,totals[name]||0),color=BUDGET_COLORS[index%BUDGET_COLORS.length];
-  return `<article class="limit-row" data-budget-category="${esc(name)}" style="--category-color:${color}"><div class="budget-card-heading"><div class="budget-category"><strong>${budgetGroupIcon(name)}<span>${esc(label)}</span></strong><p class="budget-group-description">${esc(group.description)}</p><span data-usage-label></span></div><label class="budget-limit-input"><small>${percent?'Limite em %':'Limite em R$'}</small><input aria-label="${percent?'Percentual da renda':'Limite em reais'} para ${esc(label)}" data-limit-category="${esc(name)}" type="number" min="0" max="${percent?10000000/income*100:10000000}" step="0.01" inputmode="decimal" ${budgetSaving?'disabled':''}></label></div><div class="budget-slider-area"><div class="budget-slider-label"><span>${income?'Distribuição da renda':'Seu limite mensal'}</span><output data-slider-value></output></div><input class="budget-slider" data-budget-slider="${esc(name)}" type="range" min="0" max="${scale.max}" step="${scale.step}" value="${scale.value}" aria-label="Ajustar limite de ${esc(label)}" ${budgetSaving?'disabled':''}><div class="budget-slider-scale" aria-hidden="true"><span>${income?'0%':'R$ 0'}</span><span data-scale-max></span></div></div><div class="budget-card-stats"><div><small>Já gastou</small><strong>${brl(totals[name]||0)}</strong></div><div><small>Ainda pode gastar</small><strong data-budget-remaining></strong></div><div class="limit-track" aria-hidden="true"><i></i></div></div><div class="limit-foot"><span data-budget-status></span><details class="budget-actions"><summary>Opções</summary><div><button type="button" class="text-button" data-remove-limit="${esc(name)}" ${budgetSaving?'disabled':''}>Remover limite</button></div></details></div><details class="budget-group-details"><summary>Ver gastos do grupo</summary>${budgetGroupBreakdown(name,key)}</details></article>`;
+  return `<article class="limit-row" data-budget-category="${esc(name)}" style="--category-color:${color}"><div class="budget-card-heading"><div class="budget-category"><strong>${budgetGroupIcon(name)}<span>${esc(label)}</span></strong><p class="budget-group-description">${esc(group.description)}</p><span class="budget-recommended">Recomendado: ${group.recommended}% da renda</span><span data-usage-label></span></div><label class="budget-limit-input"><small>${percent?'Limite em %':'Limite em R$'}</small><input aria-label="${percent?'Percentual da renda':'Limite em reais'} para ${esc(label)}" data-limit-category="${esc(name)}" type="number" min="0" max="${percent?10000000/income*100:10000000}" step="0.01" inputmode="decimal" ${budgetSaving?'disabled':''}></label></div><div class="budget-slider-area"><div class="budget-slider-label"><span>${income?'Distribuição da renda':'Seu limite mensal'}</span><output data-slider-value></output></div><input class="budget-slider" data-budget-slider="${esc(name)}" type="range" min="0" max="${scale.max}" step="${scale.step}" value="${scale.value}" aria-label="Ajustar limite de ${esc(label)}" ${budgetSaving?'disabled':''}><div class="budget-slider-scale" aria-hidden="true"><span>${income?'0%':'R$ 0'}</span><span data-scale-max></span></div></div><div class="budget-card-stats"><div><small>Já gastou</small><strong>${brl(totals[name]||0)}</strong></div><div><small>Ainda pode gastar</small><strong data-budget-remaining></strong></div><div class="limit-track" aria-hidden="true"><i></i></div></div><div class="limit-foot"><span data-budget-status></span><details class="budget-actions"><summary>Opções</summary><div><button type="button" class="text-button" data-remove-limit="${esc(name)}" ${budgetSaving?'disabled':''}>Remover limite</button></div></details></div><details class="budget-group-details"><summary>Ver gastos do grupo</summary>${budgetGroupBreakdown(name,key)}</details></article>`;
  }).join('');
  limitsList.querySelectorAll('[data-budget-category]').forEach(row=>paintBudgetRow(row,+configured[row.dataset.budgetCategory]||0));paintBudgetOverview();renderBudgetHistory();renderBudgetCategoryTools();
 }
@@ -2124,6 +2228,14 @@ document.querySelector('#saveBudgetChanges').addEventListener('click',async()=>{
  const key=budgetMonth.value,changes=Object.entries(budgetDrafts.get(key)||{});if(!changes.length)return;
  budgetSaving=true;budgetSaveError='';renderBudgetPanel();let saved=0;
  try{
+  const income=budgetIncomeFor(key);
+  if(budgetFollowsPlan(key)&&income>0){
+   const values=budgetValues(key),plan=Object.fromEntries(BUDGET_GROUPS.map(group=>[group.id,Math.round((+values[group.id]||0)/income*10000)/100]));
+   const response=await fetch('/api/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({budget_plan:plan})}),result=await response.json();
+   if(!response.ok)throw Error(result.error||'Não foi possível salvar o plano.');
+   ACCOUNT_PREFERENCES.budget_plan=result.preferences?.budget_plan||plan;saved=changes.length;budgetDrafts.delete(key);
+   limitsMessage.textContent='Pronto! Seu plano foi salvo e vale para todos os meses sem limites próprios.';limitsMessage.className='message ok';return;
+  }
   for(const [category,limit] of changes){
    const response=await fetch('/api/budgets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month:key,category,limit})}),result=await response.json();
    if(!response.ok)throw Error(result.error||'Não foi possível salvar os limites.');
@@ -2136,7 +2248,7 @@ document.querySelector('#saveBudgetChanges').addEventListener('click',async()=>{
 });
 window.addEventListener('beforeunload',event=>{if(budgetDrafts.size){event.preventDefault();event.returnValue=''}});
 document.querySelector('.budget-page').addEventListener('click',async event=>{if(budgetSaving)return;const limitButton=event.target.closest('[data-remove-limit]'),categoryButton=event.target.closest('[data-remove-category]'),editButton=event.target.closest('[data-edit-category]');if(editButton){const oldName=editButton.dataset.editCategory,newName=prompt('Novo nome da categoria:',oldName)?.trim();if(!newName||newName===oldName)return;const response=await fetch(`/api/categories/${encodeURIComponent(oldName)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:newName})}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível renomear');ALL_CATEGORIES=ALL_CATEGORIES.map(item=>item===oldName?result.category:item);DATA.forEach(item=>{if(item.category===oldName)item.category=result.category});Object.values(BUDGETS).forEach(values=>{if(Object.hasOwn(values,oldName)){values[result.category]=values[oldName];delete values[oldName]}});for(const drafts of budgetDrafts.values()){if(Object.hasOwn(drafts,oldName)){drafts[result.category]=drafts[oldName];delete drafts[oldName]}}refreshCategoryOptions();render();renderBudgetPanel();return}if(!limitButton&&!categoryButton)return;const name=(limitButton?.dataset.removeLimit||categoryButton?.dataset.removeCategory);if(limitButton){const row=limitButton.closest('[data-budget-category]'),input=row.querySelector('[data-limit-category]');input.value=0;previewBudgetLimit(input);row.querySelector('details').open=false;return}if(!confirm(categoryButton?`Excluir a categoria “${name}”?`:`Remover o limite de “${name}”?`))return;const endpoint=categoryButton?`/api/categories/${encodeURIComponent(name)}`:`/api/budgets/${budgetMonth.value}/${encodeURIComponent(name)}`;const response=await fetch(endpoint,{method:'DELETE'}),result=await response.json();if(!response.ok)return alert(result.error||'Não foi possível excluir');if(categoryButton){ALL_CATEGORIES=ALL_CATEGORIES.filter(item=>item!==name);for(const [key,drafts] of budgetDrafts){delete drafts[name];if(!Object.keys(drafts).length)budgetDrafts.delete(key)}}(categoryButton?Object.values(BUDGETS):[BUDGETS[budgetMonth.value]||{}]).forEach(values=>delete values[name]);render();renderBudgetPanel();refreshCategoryOptions()});
-document.querySelector('#budgetHistoryList').addEventListener('click',event=>{const button=event.target.closest('[data-history-month]');if(button){budgetMonth.value=button.dataset.historyMonth;renderBudgetPanel()}});budgetMonth.addEventListener('change',()=>{budgetSaveError='';limitsMessage.hidden=true;renderBudgetPanel()});document.querySelector('#budgetUnit').addEventListener('change',renderBudgetPanel);
+document.querySelector('#budgetHistoryList').addEventListener('click',event=>{const button=event.target.closest('[data-history-month]');if(button){budgetMonth.value=button.dataset.historyMonth;renderBudgetPanel()}});budgetMonth.addEventListener('change',()=>{budgetSaveError='';limitsMessage.hidden=true;renderBudgetPanel()});document.querySelector('#budgetUnit').addEventListener('change',event=>{event.target.dataset.chosen='1';renderBudgetPanel()});
 const categoryModal=document.querySelector('#categoryModal'),categoryForm=document.querySelector('#categoryForm');document.querySelector('#newCategoryButton').onclick=()=>{categoryModal.hidden=false;categoryForm.name.focus()};document.querySelector('#closeCategoryModal').onclick=()=>categoryModal.hidden=true;categoryForm.addEventListener('submit',async event=>{event.preventDefault();const name=categoryForm.name.value.trim(),message=document.querySelector('#categoryMessage');try{const response=await fetch('/api/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}),result=await response.json();if(!response.ok)throw new Error(result.error);if(!ALL_CATEGORIES.includes(result.category))ALL_CATEGORIES.push(result.category);categoryModal.hidden=true;categoryForm.reset();refreshCategoryOptions();renderBudgetPanel()}catch(error){message.textContent=error.message;message.className='message error';message.hidden=false}});
 const DEFAULT_CATEGORIES=new Set(["Alimentação","Mercado","Transporte","Moradia","Saúde","Educação","Lazer","Compras","Assinaturas","Contas","Viagem","Presentes","Outros"]);
 function refreshCategoryOptions(){const selects=[form.elements.category,...document.querySelectorAll('.statement-category')];selects.forEach(select=>{if(!select)return;const current=select.value;select.innerHTML=ALL_CATEGORIES.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join('');if(ALL_CATEGORIES.includes(current))select.value=current})}
@@ -2151,6 +2263,24 @@ const baseRender=render;render=function(){baseRender();renderDashboardBudgets()}
 renderDashboardBudgets();
 document.querySelector('#quickExpense').addEventListener('click',()=>document.querySelector('[data-panel="entryPanel"]').click());
 document.querySelectorAll('[data-open-panel]').forEach(button=>button.addEventListener('click',()=>document.querySelector(`[data-panel="${button.dataset.openPanel}"]`)?.click()));
+
+document.querySelector('#budgetPlanReset').addEventListener('click',()=>{
+ if(budgetSaving)return;const key=budgetMonth.value,income=budgetIncomeFor(key);if(!income)return;
+ const saved=savedBudgetGroups(key),drafts={};
+ BUDGET_GROUPS.forEach(group=>{const value=Math.round(income*group.recommended)/100;if(value!==(+saved[group.id]||0))drafts[group.id]=value});
+ if(Object.keys(drafts).length)budgetDrafts.set(key,drafts);else budgetDrafts.delete(key);
+ budgetSaveError='';limitsMessage.hidden=true;renderBudgetPanel();
+});
+document.querySelector('#budgetPlanFollow').addEventListener('click',async()=>{
+ const key=budgetMonth.value,names=Object.keys(BUDGETS[key]||{});if(budgetSaving||!names.length)return;
+ if(!confirm(`Remover os limites próprios de ${monthLabel(key)} e seguir o plano padrão?`))return;
+ if(!canWrite){alert(localOnlyMessage());return}
+ budgetSaving=true;renderBudgetPanel();
+ try{for(const name of names){const response=await fetch(`/api/budgets/${key}/${encodeURIComponent(name)}`,{method:'DELETE'}),result=await response.json();if(!response.ok)throw Error(result.error||'Não foi possível remover os limites.');delete BUDGETS[key][name]}
+  delete BUDGETS[key];budgetDrafts.delete(key);limitsMessage.textContent='Este mês voltou a seguir o plano padrão.';limitsMessage.className='message ok'}
+ catch(error){limitsMessage.textContent=error.message;limitsMessage.className='message error'}
+ finally{budgetSaving=false;render();renderBudgetPanel();limitsMessage.hidden=false}
+});
 
 const debtForm=document.querySelector('#debtForm'),debtFilter=document.querySelector('#debtChartFilter');
 let editingDebtId=null;
@@ -2380,7 +2510,7 @@ function renderRecurring(){const prefs=ACCOUNT_PREFERENCES,plan=prefs.salary_pla
 salaryScheduleForm.addEventListener('submit',async event=>{event.preventDefault();const e=salaryScheduleForm.elements,message=document.querySelector('#salaryScheduleMessage'),button=event.submitter;button.disabled=true;try{const payload={enabled:e.enabled.checked};if(payload.enabled){payload.source=e.source.value.trim();payload.start_month=e.start_month.value;payload.payments=[{day:Number(e.day1.value),amount:Number(e.amount1.value)}];if(e.count.value==='2')payload.payments.push({day:Number(e.day2.value),amount:Number(e.amount2.value)})}const result=await trustRequest('/api/recurring/salary',payload);salaryScheduleForm.querySelector('button').focus();await loadBootstrap();await refreshRecurring();message.textContent=payload.enabled?`Programação salva. ${result.posted} previsão(ões) registrada(s). Os valores entram automaticamente nas datas programadas.`:'Programação desativada. Recebimentos anteriores preservados.';message.className='message ok';message.hidden=false}catch(error){message.textContent=error.message;message.className='message error';message.hidden=false}finally{button.disabled=false}});
 creditCardForm.addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter,message=document.querySelector('#creditCardMessage');button.disabled=true;try{await trustRequest('/api/recurring/card',Object.fromEntries(new FormData(creditCardForm)));creditCardForm.reset();creditCardForm.elements.id.value='';document.querySelector('#cancelCreditCardEdit').hidden=true;await refreshRecurring();message.textContent='Cartão salvo. Próximo vencimento atualizado.';message.className='message ok';message.hidden=false}catch(error){message.textContent=error.message;message.className='message error';message.hidden=false}finally{button.disabled=false}});
 document.querySelector('#cancelCreditCardEdit').onclick=()=>{creditCardForm.reset();creditCardForm.elements.id.value='';document.querySelector('#cancelCreditCardEdit').hidden=true};
-document.querySelector('#creditCardList').addEventListener('click',async event=>{const edit=event.target.closest('[data-edit-card]'),remove=event.target.closest('[data-delete-card]');if(edit){document.querySelector('#cardEditor').open=true;const card=ACCOUNT_PREFERENCES.credit_cards.find(item=>item.id===edit.dataset.editCard);for(const key of ['id','name','due_day','closing_day','limit'])creditCardForm.elements[key].value=card[key]??'';document.querySelector('#cancelCreditCardEdit').hidden=false;creditCardForm.elements.name.focus()}if(remove){try{await trustRequest('/api/recurring/card-delete',{id:remove.dataset.deleteCard});if(creditCardForm.elements.id.value===remove.dataset.deleteCard){creditCardForm.reset();creditCardForm.elements.id.value='';document.querySelector('#cancelCreditCardEdit').hidden=true}await refreshRecurring()}catch(error){const message=document.querySelector('#creditCardMessage');message.textContent=error.message;message.hidden=false;message.className='message error'}}});
+document.querySelector('#creditCardList').addEventListener('click',async event=>{const edit=event.target.closest('[data-edit-card]'),remove=event.target.closest('[data-delete-card]');if(edit){document.querySelector('#cardEditor').open=true;const card=ACCOUNT_PREFERENCES.credit_cards.find(item=>item.id===edit.dataset.editCard);for(const key of ['id','name','due_day','closing_day','limit','spending_goal','installment_cap'])creditCardForm.elements[key].value=card[key]??'';document.querySelector('#cancelCreditCardEdit').hidden=false;creditCardForm.elements.name.focus()}if(remove){try{await trustRequest('/api/recurring/card-delete',{id:remove.dataset.deleteCard});if(creditCardForm.elements.id.value===remove.dataset.deleteCard){creditCardForm.reset();creditCardForm.elements.id.value='';document.querySelector('#cancelCreditCardEdit').hidden=true}await refreshRecurring()}catch(error){const message=document.querySelector('#creditCardMessage');message.textContent=error.message;message.hidden=false;message.className='message error'}}});
 document.querySelector('#salaryReceiptList').addEventListener('click',async event=>{const button=event.target.closest('[data-salary-action]');if(!button)return;const entry=ACCOUNT_PREFERENCES.salary_receipts.find(item=>item.key===button.dataset.receipt),action=button.dataset.salaryAction;if(action==='confirm'){openTrustDialog('Conferir recebimento',`<p>${esc(entry.source)} · ${date(entry.date)}. Informe quanto realmente recebeu.</p><form id="confirmSalaryReceipt"><label>Data em que recebeu<input name="received_date" type="date" max="${localDateValue()}" value="${entry.received_date||localDateValue()}" required></label><label>Valor recebido (R$)<input name="amount" type="number" min="0.01" max="10000000" step="0.01" value="${entry.amount}" required></label><button class="save" type="submit">Salvar valor conferido</button><p class="negative" role="status"></p></form>`);document.querySelector('#confirmSalaryReceipt').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{await trustRequest('/api/recurring/receipt',{key:entry.key,action,amount:Number(e.target.elements.amount.value),received_date:e.target.elements.received_date.value});trustDialog.close();await refreshRecurring(true)}catch(error){e.target.querySelector('p').textContent=error.message}finally{e.submitter.disabled=false}}}else{button.disabled=true;try{await trustRequest('/api/recurring/receipt',{key:entry.key,action});await refreshRecurring(true)}catch(error){alert(error.message)}finally{button.disabled=false}}});
 async function refreshRecurring(force=false){if(!canWrite)return;const data=await trustRequest('/api/recurring?month='+encodeURIComponent(month.value)),before=JSON.stringify(ACCOUNT_PREFERENCES.salary_receipts||[]);ACCOUNT_PREFERENCES=data.preferences||{};portfolio.preferences=ACCOUNT_PREFERENCES;if(force||before!==JSON.stringify(ACCOUNT_PREFERENCES.salary_receipts||[]))render();renderRecurring();if(force||before!==JSON.stringify(ACCOUNT_PREFERENCES.salary_receipts||[]))renderTrust()}
 month.addEventListener('change',()=>{renderRecurring();refreshRecurring().catch(()=>{})});document.addEventListener('finance-updated',renderRecurring);
@@ -2388,8 +2518,7 @@ setInterval(()=>{if(document.hidden||document.activeElement?.matches('input,sele
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshRecurring().catch(()=>{})});
 renderRecurring();
 
-function openCreditCards(){document.querySelector('[data-panel="debtsPanel"]').click();document.querySelector('#creditCardsTitle').scrollIntoView({behavior:'smooth',block:'start'})}
-document.querySelector('#openCreditCards').onclick=openCreditCards;
+function openCreditCards(){document.querySelector('.tab[data-panel="cardsPanel"]').click()}
 document.querySelector('#newDebtButton').insertAdjacentHTML('beforebegin','<button id="jumpCreditCards" class="secondary" type="button">Meus cartões</button>');document.querySelector('#jumpCreditCards').onclick=openCreditCards;
 
 let cardBillState=null,cardBillRequest=0;
@@ -2403,7 +2532,7 @@ document.querySelector('#newCardPurchase').onclick=()=>openCardPurchase();docume
 document.querySelector('#cardBillList').addEventListener('click',async event=>{const edit=event.target.closest('[data-edit-card-purchase]'),remove=event.target.closest('[data-delete-card-purchase]'),pay=event.target.closest('[data-pay-card-bill]'),reverse=event.target.closest('[data-reverse-card-payment]');if(edit)openCardPurchase(edit.dataset.editCardPurchase);if(remove)removeCardPurchase(remove.dataset.deleteCardPurchase);if(pay)openCardBillPayment(pay.dataset.payCardBill);if(reverse&&confirm('Desfazer a confirmação deste pagamento? A fatura volta a ficar pendente.')){try{await trustRequest('/api/cards/payment-reverse',{id:reverse.dataset.reverseCardPayment});await loadBootstrap();await refreshCardBills();cardMessage('Pagamento desfeito.')}catch(error){cardMessage(error.message,true)}}});
 month.addEventListener('change',()=>{document.querySelector('#cardBillMonth').value=month.value;refreshCardBills()});document.addEventListener('finance-updated',()=>refreshCardBills());window.cardUIReady=true;document.querySelector('#cardBillMonth').value=month.value;refreshCardBills();
 
-function updateExpenseCardSelector(){const input=form.elements.credit_card_id;if(!input)return;const selected=input.value;input.innerHTML='<option value="">Sem vínculo (gasto avulso)</option>'+(ACCOUNT_PREFERENCES.credit_cards||[]).filter(card=>card.closing_day).map(card=>`<option value="${card.id}">${esc(card.name)}</option>`).join('');if([...input.options].some(option=>option.value===selected))input.value=selected;input.disabled=!!editingExpenseId||form.elements.payment.value!=='Crédito';document.querySelector('#expenseCardField').hidden=input.disabled}
+function updateExpenseCardSelector(){const input=form.elements.credit_card_id;if(!input)return;const selected=input.value;input.innerHTML='<option value="">Nenhum (gasto avulso)</option>'+(ACCOUNT_PREFERENCES.credit_cards||[]).filter(card=>card.closing_day).map(card=>`<option value="${card.id}">${esc(card.name)}</option>`).join('');if([...input.options].some(option=>option.value===selected))input.value=selected;input.disabled=!!editingExpenseId||form.elements.payment.value!=='Crédito';document.querySelector('#expenseCardField').hidden=input.disabled}
 form.elements.payment.addEventListener('change',updateExpenseCardSelector);document.addEventListener('finance-updated',updateExpenseCardSelector);form.addEventListener('reset',()=>setTimeout(updateExpenseCardSelector,0));updateExpenseCardSelector();
 
 let bankState={accounts:[],entries:[]},bankSequence=0;
@@ -2489,9 +2618,6 @@ document.addEventListener('insights-updated',renderExperience);
 month.addEventListener('change',()=>{experienceBills=[];renderExperience();refreshExperienceBills()});
 document.querySelector('.home-summary').hidden=true;
 document.body.classList.add('has-daily-workspace');
-const cardsNavigation=document.querySelector('#openCreditCards');
-document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{cardsNavigation.classList.remove('active');cardsNavigation.removeAttribute('aria-current')}));
-cardsNavigation.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(tab=>{tab.classList.remove('active');tab.removeAttribute('aria-current')});cardsNavigation.classList.add('active');cardsNavigation.setAttribute('aria-current','page')});
 
 // Pure calculations shared by the interface and the numerical regression checks.
 const InvestmentSimulator = (() => {
@@ -2856,15 +2982,19 @@ function ovInvestments(){
 }
 
 function ovCommitments(){
-  const today=ovToday(),open=DATA.filter(e=>e.installment_group&&!e.finance?.paid&&e.date>=today.slice(0,7)+'-01');
+  const today=ovToday(),cardNames=Object.fromEntries((ACCOUNT_PREFERENCES?.credit_cards||[]).map(c=>[c.id,c.name]));
+  const groupOf=e=>e.installment_group||(e.finance?.card_purchase_id&&e.installment_count>1?'card:'+e.finance.card_purchase_id:null);
+  const open=DATA.filter(e=>groupOf(e)&&!e.finance?.paid&&e.date>=today.slice(0,7)+'-01');
   const debts=open.filter(e=>e.finance?.debt_entry),parcels=open.filter(e=>!e.finance?.debt_entry&&e.date>today);
-  const group=list=>{const g={};list.forEach(e=>{const k=e.installment_group;(g[k]=g[k]||{label:e.where,total:0,count:0,last:e.date}).total+=e.amount;g[k].count++;if(e.date>g[k].last)g[k].last=e.date});return Object.values(g).sort((a,b)=>b.total-a.total)};
+  const group=list=>{const g={};list.forEach(e=>{const k=groupOf(e),card=cardNames[e.finance?.credit_card_id];(g[k]=g[k]||{label:card?`${e.where} · ${card}`:e.where,total:0,count:0,last:e.date}).total+=e.amount;g[k].count++;if(e.date>g[k].last)g[k].last=e.date});return Object.values(g).sort((a,b)=>b.total-a.total)};
   const debtGroups=group(debts),parcelGroups=group(parcels),debtTotal=debtGroups.reduce((s,x)=>s+x.total,0),parcelTotal=parcelGroups.reduce((s,x)=>s+x.total,0),max=Math.max(1,...debtGroups.map(x=>x.total),...parcelGroups.map(x=>x.total));
   const row=(g,cls)=>`<div class="ov-debt ${cls}"><div><span>${esc(g.label)}</span><small>${g.count} ${g.count===1?'parcela':'parcelas'} · até ${new Date(g.last+'T12:00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('.','')}</small></div><div class="ov-track"><i style="width:${g.total/max*100}%"></i></div><b>${brl(g.total)}</b></div>`;
   ovEl('ovDebts').innerHTML=(debtGroups.length||parcelGroups.length)?`<div class="ov-debt-kpis"><div><small>Empréstimos e financiamentos</small><strong>${brl(debtTotal)}</strong></div><div><small>Compras parceladas</small><strong>${brl(parcelTotal)}</strong></div></div>${debtGroups.slice(0,3).map(g=>row(g,'is-debt')).join('')}${parcelGroups.slice(0,3).map(g=>row(g,'is-parcel')).join('')}`:'<p class="ov-empty">Nenhuma dívida ou parcela em aberto.</p>';
   const limit=new Date(today+'T12:00:00');limit.setDate(limit.getDate()+30);const end=limit.toISOString().slice(0,10);
-  const next=DATA.filter(e=>e.date>=today&&e.date<=end&&!e.finance?.paid&&(e.installment_group||e.finance?.fixed_expense_id||e.finance?.scheduled_date)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  ovEl('ovUpcoming').innerHTML=next.length?next.map(e=>{const d=new Date(e.date+'T12:00:00');const days=Math.round((d-new Date(today+'T12:00:00'))/864e5);return `<li><span class="ov-date"><b>${d.getDate()}</b>${d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')}</span><div><span>${esc(e.where)}</span><small>${days===0?'hoje':days===1?'amanhã':'em '+days+' dias'}${e.installment_number?` · ${e.installment_number}/${e.installment_count}`:''}</small></div><b>${brl(e.amount)}</b></li>`}).join(''):'<li class="ov-empty">Nada vencendo nos próximos 30 dias.</li>';
+  const paidByInvoice={};(ACCOUNT_PREFERENCES?.card_payments||[]).filter(p=>!p.reversed).forEach(p=>paidByInvoice[p.invoice_key]=(paidByInvoice[p.invoice_key]||0)+p.amount);
+  const invoices={};DATA.filter(e=>e.finance?.invoice_key&&e.date>=today&&e.date<=end).forEach(e=>{const k=e.finance.invoice_key;(invoices[k]=invoices[k]||{date:e.date,where:'Fatura '+(cardNames[k.split(':')[0]]||'do cartão'),amount:-(paidByInvoice[k]||0),invoice:true}).amount+=e.amount});
+  const next=[...DATA.filter(e=>e.date>=today&&e.date<=end&&!e.finance?.paid&&!e.finance?.invoice_key&&(e.installment_group||e.finance?.fixed_expense_id||e.finance?.scheduled_date)),...Object.values(invoices).filter(i=>i.amount>0.004)].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+  ovEl('ovUpcoming').innerHTML=next.length?next.map(e=>{const d=new Date(e.date+'T12:00:00');const days=Math.round((d-new Date(today+'T12:00:00'))/864e5);return `<li><span class="ov-date"><b>${d.getDate()}</b>${d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')}</span><div><span>${esc(e.where)}</span><small>${days===0?'hoje':days===1?'amanhã':'em '+days+' dias'}${e.invoice?' · cartão':e.installment_number?` · ${e.installment_number}/${e.installment_count}`:''}</small></div><b>${brl(e.amount)}</b></li>`}).join(''):'<li class="ov-empty">Nada vencendo nos próximos 30 dias.</li>';
 }
 
 function renderOverview(){
@@ -2901,5 +3031,127 @@ function renderOverview(){
   month.addEventListener('change',renderOverview);
   renderOverview();
 })();
+
+// Cartões: one block per card with its invoice, spending goal, monthly installment cap and limit.
+// Everything is derived from the card purchases, payments and refunds already kept in the account.
+const CARD_COLORS=['#5aa9ff','#a98bff','#3ddc97','#f5b94a','#f78fb3','#2dd4bf'];
+const cardShift=(key,delta)=>{const [y,m]=key.split('-').map(Number),d=new Date(y,m-1+delta,1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`};
+const cardDue=(key,day)=>{const [y,m]=key.split('-').map(Number),last=new Date(y,m,0).getDate();return `${key}-${String(Math.min(day,last)).padStart(2,'0')}`};
+const cardMonthShort=key=>{const [y,m]=key.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.','')};
+const cardMonthLong=key=>{const [y,m]=key.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'long'})};
+
+// Same split as cards.parts on the server: equal cents, remainder on the last installment.
+function cardPurchaseParts(purchase){
+  const total=Math.round(purchase.amount*100),count=purchase.installments,regular=Math.floor(total/count);
+  return [...Array(count)].map((_,index)=>{const key=cardShift(purchase.first_invoice_month,index);
+    return {number:index+1,month:key,date:cardDue(key,purchase.due_day),amount:(index<count-1?regular:total-regular*(count-1))/100,installments:count}});
+}
+// {cardId: {month: {total, installments, paid, refunds}}}
+function cardLedger(){
+  const prefs=ACCOUNT_PREFERENCES||{},ledger={};
+  const slot=(card,key)=>((ledger[card]??={})[key]??={total:0,installments:0,paid:0,refunds:0,count:0});
+  (prefs.card_purchases||[]).forEach(purchase=>cardPurchaseParts(purchase).forEach(part=>{const entry=slot(purchase.card_id,part.date.slice(0,7));entry.total+=part.amount;entry.count++;if(part.installments>1)entry.installments+=part.amount}));
+  (prefs.card_payments||[]).filter(item=>!item.reversed).forEach(item=>{const [card,key]=item.invoice_key.split(':');slot(card,key).paid+=item.amount});
+  (prefs.card_refunds||[]).filter(item=>!item.reversed).forEach(item=>{const [card,key]=item.invoice_key.split(':');slot(card,key).refunds+=item.amount});
+  return ledger;
+}
+function cardBill(ledger,card,key){const entry=ledger[card]?.[key]||{total:0,installments:0,paid:0,refunds:0,count:0},total=Math.max(0,entry.total-entry.refunds);return {...entry,total,remaining:Math.max(0,total-entry.paid)}}
+function cardCommitted(ledger,card){return Object.keys(ledger[card]||{}).reduce((sum,key)=>sum+cardBill(ledger,card,key).remaining,0)}
+
+function cardMeter(label,value,target,emptyText){
+  if(!target)return `<div class="card-meter is-unset"><div><span>${label}</span><b>${brl(value)}</b></div><small>${emptyText}</small></div>`;
+  const ratio=value/target,level=ratio>1?'over':ratio>=.8?'warn':'ok';
+  return `<div class="card-meter is-${level}"><div><span>${label}</span><b>${brl(value)} <em>de ${brl(target)}</em></b></div><div class="card-meter-track"><i style="width:${Math.min(100,ratio*100)}%"></i></div><small>${ratio>1?`${brl(value-target)} acima`:`${brl(target-value)} livres`} · ${Math.round(ratio*100)}%</small></div>`;
+}
+function cardInstallmentBars(ledger,card,start){
+  const keys=[...Array(6)].map((_,i)=>cardShift(start,i)),values=keys.map(key=>cardBill(ledger,card.id,key).installments),cap=+card.installment_cap||0;
+  const max=Math.max(cap,...values,1)*1.12,W=300,H=96,P=16,slot=(W-8)/keys.length,bw=Math.min(26,slot*.55),y=v=>H-P-(v/max)*(H-P-12);
+  const bars=values.map((value,i)=>{const x=4+slot*i+slot/2,over=cap&&value>cap;return `<rect x="${x-bw/2}" y="${y(value)}" width="${bw}" height="${Math.max(0,y(0)-y(value))}" rx="3" class="${over?'is-over':''}"><title>${cardMonthLong(keys[i])}: ${brl(value)} em parcelas</title></rect><text x="${x}" y="${H-3}" text-anchor="middle">${cardMonthShort(keys[i])}</text>`}).join('');
+  const capLine=cap?`<line x1="2" x2="${W-2}" y1="${y(cap)}" y2="${y(cap)}" class="card-cap"/><text x="${W-4}" y="${y(cap)-4}" text-anchor="end" class="card-cap-label">teto ${brl(cap)}</text>`:'';
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Parcelas de ${esc(card.name)} nos próximos seis meses">${capLine}${bars}</svg>`;
+}
+
+// In the current month each card shows its open invoice: once this month's due date has
+// passed, that is next month's. Other months show the invoice that is due in them.
+function cardFocusMonth(card,key){const today=localDateValue();return key===today.slice(0,7)&&cardDue(key,card.due_day)<today?cardShift(key,1):key}
+function renderCardsOverview(){
+  const grid=document.querySelector('#cardsGrid');if(!grid)return;
+  const cards=ACCOUNT_PREFERENCES?.credit_cards||[],selected=month.value,current=selected===localDateValue().slice(0,7),ledger=cardLedger();
+  const bills=cards.map(card=>cardBill(ledger,card.id,cardFocusMonth(card,selected))),totals={bill:bills.reduce((s,b)=>s+b.total,0),open:bills.reduce((s,b)=>s+b.remaining,0),installments:bills.reduce((s,b)=>s+b.installments,0)};
+  const future=cards.reduce((sum,card)=>{const focus=cardFocusMonth(card,selected);return sum+Object.keys(ledger[card.id]||{}).filter(k=>k>focus).reduce((s,k)=>s+cardBill(ledger,card.id,k).remaining,0)},0);
+  const key=selected;
+  // The invoice list below follows the earliest open invoice shown in the cards.
+  const billMonth=document.querySelector('#cardBillMonth'),focusMonths=cards.map(card=>cardFocusMonth(card,selected)).sort(),wanted=focusMonths[0]||selected;
+  if(billMonth&&billMonth.value!==wanted&&!billMonth.dataset.touched){billMonth.value=wanted;if(typeof refreshCardBills==='function')refreshCardBills()}
+  const limits=cards.filter(card=>card.limit!=null),available=limits.reduce((sum,card)=>sum+(card.limit-cardCommitted(ledger,card.id)),0);
+  document.querySelector('#cardsKpis').innerHTML=[
+    [current?'Faturas abertas':'Faturas de '+cardMonthLong(key),brl(totals.bill),totals.open?`${brl(totals.open)} a pagar`:totals.bill?'tudo pago':'sem compras'],
+    ['Parcelas nessas faturas',brl(totals.installments),'soma das compras parceladas'],
+    ['Faturas seguintes',brl(future),'já comprometido em parcelas'],
+    ['Limite disponível',limits.length?brl(available):'—',limits.length?`em ${limits.length} ${limits.length===1?'cartão':'cartões'} com limite`:'informe o limite no cadastro']
+  ].map(([label,value,note])=>`<div><small>${label}</small><strong>${value}</strong><span>${note}</span></div>`).join('');
+  if(!cards.length){grid.innerHTML='<div class="cards-empty"><strong>Nenhum cartão ainda.</strong><span>Cadastre seus cartões com fechamento e vencimento. Depois, ao lançar um gasto no crédito, escolha o cartão e ele aparece aqui.</span><button class="save" type="button" data-cards-add>＋ Cadastrar primeiro cartão</button></div>';return}
+  grid.innerHTML=cards.map((card,index)=>{
+    const focus=cardFocusMonth(card,selected),bill=bills[index],committed=cardCommitted(ledger,card.id),color=CARD_COLORS[index%CARD_COLORS.length];
+    const due=cardDue(focus,card.due_day),status=!bill.total?'Sem compras':bill.remaining===0?'Paga':due<localDateValue()?'Vencida':'Em aberto';
+    return `<article class="card-tile" style="--card-color:${color}">
+      <div class="card-face"><div><strong>${esc(card.name)}</strong><small>Fecha dia ${card.closing_day||'—'} · vence dia ${card.due_day}</small></div><span class="card-status is-${status==='Vencida'?'bad':status==='Paga'?'good':'idle'}">${status}</span></div>
+      <div class="card-bill"><small>${focus!==selected?'Fatura atual · ':'Fatura de '}${cardMonthLong(focus)}</small><strong>${brl(bill.total)}</strong><span>${bill.count} ${bill.count===1?'lançamento':'lançamentos'} · vence ${date(due)}${bill.paid?` · pago ${brl(bill.paid)}`:''}</span></div>
+      ${cardMeter('Meta de gasto',bill.total,+card.spending_goal||0,'Sem meta. Defina quanto quer gastar por fatura.')}
+      ${cardMeter('Parcelas no mês',bill.installments,+card.installment_cap||0,'Sem teto. Defina até quanto aceita em parcelas.')}
+      ${card.limit!=null?cardMeter('Limite usado',committed,+card.limit,''):''}
+      <div class="card-chart"><span>Parcelas nos próximos 6 meses</span>${cardInstallmentBars(ledger,card,focus)}</div>
+      <div class="card-actions"><button class="secondary" type="button" data-cards-edit="${card.id}">Editar cartão e metas</button><button class="secondary" type="button" data-cards-bill>Ver fatura</button></div>
+    </article>`}).join('');
+}
+
+function openCardEditor(id){
+  const editor=document.querySelector('#cardEditor');editor.open=true;
+  if(id){document.querySelector(`#creditCardList [data-edit-card="${CSS.escape(id)}"]`)?.click()}
+  else{creditCardForm.reset();creditCardForm.elements.id.value='';document.querySelector('#cancelCreditCardEdit').hidden=true}
+  editor.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>creditCardForm.elements.name.focus({preventScroll:true}),300);
+}
+document.querySelector('#cardsPanel').addEventListener('click',event=>{
+  if(event.target.closest('#cardsAddCard,[data-cards-add]'))openCardEditor();
+  const edit=event.target.closest('[data-cards-edit]');if(edit)openCardEditor(edit.dataset.cardsEdit);
+  if(event.target.closest('[data-cards-bill]'))document.querySelector('.card-bills').scrollIntoView({behavior:'smooth',block:'start'});
+  if(event.target.closest('#cardsNewPurchase'))document.querySelector('#newCardPurchase').click();
+});
+
+// Registrar: pick the card and see how the purchase fits its goal and installment cap.
+function cardMoney(value){const text=String(value||'').trim();if(!text)return 0;return +(text.includes(',')?text.replace(/\./g,'').replace(',','.'):text)||0}
+function updateExpenseCardHint(){
+  const field=document.querySelector('#expenseCardField'),hint=document.querySelector('#expenseCardHint');if(!field||!hint)return;
+  const e=form.elements,credit=e.payment.value==='Crédito',cards=ACCOUNT_PREFERENCES?.credit_cards||[],usable=cards.filter(card=>card.closing_day);
+  if(credit&&!editingExpenseId&&!usable.length){field.hidden=false;hint.innerHTML=cards.length?'Informe o dia de fechamento do cartão na aba Cartões para vincular compras.':'Cadastre seus cartões na aba Cartões para separar os gastos de cada um.';hint.className='card-hint';return}
+  if(credit&&!editingExpenseId&&usable.length===1&&!e.credit_card_id.value&&!e.credit_card_id.dataset.touched)e.credit_card_id.value=usable[0].id;
+  const card=usable.find(item=>item.id===e.credit_card_id.value);
+  if(field.hidden||!card){hint.textContent='';hint.className='card-hint';return}
+  const total=cardMoney(e.amount.value),count=e.installment?.value==='true'?Math.max(1,+e.installment_count.value||1):1,day=e.date.value||localDateValue();
+  const first=cardFirstMonth(card,day)||day.slice(0,7),part=total/count,ledger=cardLedger(),messages=[];let warn=false;
+  messages.push(`Entra na fatura de ${cardMonthLong(first)}${count>1?` em ${count}x de ${brl(part)}`:''}.`);
+  if(total&&card.spending_goal){const after=cardBill(ledger,card.id,first).total+part;warn||=after>card.spending_goal;messages.push(`Fatura de ${cardMonthLong(first)}: ${brl(after)} de ${brl(card.spending_goal)} da meta.`)}
+  if(total&&count>1&&card.installment_cap){
+    const peak=[...Array(count)].map((_,i)=>{const key=cardShift(first,i);return {key,value:cardBill(ledger,card.id,key).installments+part}}).sort((a,b)=>b.value-a.value)[0];
+    warn||=peak.value>card.installment_cap;
+    messages.push(peak.value>card.installment_cap?`Com esta compra, as parcelas chegam a ${brl(peak.value)} em ${cardMonthLong(peak.key)}, acima do teto de ${brl(card.installment_cap)}.`:`Parcelas no mês mais cheio: ${brl(peak.value)} de ${brl(card.installment_cap)}.`);
+  }
+  hint.textContent=messages.join(' ');hint.className='card-hint'+(warn?' is-warn':'');
+}
+(function(){
+  const field=document.querySelector('#expenseCardField');if(!field)return;
+  field.firstChild.textContent='Qual cartão?';
+  field.querySelector('small').outerHTML='<small id="expenseCardHint" class="card-hint" aria-live="polite"></small>';
+  const select=form.elements.credit_card_id;select.addEventListener('change',()=>{select.dataset.touched='1'});
+  ['input','change'].forEach(type=>form.addEventListener(type,()=>queueMicrotask(updateExpenseCardHint)));
+  form.addEventListener('reset',()=>{delete select.dataset.touched;setTimeout(updateExpenseCardHint,0)});
+  updateExpenseCardHint();
+})();
+
+['finance-updated','bootstrap-loaded'].forEach(name=>document.addEventListener(name,()=>queueMicrotask(()=>{renderCardsOverview();updateExpenseCardHint()})));
+month.addEventListener('change',()=>{const input=document.querySelector('#cardBillMonth');if(input)delete input.dataset.touched;renderCardsOverview()});
+document.querySelector('#cardBillMonth')?.addEventListener('change',event=>{event.target.dataset.touched='1'});
+if(typeof renderRecurring==='function'){const baseRecurring=renderRecurring;renderRecurring=function(...args){const result=baseRecurring.apply(this,args);renderCardsOverview();return result}}
+renderCardsOverview();
 
 </script></body></html>

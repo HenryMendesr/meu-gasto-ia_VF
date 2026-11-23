@@ -166,4 +166,5 @@ body .foot{max-width:1240px;margin:40px auto 0;border-top:1px solid var(--line);
   body .shell>nav.tabs :is(.tab,#openCreditCards)>span:last-child{overflow:hidden;text-overflow:ellipsis;max-width:100%}
   body .top-actions :is(.account-button,.logout button){padding:6px 10px;font-size:12px}
   body .panel :is(.card,.routine-section,.goals-section,.debt-chart,.daily-summary,.budget-allocation,.budget-editor,.credit-card-section,.card-bills,.salary-schedule){padding:16px}
+  body .panel :is(.routine-summary,.investment-summary,.debt-totals,.budget-summary,.bill-metrics) strong{font-size:19px;white-space:nowrap;overflow-wrap:normal}
 }

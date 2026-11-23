@@ -271,3 +271,21 @@ body:has(#budgetsPanel:not([hidden])) .global-period { display: none; }
  .budget-card-stats strong { font-size: 14px; }
  .budget-page .limit-foot,.budget-group-details summary { font-size: 11px; }
 }
+/* Plano padrão: a share of income per group, with the rest left to save. */
+.budget-plan{display:grid;gap:14px;margin:0 0 18px;padding:20px 22px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,var(--surface-2),var(--surface))}
+.budget-plan-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.budget-plan-head h3{margin:2px 0 4px;font-size:17px}
+.budget-plan-head p{margin:0;max-width:62ch;color:var(--muted);font-size:13px}
+.budget-plan-actions{display:flex;flex-wrap:wrap;gap:8px}
+.budget-plan-bar{display:flex;gap:3px;height:14px;overflow:hidden;border-radius:999px;background:var(--surface-3)}
+.budget-plan-bar i{display:block;height:100%;min-width:3px;transition:width .3s ease}
+.budget-plan-bar .budget-plan-free{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--green) 55%,transparent) 0 6px,color-mix(in srgb,var(--green) 25%,transparent) 6px 12px)}
+.budget-plan-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.budget-plan-legend>div{display:grid;grid-template-columns:10px 1fr auto;column-gap:8px;align-items:center;padding:10px 12px;border-radius:var(--radius-sm);background:var(--surface-3)}
+.budget-plan-legend i{width:10px;height:10px;border-radius:3px}
+.budget-plan-legend span{font-size:13px;font-weight:600;color:var(--ink-2)}
+.budget-plan-legend b{font-size:15px}
+.budget-plan-legend small{grid-column:2/4;color:var(--muted);font-size:11px}
+.budget-plan-save i{background:repeating-linear-gradient(135deg,var(--green) 0 3px,transparent 3px 6px)}
+.budget-plan-save b{color:var(--green)}
+.budget-recommended{display:block;margin:2px 0;color:var(--muted);font-size:11px;font-weight:600}

@@ -129,6 +129,10 @@ def _validate(payload):
         try:from src.investor_education import validate_education
         except ImportError:from investor_education import validate_education
         prefs['investment_education'] = validate_education(prefs['investment_education'])
+    if 'budget_plan' in prefs:
+        try:from src.budget_groups import validate_plan
+        except ImportError:from budget_groups import validate_plan
+        prefs['budget_plan'] = validate_plan(prefs['budget_plan'])
     for key in ('income_modes','category_rules'):
         if not isinstance(prefs.get(key,{}),dict):raise ValueError('Preferência inválida')
     for key,value in prefs.get('category_rules',{}).items():

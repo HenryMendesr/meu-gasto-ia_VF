@@ -33,10 +33,15 @@ def preferences(payload, user_id=None):
             import suitability
         profile = suitability.evaluate(payload['investor_profile'])
         profile['completed_at'] = investments.now_iso()
-    allowed = {'onboarding_dismissed', 'analytics_consent', 'investor_profile_started', 'investment_education'}
-    if any(key not in allowed or (key != 'investment_education' and not isinstance(value, bool)) for key, value in payload.items() if key != 'investor_profile'):
+    allowed = {'onboarding_dismissed', 'analytics_consent', 'investor_profile_started', 'investment_education', 'budget_plan'}
+    structured = {'investment_education', 'budget_plan'}
+    if any(key not in allowed or (key not in structured and not isinstance(value, bool)) for key, value in payload.items() if key != 'investor_profile'):
         raise ValueError('Preferências inválidas')
     payload = copy.deepcopy(payload)
+    if 'budget_plan' in payload:
+        try:from src.budget_groups import validate_plan
+        except ImportError:from budget_groups import validate_plan
+        payload['budget_plan'] = validate_plan(payload['budget_plan'])
     if 'investment_education' in payload:
         try:from src.investor_education import validate_education
         except ImportError:from investor_education import validate_education

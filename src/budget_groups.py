@@ -10,6 +10,7 @@ import unicodedata
 GROUPS = [
     {
         'id': '@budget:fixed',
+        'recommended': 50,
         'label': 'Custos fixos',
         'description': 'Moradia, mercado, carro, transporte, saúde e contas.',
         'categories': ['Mercado', 'Transporte', 'Moradia', 'Saúde', 'Contas'],
@@ -18,6 +19,7 @@ GROUPS = [
     },
     {
         'id': '@budget:comfort',
+        'recommended': 15,
         'label': 'Conforto',
         'description': 'Alimentação fora, compras e assinaturas.',
         'categories': ['Alimentação', 'Compras', 'Assinaturas'],
@@ -25,6 +27,7 @@ GROUPS = [
     },
     {
         'id': '@budget:leisure',
+        'recommended': 10,
         'label': 'Lazer e experiências',
         'description': 'Lazer, viagens e presentes.',
         'categories': ['Lazer', 'Viagem', 'Presentes'],
@@ -32,6 +35,7 @@ GROUPS = [
     },
     {
         'id': '@budget:learning',
+        'recommended': 5,
         'label': 'Conhecimento',
         'description': 'Educação, cursos e estudos.',
         'categories': ['Educação'],
@@ -39,6 +43,7 @@ GROUPS = [
     },
     {
         'id': '@budget:other',
+        'recommended': 5,
         'label': 'Outros',
         'description': 'Outros gastos e categorias personalizadas.',
         'categories': ['Outros'],
@@ -46,6 +51,23 @@ GROUPS = [
     },
 ]
 GROUP_IDS = frozenset(group['id'] for group in GROUPS)
+# Default share of monthly income for each group; the remaining 15% is left
+# unallocated so it can be saved or invested.
+RECOMMENDED_PLAN = {group['id']: group['recommended'] for group in GROUPS}
+
+
+def validate_plan(plan):
+    """Return a clean {group_id: percent} plan; the total may not exceed 100%."""
+    if not isinstance(plan, dict) or set(plan) != GROUP_IDS:
+        raise ValueError('Plano de limites inválido')
+    clean = {}
+    for group_id, value in plan.items():
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 100:
+            raise ValueError('Cada grupo deve ter de 0% a 100% da renda')
+        clean[group_id] = float(Decimal(str(value)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+    if sum(clean.values()) > 100.0001:
+        raise ValueError('O plano não pode passar de 100% da renda')
+    return clean
 def normalized_category(category: str) -> str:
     """Match category names across case and accent differences."""
     return ''.join(

@@ -18,6 +18,14 @@
         <div class="budget-metric budget-metric-available"><span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Disponível nos limites</span><strong id="budgetAvailable">R$ 0,00</strong></div>
       </section>
       <div id="limitsMessage" class="message" role="status" hidden></div>
+      <section id="budgetPlan" class="budget-plan" aria-labelledby="budgetPlanTitle">
+        <div class="budget-plan-head">
+          <div><span class="eyebrow">Plano padrão</span><h3 id="budgetPlanTitle">Para onde vai cada real da renda</h3><p id="budgetPlanNote"></p></div>
+          <div class="budget-plan-actions"><button id="budgetPlanFollow" class="secondary" type="button" hidden>Usar o plano neste mês</button><button id="budgetPlanReset" class="secondary" type="button">Voltar à recomendação</button></div>
+        </div>
+        <div id="budgetPlanBar" class="budget-plan-bar" role="img"></div>
+        <div id="budgetPlanLegend" class="budget-plan-legend"></div>
+      </section>
       <div class="budget-workspace">
         <section class="limits-section" aria-label="Ajustar limites por grupo">
           <div class="section-title">

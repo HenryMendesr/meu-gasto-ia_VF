@@ -75,6 +75,18 @@ Em **Planejar**, os limites são organizados em cinco grupos: **Custos fixos** (
 
 Arraste a barra de cada grupo ou digite um valor exato. Com renda cadastrada, a barra usa percentuais da renda; sem renda, usa reais. O gráfico e o resumo mostram a prévia na hora. Clique em **Salvar alterações** para confirmar ou em **Desfazer** para voltar aos valores salvos. Os limites antigos das categorias são somados por grupo sem regravar o histórico; ao salvar um limite de grupo, esse valor passa a valer para o mês, inclusive quando for zero. Ajustes pendentes são preservados ao trocar de mês enquanto a página permanecer aberta. Os limites são salvos em reais e não mudam automaticamente quando a renda muda. O resumo e os alertas do Início acompanham os mesmos grupos, com atenção a partir de 80% de utilização.
 
+## Plano padrão dos limites
+
+Toda conta começa com um plano recomendado sobre a renda do mês: **Custos fixos 50%**, **Conforto 15%**, **Lazer e experiências 10%**, **Conhecimento 5%** e **Outros 5%**. Os 15% restantes ficam livres para guardar ou investir. Os percentuais estão em `src/budget_groups.py` (`recommended`).
+
+Um mês sem limites próprios segue o plano: os limites são calculados sobre a renda daquele mês e acompanham mudanças na renda. Ao ajustar os grupos em **Planejar** e salvar, o novo percentual vira o plano da conta (`preferences.budget_plan`) e vale para todos os meses que seguem o plano. Meses que já tinham limites em reais continuam com eles; o botão **Usar o plano neste mês** remove esses limites e volta ao plano. **Voltar à recomendação** restaura os percentuais sugeridos.
+
+## Cartões
+
+A aba **Cartões** mostra um bloco por cartão com a fatura aberta, a meta de gasto por fatura, o total em parcelas do mês comparado ao teto definido, o limite usado e as parcelas dos próximos seis meses. No mês atual, cada cartão mostra a fatura que ainda vai vencer. Abaixo ficam as faturas com compras, pagamentos e estornos, e o cadastro dos cartões.
+
+No cadastro do cartão, **Meta de gasto por fatura** e **Máximo em parcelas por mês** são opcionais. Ao lançar um gasto em **Registrar** com pagamento **Crédito**, escolha o cartão: a compra entra nas faturas dele, dividida nas parcelas informadas. O formulário mostra em qual fatura a compra entra e avisa quando ela ultrapassa a meta ou o teto de parcelas; o aviso não impede o lançamento. Com um único cartão cadastrado, ele já vem selecionado.
+
 ## Compras parceladas
 
 Ao escolher **Crédito**, o lançamento pode ser dividido em até 120 parcelas. Empréstimos, dívidas e financiamentos possuem cadastro próprio na aba **Dívidas**, inclusive quando a cobrança ocorre por Pix ou transferência. Informe o valor financiado **sem juros**, a taxa **mensal** (zero para compras sem juros), a quantidade e a primeira cobrança. O app calcula parcelas fixas pela Tabela Price, separa juros e amortização e ajusta os centavos na última cobrança. A taxa aceita vírgula ou ponto.
@@ -152,7 +164,7 @@ A interface usa um tema escuro com navegação lateral no computador e inferior 
 - **Cores:** todas as cores vêm dos tokens em `:root` no início de `public/app.css` (superfícies, texto, verde para entradas e resultados positivos, vermelho para saídas e perdas, âmbar para atenção). Os demais arquivos CSS usam apenas `var(--token)`; para mudar a paleta, altere só esses tokens.
 - **Camada visual:** `src/theme.css` é carregado por último e padroniza cartões, botões, campos, tabelas, seções recolhíveis e a navegação.
 - **Início:** `src/overview.html`, `src/overview.css` e `src/overview.js` formam o painel somente leitura (sobra do mês, ritmo de gastos, limites, categorias, últimos seis meses, investimentos e compromissos). Os blocos antigos do Início continuam ocultos no HTML porque outros painéis ainda usam seus IDs.
-- **Ordem das abas:** `src/focus_layout.py` coloca primeiro os números e gráficos de cada aba e move guias, resumo do dia e históricos para seções recolhíveis.
+- **Ordem das abas:** `src/focus_layout.py` coloca primeiro os números e gráficos de cada aba, move guias, resumo do dia e históricos para seções recolhíveis e monta a aba Cartões (`src/cards_overview.*`).
 
 Ao alterar a interface, regenere `templates/index.html` com `SANITIZE_BUILD=1 python3 src/build_dashboard.py`.
 

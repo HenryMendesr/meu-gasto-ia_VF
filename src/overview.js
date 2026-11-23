@@ -119,15 +119,19 @@ function ovInvestments(){
 }
 
 function ovCommitments(){
-  const today=ovToday(),open=DATA.filter(e=>e.installment_group&&!e.finance?.paid&&e.date>=today.slice(0,7)+'-01');
+  const today=ovToday(),cardNames=Object.fromEntries((ACCOUNT_PREFERENCES?.credit_cards||[]).map(c=>[c.id,c.name]));
+  const groupOf=e=>e.installment_group||(e.finance?.card_purchase_id&&e.installment_count>1?'card:'+e.finance.card_purchase_id:null);
+  const open=DATA.filter(e=>groupOf(e)&&!e.finance?.paid&&e.date>=today.slice(0,7)+'-01');
   const debts=open.filter(e=>e.finance?.debt_entry),parcels=open.filter(e=>!e.finance?.debt_entry&&e.date>today);
-  const group=list=>{const g={};list.forEach(e=>{const k=e.installment_group;(g[k]=g[k]||{label:e.where,total:0,count:0,last:e.date}).total+=e.amount;g[k].count++;if(e.date>g[k].last)g[k].last=e.date});return Object.values(g).sort((a,b)=>b.total-a.total)};
+  const group=list=>{const g={};list.forEach(e=>{const k=groupOf(e),card=cardNames[e.finance?.credit_card_id];(g[k]=g[k]||{label:card?`${e.where} · ${card}`:e.where,total:0,count:0,last:e.date}).total+=e.amount;g[k].count++;if(e.date>g[k].last)g[k].last=e.date});return Object.values(g).sort((a,b)=>b.total-a.total)};
   const debtGroups=group(debts),parcelGroups=group(parcels),debtTotal=debtGroups.reduce((s,x)=>s+x.total,0),parcelTotal=parcelGroups.reduce((s,x)=>s+x.total,0),max=Math.max(1,...debtGroups.map(x=>x.total),...parcelGroups.map(x=>x.total));
   const row=(g,cls)=>`<div class="ov-debt ${cls}"><div><span>${esc(g.label)}</span><small>${g.count} ${g.count===1?'parcela':'parcelas'} · até ${new Date(g.last+'T12:00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}).replace('.','')}</small></div><div class="ov-track"><i style="width:${g.total/max*100}%"></i></div><b>${brl(g.total)}</b></div>`;
   ovEl('ovDebts').innerHTML=(debtGroups.length||parcelGroups.length)?`<div class="ov-debt-kpis"><div><small>Empréstimos e financiamentos</small><strong>${brl(debtTotal)}</strong></div><div><small>Compras parceladas</small><strong>${brl(parcelTotal)}</strong></div></div>${debtGroups.slice(0,3).map(g=>row(g,'is-debt')).join('')}${parcelGroups.slice(0,3).map(g=>row(g,'is-parcel')).join('')}`:'<p class="ov-empty">Nenhuma dívida ou parcela em aberto.</p>';
   const limit=new Date(today+'T12:00:00');limit.setDate(limit.getDate()+30);const end=limit.toISOString().slice(0,10);
-  const next=DATA.filter(e=>e.date>=today&&e.date<=end&&!e.finance?.paid&&(e.installment_group||e.finance?.fixed_expense_id||e.finance?.scheduled_date)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  ovEl('ovUpcoming').innerHTML=next.length?next.map(e=>{const d=new Date(e.date+'T12:00:00');const days=Math.round((d-new Date(today+'T12:00:00'))/864e5);return `<li><span class="ov-date"><b>${d.getDate()}</b>${d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')}</span><div><span>${esc(e.where)}</span><small>${days===0?'hoje':days===1?'amanhã':'em '+days+' dias'}${e.installment_number?` · ${e.installment_number}/${e.installment_count}`:''}</small></div><b>${brl(e.amount)}</b></li>`}).join(''):'<li class="ov-empty">Nada vencendo nos próximos 30 dias.</li>';
+  const paidByInvoice={};(ACCOUNT_PREFERENCES?.card_payments||[]).filter(p=>!p.reversed).forEach(p=>paidByInvoice[p.invoice_key]=(paidByInvoice[p.invoice_key]||0)+p.amount);
+  const invoices={};DATA.filter(e=>e.finance?.invoice_key&&e.date>=today&&e.date<=end).forEach(e=>{const k=e.finance.invoice_key;(invoices[k]=invoices[k]||{date:e.date,where:'Fatura '+(cardNames[k.split(':')[0]]||'do cartão'),amount:-(paidByInvoice[k]||0),invoice:true}).amount+=e.amount});
+  const next=[...DATA.filter(e=>e.date>=today&&e.date<=end&&!e.finance?.paid&&!e.finance?.invoice_key&&(e.installment_group||e.finance?.fixed_expense_id||e.finance?.scheduled_date)),...Object.values(invoices).filter(i=>i.amount>0.004)].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+  ovEl('ovUpcoming').innerHTML=next.length?next.map(e=>{const d=new Date(e.date+'T12:00:00');const days=Math.round((d-new Date(today+'T12:00:00'))/864e5);return `<li><span class="ov-date"><b>${d.getDate()}</b>${d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')}</span><div><span>${esc(e.where)}</span><small>${days===0?'hoje':days===1?'amanhã':'em '+days+' dias'}${e.invoice?' · cartão':e.installment_number?` · ${e.installment_number}/${e.installment_count}`:''}</small></div><b>${brl(e.amount)}</b></li>`}).join(''):'<li class="ov-empty">Nada vencendo nos próximos 30 dias.</li>';
 }
 
 function renderOverview(){

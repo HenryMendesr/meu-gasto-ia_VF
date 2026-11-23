@@ -194,7 +194,7 @@ safe_investments = json.dumps(initial_investments, ensure_ascii=False, separator
 html = html.replace("let DATA=", f"const INVESTMENT_DATA={safe_investments};\nlet DATA=", 1)
 html = html.replace("__EXPENSE_FINANCE_JS__", (ROOT / "src/expense_finance.js").read_text(encoding="utf-8"))
 html = html.replace('  <div class="foot">', (ROOT / 'src/trust_panel.html').read_text(encoding='utf-8') + '\n  <div class="foot">', 1)
-html = html.replace('</nav>', '<button id="openCreditCards" class="sidebar-card-link" type="button" aria-label="Cartões"><span class="tab-icon" aria-hidden="true">▰</span><span>Cartões</span></button></nav>', 1)
+html = html.replace('</nav>', '<button id="openCreditCards" class="tab" data-panel="cardsPanel" type="button"><span class="tab-icon" aria-hidden="true">▰</span><span>Cartões</span></button></nav>', 1)
 html = html.replace('<div class="detail-columns"><section class="flow-section"><div class="section-title"><h3>Entradas identificadas', (ROOT / 'src/salary_panel.html').read_text(encoding='utf-8') + '<div class="detail-columns"><section class="flow-section"><div class="section-title"><h3>Entradas identificadas', 1)
 html = html.replace('<section class="debt-contracts">', (ROOT / 'src/cards_panel.html').read_text(encoding='utf-8') + (ROOT / 'src/card_bills.html').read_text(encoding='utf-8') + '<section class="debt-contracts">', 1)
 html = html.replace('<div id="trustUpcoming" class="trust-upcoming"></div>', '<div><div id="trustUpcoming" class="trust-upcoming"></div><div id="creditUpcoming" class="credit-upcoming" hidden></div></div>', 1)
@@ -335,6 +335,9 @@ html=html.replace('</style>',(ROOT/'src/overview.css').read_text(encoding='utf-8
 html=html.replace('</script>',(ROOT/'src/overview.js').read_text(encoding='utf-8')+'\n</script>',1)
 html=html.replace('/app.css?v=29','/app.css?v=30')
 html=focus_layout.apply(html)
+html=focus_layout.cards_panel(html,(ROOT/'src/cards_overview.html').read_text(encoding='utf-8'))
+html=html.replace('</style>',(ROOT/'src/cards_overview.css').read_text(encoding='utf-8')+'\n</style>',1)
+html=html.replace('</script>',(ROOT/'src/cards_overview.js').read_text(encoding='utf-8')+'\n</script>',1)
 
 icons = {
     "≡": '<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/>',

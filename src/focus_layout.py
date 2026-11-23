@@ -71,6 +71,18 @@ def panel(html, panel_id, markers):
     return replace_element(html, opening, lambda block: reorder(block, markers))
 
 
+def cards_panel(html, overview):
+    """Give credit cards their own tab: overview first, then invoices and card settings."""
+    invoices, html = take_element(html, '<section class="card-bills"')
+    settings, html = take_element(html, '<section class="credit-card-section')
+    invoices = invoices.replace('<span class="eyebrow">Compras e faturas</span><h3 id="cardBillsTitle">Faturas</h3>',
+                                '<span class="eyebrow">Compras e faturas</span><h3 id="cardBillsTitle">Faturas e compras</h3>', 1)
+    panel = ('<div id="cardsPanel" class="panel" role="region" aria-label="Cartões" hidden>'
+             + overview + invoices + settings + '</div>')
+    debts, _ = take_element(html, re.search(r'<div id="debtsPanel"[^>]*>', html).group())
+    return html.replace(debts, debts + '\n' + panel, 1)
+
+
 def apply(html):
     html = investments(html)
     # Registrar: the form first; report and list after it.

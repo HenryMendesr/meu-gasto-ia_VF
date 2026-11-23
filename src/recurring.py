@@ -164,7 +164,14 @@ def validate_card(payload):
         limit=investments.number(limit,'Limite do cartão',minimum=0)
         if limit>10000000:raise ValueError('Revise o limite do cartão')
     else:limit=None
-    return {'name':name,'due_day':day,'closing_day':closing_number,'limit':limit}
+    goals={}
+    for field,label in (('spending_goal','Meta de gasto do cartão'),('installment_cap','Máximo em parcelas por mês')):
+        value=payload.get(field)
+        if value in (None,''):goals[field]=None;continue
+        value=investments.number(value,label,minimum=0)
+        if value>10000000:raise ValueError('Revise o valor de '+label.lower())
+        goals[field]=round(value,2)
+    return {'name':name,'due_day':day,'closing_day':closing_number,'limit':limit,**goals}
 
 
 def save_card(payload,user_id=None):
