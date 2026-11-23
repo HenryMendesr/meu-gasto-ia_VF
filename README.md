@@ -147,7 +147,14 @@ A opção **Meus ganhos e perdas** mostra apenas o resultado em reais desde a co
 
 Use **Registrar venda** para informar data, quantidade e preço por unidade ou valor total recebido. Vendas parciais reduzem a posição aberta; vendas totais encerram a posição sem apagar o histórico. O valor líquido da nova venda (bruto menos taxas informadas) entra automaticamente no caixa de investimentos, na mesma transação do registro da venda. Vendas antigas não são creditadas retroativamente. Ativos com vendas preservam os dados originais da compra e não podem ser excluídos, para manter o resultado realizado. Em renda variável, use **Movimentar → Novo aporte** para comprar mais no mesmo ativo. O custo com taxas é debitado do caixa; o preço médio é recalculado sobre a posição ainda aberta, preservando o resultado das vendas anteriores. Registre compras e vendas em ordem cronológica. Aportes de renda fixa continuam com cadastros individuais.
 
-A interface usa um tema escuro com navegação lateral no computador e inferior no celular. A paleta e os componentes compartilhados ficam em `public/app.css`; os layouts complementares ficam nos arquivos CSS dos painéis. Ao alterar a interface, regenere `templates/index.html` com `SANITIZE_BUILD=1 python3 src/build_dashboard.py`.
+A interface usa um tema escuro com navegação lateral no computador e inferior no celular.
+
+- **Cores:** todas as cores vêm dos tokens em `:root` no início de `public/app.css` (superfícies, texto, verde para entradas e resultados positivos, vermelho para saídas e perdas, âmbar para atenção). Os demais arquivos CSS usam apenas `var(--token)`; para mudar a paleta, altere só esses tokens.
+- **Camada visual:** `src/theme.css` é carregado por último e padroniza cartões, botões, campos, tabelas, seções recolhíveis e a navegação.
+- **Início:** `src/overview.html`, `src/overview.css` e `src/overview.js` formam o painel somente leitura (sobra do mês, ritmo de gastos, limites, categorias, últimos seis meses, investimentos e compromissos). Os blocos antigos do Início continuam ocultos no HTML porque outros painéis ainda usam seus IDs.
+- **Ordem das abas:** `src/focus_layout.py` coloca primeiro os números e gráficos de cada aba e move guias, resumo do dia e históricos para seções recolhíveis.
+
+Ao alterar a interface, regenere `templates/index.html` com `SANITIZE_BUILD=1 python3 src/build_dashboard.py`.
 
 O acabamento de **Planejar** usa tokens de espaçamento, cores, sombras e transições do [Open Props 1.7.23](https://open-props.style/). A biblioteca e a licença MIT ficam em `src/vendor/open-props/`, com seletores limitados à tela de planejamento. O build incorpora o CSS localmente, sem CDN, fontes remotas ou dependência de rede no navegador.
 

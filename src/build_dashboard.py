@@ -8,7 +8,9 @@ try:
     from src.investments import portfolio
     from src import runtime_storage as storage
     from src.budget_groups import GROUPS
+    from src import focus_layout
 except ImportError:
+    import focus_layout
     from investments import portfolio
     from budget_groups import GROUPS
     import runtime_storage as storage
@@ -117,7 +119,7 @@ function scheduledSalaryBasis(period){const prefs=ACCOUNT_PREFERENCES,all=prefs.
 const voucherByMonth={...DEFAULT_VOUCHER};
 let canWrite=false;
 const month=document.querySelector('#month'),category=document.querySelector('#category'),search=document.querySelector('#search'),incomeInput=document.querySelector('#incomeInput'),voucherInput=document.querySelector('#voucherInput'),paydayInput=document.querySelector('#paydayInput'),incomeSourceInput=document.querySelector('#incomeSourceInput');
-function populateFilters(){const selected=month.value;month.innerHTML='';const months=[...new Set([...DATA.map(x=>x.date.slice(0,7)),...INCOME_ENTRIES.map(x=>x.date.slice(0,7)),...Object.keys(incomeByMonth),...(ACCOUNT_PREFERENCES.salary_receipts||[]).map(x=>x.month),...Object.keys(voucherByMonth),...Object.keys(BUDGETS),new Date().toISOString().slice(0,7)])].sort().reverse();months.forEach(m=>month.add(new Option(monthLabel(m),m)));if(months.includes(selected))month.value=selected;category.innerHTML='<option value="">Todas</option>';ALL_CATEGORIES.slice().sort((a,b)=>a.localeCompare(b,'pt-BR')).forEach(c=>category.add(new Option(c,c)))}populateFilters();
+function populateFilters(){const selected=month.value;month.innerHTML='';const months=[...new Set([...DATA.map(x=>x.date.slice(0,7)),...INCOME_ENTRIES.map(x=>x.date.slice(0,7)),...Object.keys(incomeByMonth),...(ACCOUNT_PREFERENCES.salary_receipts||[]).map(x=>x.month),...Object.keys(voucherByMonth),...Object.keys(BUDGETS),new Date().toISOString().slice(0,7)])].sort().reverse();months.forEach(m=>month.add(new Option(monthLabel(m),m)));if(months.includes(selected))month.value=selected;else{const now=new Date(),current=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;if(months.includes(current))month.value=current}category.innerHTML='<option value="">Todas</option>';ALL_CATEGORIES.slice().sort((a,b)=>a.localeCompare(b,'pt-BR')).forEach(c=>category.add(new Option(c,c)))}populateFilters();
 function filtered(){const q=search.value.trim().toLocaleLowerCase('pt-BR');return DATA.filter(x=>x.date.startsWith(month.value)&&(!category.value||x.category===category.value)&&(!q||Object.values(x).join(' ').toLocaleLowerCase('pt-BR').includes(q)))}
 function cardPaidDue(period){const totals={},paid={};for(const row of DATA){const key=row.finance?.invoice_key;if(key&&row.date.startsWith(period))totals[key]=(totals[key]||0)+row.amount}for(const entry of ACCOUNT_PREFERENCES.card_payments||[]){if(!entry.reversed&&entry.invoice_key.endsWith(':'+period))paid[entry.invoice_key]=(paid[entry.invoice_key]||0)+entry.amount}return Object.entries(paid).reduce((sum,[key,value])=>sum+Math.min(value,Math.max(0,totals[key]||0)),0)}
 function render(){const all=DATA.filter(x=>x.date.startsWith(month.value));const cash=all.filter(x=>x.payment!=='Voucher'),voucher=all.filter(x=>x.payment==='Voucher');const view=filtered();const spent=cash.reduce((s,x)=>s+x.amount,0),voucherSpent=voucher.reduce((s,x)=>s+x.amount,0);const importedConfirmed=INCOME_ENTRIES.filter(x=>x.date.startsWith(month.value)&&x.date<=localDateValue()).reduce((sum,x)=>sum+x.amount,0);const declared=+(incomeByMonth[month.value]||0),imported=INCOME_ENTRIES.filter(x=>x.date.startsWith(month.value)).reduce((sum,x)=>sum+x.amount,0),incomeMode=ACCOUNT_PREFERENCES.income_modes?.[month.value]||'auto',salary=scheduledSalaryBasis(month.value),income=incomeMode==='scheduled'||incomeMode==='auto'&&salary.active?salary.received:incomeMode==='declared'||incomeMode==='auto'&&declared>0?(ACCOUNT_PREFERENCES.income_confirmed?.[month.value]?declared:0):importedConfirmed,expectedIncome=incomeMode==='scheduled'||incomeMode==='auto'&&salary.active?salary.expected:incomeMode==='declared'||incomeMode==='auto'&&declared>0?declared:imported,voucherIncome=+(voucherByMonth[month.value]||0);const cardPayments=(ACCOUNT_PREFERENCES.card_payments||[]).filter(entry=>!entry.reversed),paidDue=cardPaidDue(month.value),paidMonth=cardPayments.filter(entry=>entry.date.startsWith(month.value)).reduce((sum,entry)=>sum+entry.amount,0),projectedSpent=DATA.filter(x=>x.payment!=='Voucher'&&(x.finance?.paid&&(['loan','debt','asset'].includes(x.finance?.financing_kind)||x.finance?.fixed_expense_id)?x.finance.paid_date:x.date).startsWith(month.value)).reduce((sum,x)=>sum+x.amount,0)-paidDue+paidMonth,balance=expectedIncome-projectedSpent,voucherBalance=voucherIncome-voucherSpent;
@@ -321,6 +323,18 @@ for old,new in {
     html=html.replace(old,new)
 html=html.replace('/app.css?v=28','/app.css?v=29')
 html=html.replace('</style>',(ROOT/'src/calm.css').read_text(encoding='utf-8')+'\n</style>',1)
+
+# Início is a read-only dashboard. The previous home blocks stay in the DOM,
+# hidden, because other panels still read and write their element IDs.
+home_block,_=take_element(html,'<div id="dashboardPanel"')
+home_open=home_block[:home_block.index('>')+1]
+home_inner=home_block[len(home_open):-len('</div>')]
+new_home=home_open+(ROOT/'src/overview.html').read_text(encoding='utf-8')+'<div class="legacy-home" hidden>'+home_inner+'</div></div>'
+html=html.replace(home_block,new_home,1)
+html=html.replace('</style>',(ROOT/'src/overview.css').read_text(encoding='utf-8')+'\n'+(ROOT/'src/theme.css').read_text(encoding='utf-8')+'\n</style>',1)
+html=html.replace('</script>',(ROOT/'src/overview.js').read_text(encoding='utf-8')+'\n</script>',1)
+html=html.replace('/app.css?v=29','/app.css?v=30')
+html=focus_layout.apply(html)
 
 icons = {
     "≡": '<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3"/>',

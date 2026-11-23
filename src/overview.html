@@ -1,0 +1,69 @@
+<div class="ov" id="overview" aria-live="polite">
+  <header class="ov-head">
+    <div><span class="ov-kicker">Seu mês</span><h2 id="ovMonthTitle">—</h2></div>
+    <span id="ovStatus" class="ov-status">—</span>
+  </header>
+
+  <section class="ov-hero" aria-label="Resumo do mês">
+    <article class="ov-card ov-balance">
+      <div class="ov-card-top"><span class="ov-label">Sobra prevista no mês</span><span id="ovDaysLeft" class="ov-chip">—</span></div>
+      <strong id="ovBalance" class="ov-big">—</strong>
+      <div id="ovBudgetBar" class="ov-stack" role="img" aria-label="Uso da renda do mês"></div>
+      <div id="ovBudgetLegend" class="ov-stack-legend"></div>
+    </article>
+    <article class="ov-card ov-kpi ov-in"><span class="ov-label">Entrou</span><strong id="ovIn">—</strong><small id="ovInNote">—</small></article>
+    <article class="ov-card ov-kpi ov-out"><span class="ov-label">Saiu</span><strong id="ovOut">—</strong><small id="ovOutNote">—</small></article>
+    <article class="ov-card ov-kpi ov-due"><span class="ov-label">Falta pagar</span><strong id="ovDue">—</strong><small id="ovDueNote">—</small></article>
+  </section>
+
+  <section class="ov-grid ov-grid-2">
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Ritmo de gastos</h3><span id="ovPaceNote" class="ov-pill">—</span></div>
+      <div id="ovPace" class="ov-chart"></div>
+    </article>
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Limites do mês</h3><button class="ov-link" type="button" data-open-panel="budgetsPanel">Planejar →</button></div>
+      <div id="ovLimits" class="ov-limits"></div>
+    </article>
+  </section>
+
+  <section class="ov-grid ov-grid-2">
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Para onde foi o dinheiro</h3><span id="ovCatTotal" class="ov-pill">—</span></div>
+      <div class="ov-donut-row"><div id="ovCatDonut" class="ov-donut"></div><ul id="ovCatLegend" class="ov-legend"></ul></div>
+    </article>
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Últimos 6 meses</h3><span class="ov-keys"><i class="k-in"></i>Entrou <i class="k-out"></i>Saiu</span></div>
+      <div id="ovHistory" class="ov-chart"></div>
+    </article>
+  </section>
+
+  <header class="ov-section"><h2>Investimentos</h2><button class="ov-link" type="button" data-open-panel="investmentsPanel">Ver carteira →</button></header>
+  <section class="ov-invest" aria-label="Investimentos">
+    <article class="ov-card ov-kpi ov-wealth"><span class="ov-label">Patrimônio</span><strong id="ovWealth">—</strong><small id="ovWealthNote">—</small></article>
+    <article class="ov-card ov-kpi"><span class="ov-label">Resultado</span><strong id="ovProfit">—</strong><small id="ovProfitNote">—</small></article>
+    <article class="ov-card ov-kpi"><span class="ov-label">Rende por mês</span><strong id="ovMonthly">—</strong><small>Estimativa bruta da renda fixa</small></article>
+  </section>
+  <section class="ov-grid ov-grid-2">
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Onde está investido</h3></div>
+      <div class="ov-donut-row"><div id="ovAllocDonut" class="ov-donut"></div><ul id="ovAllocLegend" class="ov-legend"></ul></div>
+    </article>
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Desempenho por ativo</h3><span class="ov-pill">desde a compra</span></div>
+      <div id="ovAssets" class="ov-assets"></div>
+    </article>
+  </section>
+
+  <header class="ov-section"><h2>Compromissos</h2><button class="ov-link" type="button" data-open-panel="debtsPanel">Ver dívidas →</button></header>
+  <section class="ov-grid ov-grid-2">
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Dívidas e parcelas</h3></div>
+      <div id="ovDebts" class="ov-debts"></div>
+    </article>
+    <article class="ov-card">
+      <div class="ov-card-head"><h3>Próximos vencimentos</h3><span class="ov-pill">30 dias</span></div>
+      <ul id="ovUpcoming" class="ov-upcoming"></ul>
+    </article>
+  </section>
+</div>

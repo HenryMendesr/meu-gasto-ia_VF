@@ -20,7 +20,7 @@ function savedBudgetGroups(key){
  Object.entries(raw).forEach(([name,value])=>{if(!BUDGET_GROUP_IDS.has(name))values[budgetGroupFor(name)]+=+value||0});
  BUDGET_GROUPS.forEach(group=>{if(Object.hasOwn(raw,group.id))values[group.id]=+raw[group.id]||0;values[group.id]=Math.round(values[group.id]*100)/100});return values;
 }
-const BUDGET_COLORS=['#91c6ff','#89e0c8','#e8c486','#c4a5f1','#aebbc8'];
+const BUDGET_COLORS=['#5aa9ff','#3ddc97','#f5b94a','#a98bff','#8592a4'];
 function categoryTotals(monthValue){const totals={};DATA.filter(item=>item.date.startsWith(monthValue)).forEach(item=>totals[budgetGroupFor(item.category)]=(totals[budgetGroupFor(item.category)]||0)+item.amount);return totals}
 function budgetLevel(used,limit){if(!limit)return 'unset';const ratio=used/limit;return ratio>1?'over':ratio>=.8?'warning':'safe'}
 function budgetIncomeFor(key){const mode=ACCOUNT_PREFERENCES.income_modes?.[key]||'auto',salary=scheduledSalaryBasis(key),declared=+(incomeByMonth[key]||0),imported=INCOME_ENTRIES.filter(x=>x.date.startsWith(key)).reduce((sum,x)=>sum+x.amount,0);return Math.max(0,mode==='scheduled'||mode==='auto'&&salary.active?salary.expected:mode==='declared'||mode==='auto'&&declared>0?declared:imported)}
